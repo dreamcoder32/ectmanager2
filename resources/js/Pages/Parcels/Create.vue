@@ -118,7 +118,7 @@
                 {{ $t('parcels.create_new') }}
               </v-card-title>
               <v-card-text>
-                <v-form @submit.prevent="submit" ref="form">
+                <v-form @submit.prevent="submit" ref="form_ref">
                   <v-row>
                     <!-- Tracking Number -->
                     <v-col cols="12">
@@ -314,6 +314,7 @@ const props = defineProps({
 const states = ref([])
 const cities = ref([])
 const loadingCities = ref(false)
+const form_ref = ref(null)
 
 const form = useForm({
   tracking_number: '',
