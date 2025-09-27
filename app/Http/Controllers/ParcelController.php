@@ -202,6 +202,10 @@ class ParcelController extends Controller
      */
     public function importExcel(Request $request)
     {
+        // Set execution limits for large file processing
+        set_time_limit(300); // 5 minutes
+        ini_set('memory_limit', '512M'); // Increase memory for processing
+        
         try {
             // Validate the uploaded file
             $request->validate([

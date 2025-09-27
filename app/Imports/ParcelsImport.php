@@ -204,7 +204,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
      */
     public function batchSize(): int
     {
-        return 100;
+        return 500; // Increased from 100 for better performance with large files
     }
 
     /**
@@ -212,7 +212,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
      */
     public function chunkSize(): int
     {
-        return 100;
+        return 500; // Increased from 100 for better performance with large files
     }
 
     /**
