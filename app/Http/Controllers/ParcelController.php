@@ -206,13 +206,28 @@ class ParcelController extends Controller
         set_time_limit(300); // 5 minutes
         ini_set('memory_limit', '512M'); // Increase memory for processing
         
+        // Log the start of import process
+        Log::info('Excel import started', [
+            'user_id' => Auth::id(),
+            'request_size' => $request->header('Content-Length'),
+            'ip' => $request->ip()
+        ]);
+        
         try {
             // Validate the uploaded file
             $request->validate([
-                'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // Max 10MB
+                'excel_file' => 'required|file|mimes:xlsx,xls,csv|max:51200', // Max 50MB
             ]);
 
             $file = $request->file('excel_file');
+            
+            // Log file details
+            Log::info('Excel file validated', [
+                'filename' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'user_id' => Auth::id()
+            ]);
             
             // Create import instance
             $import = new ParcelsImport();
@@ -221,12 +236,24 @@ class ParcelController extends Controller
             
             try {
                 // Import the Excel file
+                Log::info('Starting Excel import process', [
+                    'filename' => $file->getClientOriginalName(),
+                    'user_id' => Auth::id()
+                ]);
+                
                 Excel::import($import, $file);
                 
                 DB::commit();
                 
                 $importedCount = $import->getImportedCount();
                 $errors = $import->errors();
+                
+                Log::info('Excel import completed', [
+                    'imported_count' => $importedCount,
+                    'errors_count' => count($errors),
+                    'filename' => $file->getClientOriginalName(),
+                    'user_id' => Auth::id()
+                ]);
                 
                 if (count($errors) > 0) {
                     return response()->json([
@@ -251,7 +278,10 @@ class ParcelController extends Controller
                 
                 Log::error('Excel import failed: ' . $e->getMessage(), [
                     'file' => $file->getClientOriginalName(),
-                    'user_id' => Auth::id()
+                    'user_id' => Auth::id(),
+                    'exception' => $e->getTraceAsString(),
+                    'line' => $e->getLine(),
+                    'file_path' => $e->getFile()
                 ]);
                 
                 return response()->json([
@@ -264,6 +294,12 @@ class ParcelController extends Controller
             }
             
         } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Excel file validation failed', [
+                'errors' => $e->errors(),
+                'user_id' => Auth::id(),
+                'request_data' => $request->all()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'File validation failed',
@@ -271,7 +307,12 @@ class ParcelController extends Controller
                 'has_errors' => true
             ], 422);
         } catch (\Exception $e) {
-            Log::error('Unexpected error during Excel import: ' . $e->getMessage());
+            Log::error('Unexpected error during Excel import: ' . $e->getMessage(), [
+                'exception' => $e->getTraceAsString(),
+                'line' => $e->getLine(),
+                'file_path' => $e->getFile(),
+                'user_id' => Auth::id()
+            ]);
             
             return response()->json([
                 'success' => false,

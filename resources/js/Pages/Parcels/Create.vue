@@ -355,12 +355,16 @@ const uploadExcel = async () => {
   formData.append('excel_file', excelFile.value)
 
   try {
+    console.log('Starting Excel upload...', excelFile.value.name)
+    
     const response = await axios.post('/parcels/import-excel', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 300000, // 5 minutes timeout
     })
 
+    console.log('Excel upload response:', response.data)
     uploadMessage.value = `Successfully imported ${response.data.imported_count} parcels from Excel file.`
     uploadMessageType.value = 'success'
     excelFile.value = null
@@ -372,11 +376,15 @@ const uploadExcel = async () => {
 
   } catch (error) {
     console.error('Excel upload error:', error)
+    console.error('Error response:', error.response)
     
     if (error.response?.data?.errors) {
       excelErrors.value = Object.values(error.response.data.errors).flat()
     } else if (error.response?.data?.message) {
       uploadMessage.value = error.response.data.message
+      uploadMessageType.value = 'error'
+    } else if (error.code === 'ECONNABORTED') {
+      uploadMessage.value = 'Upload timeout. The file may be too large or the server is busy.'
       uploadMessageType.value = 'error'
     } else {
       uploadMessage.value = 'An error occurred while uploading the Excel file. Please try again.'

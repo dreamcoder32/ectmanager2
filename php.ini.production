@@ -1,0 +1,28 @@
+# PHP configuration for production server
+# These settings should be applied to php.ini or as environment variables
+
+# File upload settings
+upload_max_filesize = 50M
+post_max_size = 50M
+max_file_uploads = 20
+
+# Execution time settings
+max_execution_time = 300
+max_input_time = 300
+
+# Memory settings
+memory_limit = 512M
+
+# Other important settings for Laravel
+max_input_vars = 3000
+date.timezone = UTC
+
+# Session settings
+session.cookie_httponly = 1
+session.cookie_secure = 1
+session.use_strict_mode = 1
+
+# Error reporting (adjust for production)
+display_errors = Off
+log_errors = On
+error_log = /var/log/php_errors.log

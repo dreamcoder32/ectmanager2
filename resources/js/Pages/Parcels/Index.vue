@@ -69,20 +69,8 @@
               </v-col>
               
               <v-col cols="12" md="3">
-                <v-select
-                  v-model="filters.state_id"
-                  :items="stateOptions"
-                  :label="$t('parcels.state')"
-                  item-title="text"
-                  item-value="value"
-                  outlined
-                  dense
-                  clearable
-                  @change="onStateChange"
-                  style="border-radius: 8px;"
-                  color="primary"
-                  :menu-props="{ offsetY: true, maxHeight: 300 }"
-                ></v-select>
+             
+             
               </v-col>
               
               <v-col cols="12" md="3">
@@ -154,7 +142,7 @@
                
                <template v-slot:[`item.cod_amount`]="{ item }">
                  <span v-if="item.cod_amount" class="font-weight-medium">
-                   ${{ parseFloat(item.cod_amount).toFixed(2) }}
+                   {{ item.cod_amount }} Da
                  </span>
                  <span v-else class="text-grey">-</span>
                </template>
