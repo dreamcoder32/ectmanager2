@@ -12,14 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('expenses', function (Blueprint $table) {
-            // Drop existing indexes first
-            $table->dropIndex(['driver_id', 'expense_date']);
-            $table->dropIndex(['expense_type', 'expense_date']);
-            
-            // Drop foreign key constraints
+            // Drop foreign key constraints first (they depend on indexes)
             $table->dropForeign(['driver_id']);
             $table->dropForeign(['collection_id']);
             $table->dropForeign(['approved_by']);
+            
+            // Now drop existing indexes
+            $table->dropIndex(['driver_id', 'expense_date']);
+            $table->dropIndex(['expense_type', 'expense_date']);
             
             // Drop existing columns that don't match PRD2
             $table->dropColumn(['driver_id', 'collection_id', 'expense_type', 'receipt_path', 'is_approved', 'approved_by', 'approved_at']);
