@@ -37,7 +37,6 @@
           </v-list-item>
         </v-list>
       </v-menu>
-    </v-app-bar>
 
     <!-- Main Content -->
     <v-main>
@@ -243,6 +242,7 @@
           </v-row>
         </v-form>
       </v-container>
+    </v-main>
     </template>
   </AppLayout>
 </template>
