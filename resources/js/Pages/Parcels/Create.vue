@@ -365,14 +365,33 @@ const uploadExcel = async () => {
     })
 
     console.log('Excel upload response:', response.data)
-    uploadMessage.value = `Successfully imported ${response.data.imported_count} parcels from Excel file.`
-    uploadMessageType.value = 'success'
+    
+    // Check if the response indicates success
+    if (response.data.success !== false) {
+      uploadMessage.value = `Successfully imported ${response.data.imported_count} parcels from Excel file.`
+      uploadMessageType.value = 'success'
+      
+      // Show errors if any, but still consider it a success
+      if (response.data.has_errors && response.data.errors && response.data.errors.length > 0) {
+        uploadMessage.value += ` (${response.data.errors.length} rows had validation errors)`
+      }
+    } else {
+      uploadMessage.value = response.data.message || 'Import failed'
+      uploadMessageType.value = 'error'
+      
+      if (response.data.errors && response.data.errors.length > 0) {
+        excelErrors.value = response.data.errors
+      }
+    }
+    
     excelFile.value = null
 
-    // Optionally redirect to parcels list after successful import
-    setTimeout(() => {
-      router.visit('/parcels')
-    }, 2000)
+    // Only redirect on successful import without major errors
+    if (response.data.success !== false) {
+      setTimeout(() => {
+        router.visit('/parcels')
+      }, 3000) // Increased to 3 seconds to show the message
+    }
 
   } catch (error) {
     console.error('Excel upload error:', error)
