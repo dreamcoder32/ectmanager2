@@ -30,7 +30,7 @@ class Parcel extends Model
         'cod_amount',
         'delivery_fee',
         'status',
-        'description',
+        'delivery_type',
         'notes',
         'reference',
         'secondary_phone',
@@ -151,10 +151,18 @@ class Parcel extends Model
     }
 
     /**
-     * Check if the parcel is pending.
+     * Check if the parcel is for stopdesk collection.
      */
-    public function isPending(): bool
+    public function isStopdesk(): bool
     {
-        return $this->status === 'pending';
+        return $this->delivery_type === 'stopdesk';
     }
+
+    /**
+     * Check if the parcel is for home delivery.
+     */
+    // public function isHomeDelivery(): bool
+    // {
+    //     return $this->delivery_type === 'home_delivery';
+    // }
 }

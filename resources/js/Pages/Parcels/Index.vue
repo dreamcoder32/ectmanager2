@@ -200,12 +200,12 @@ export default {
   computed: {
     headers() {
       return [
-        { text: this.$t('parcels.tracking_number'), value: 'tracking_number' },
-        { text: this.$t('parcels.sender_name'), value: 'sender_name' },
-        { text: this.$t('parcels.receiver_name'), value: 'recipient_name' },
-        { text: this.$t('parcels.status'), value: 'status' },
-        { text: 'COD Amount', value: 'cod_amount' },
-        { text: this.$t('parcels.actions'), value: 'actions', sortable: false }
+        { title: this.$t('parcels.tracking_number'), key: 'tracking_number' },
+        { title: this.$t('parcels.sender_name'), key: 'sender_name' },
+        { title: this.$t('parcels.receiver_name'), key: 'recipient_name' },
+        { title: this.$t('parcels.status'), key: 'status' },
+        { title: 'COD Amount', key: 'cod_amount' },
+        { title: this.$t('parcels.actions'), key: 'actions', sortable: false }
       ]
     },
     statusOptions() {

@@ -72,6 +72,23 @@
           </span>
         </v-list-item>
 
+        <v-list-item 
+          @click="$inertia.visit('/stopdesk-payment')" 
+          link
+          :class="{ 'sidebar-item-active': $page.component.startsWith('StopDeskPayment/') }"
+          class="sidebar-item mb-2 d-flex align-center"
+          style="border-radius: 12px; 
+                 transition: all 0.3s ease;
+                 backdrop-filter: blur(10px);
+                 min-height: 48px;
+                 padding: 12px 16px;"
+        >
+          <v-icon color="white" size="24" class="mr-4">mdi-cash-register</v-icon>
+          <span class="text-white font-weight-medium text-body-1">
+            Stopdesk Payment
+          </span>
+        </v-list-item>
+
         <!-- Additional Menu Items -->
         <v-list-item 
           @click="$inertia.visit('/reports')" 

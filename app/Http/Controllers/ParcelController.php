@@ -343,4 +343,109 @@ class ParcelController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Search for a parcel by tracking number for stopdesk payment
+     */
+    public function searchByTrackingNumber(Request $request)
+    {
+        $request->validate([
+            'tracking_number' => 'required|string'
+        ]);
+
+        $parcel = Parcel::with(['company', 'state', 'city'])
+            ->where('tracking_number', $request->tracking_number)
+            ->where('status', '!=', 'delivered') // Only show undelivered parcels
+            ->first();
+
+        if (!$parcel) {
+            return back()->with('flash', [
+                'success' => false,
+                'message' => 'Parcel not found or already delivered'
+            ]);
+        }
+
+        return back()->with('flash', [
+            'success' => true,
+            'parcel' => [
+                'id' => $parcel->id,
+                'tracking_number' => $parcel->tracking_number,
+                'recipient_name' => $parcel->recipient_name,
+                'recipient_phone' => $parcel->recipient_phone,
+                'cod_amount' => $parcel->cod_amount,
+                'status' => $parcel->status,
+                'company' => $parcel->company ? $parcel->company->name : null,
+                'state' => $parcel->state ? $parcel->state->name : null,
+                'city' => $parcel->city ? $parcel->city->name : null,
+            ]
+        ]);
+    }
+
+    /**
+     * Confirm payment for stopdesk collection
+     */
+    public function confirmPayment(Request $request)
+    {
+        $request->validate([
+            'parcel_id' => 'required|exists:parcels,id',
+            'amount_paid' => 'required|numeric|min:0'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $parcel = Parcel::findOrFail($request->parcel_id);
+            
+            // Update parcel status to delivered
+            $parcel->update([
+                'status' => 'delivered',
+                'delivered_at' => now()
+            ]);
+
+            // Create collection record
+            $collection = \App\Models\Collection::create([
+                'parcel_id' => $parcel->id,
+                'collected_at' => now(),
+                'amount' => $request->amount_paid,
+                'created_by' => Auth::id(),
+                'note' => 'Stopdesk collection payment'
+            ]);
+
+            DB::commit();
+
+            Log::info('Stopdesk payment confirmed', [
+                'parcel_id' => $parcel->id,
+                'tracking_number' => $parcel->tracking_number,
+                'amount_paid' => $request->amount_paid,
+                'collected_by' => Auth::id()
+            ]);
+
+            return back()->with('flash', [
+                'success' => true,
+                'message' => 'Payment confirmed successfully',
+                'parcel' => [
+                    'id' => $parcel->id,
+                    'tracking_number' => $parcel->tracking_number,
+                    'recipient_name' => $parcel->recipient_name,
+                    'cod_amount' => $parcel->cod_amount,
+                    'amount_paid' => $collection->amount,
+                    'delivered_at' => $parcel->delivered_at
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            Log::error('Error confirming stopdesk payment', [
+                'parcel_id' => $request->parcel_id,
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id()
+            ]);
+
+            return back()->with('flash', [
+                'success' => false,
+                'message' => 'Error confirming payment'
+            ]);
+        }
+    }
 }

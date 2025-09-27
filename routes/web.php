@@ -48,6 +48,13 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('parcels', ParcelController::class);
     Route::post('parcels/import-excel', [ParcelController::class, 'importExcel'])->name('parcels.import-excel');
     
+    // Stopdesk Payment Routes
+    Route::get('/stopdesk-payment', function () {
+        return Inertia::render('StopDeskPayment/Index');
+    })->name('stopdesk.payment');
+    Route::post('parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber']);
+    Route::post('parcels/confirm-payment', [ParcelController::class, 'confirmPayment']);
+    
     // Redirect root to dashboard for authenticated users
     Route::get('/', function () {
         return redirect()->route('dashboard');
