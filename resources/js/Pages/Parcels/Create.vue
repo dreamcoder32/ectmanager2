@@ -393,9 +393,10 @@ const onStateChange = async () => {
     form.city_id = ''
     try {
       const response = await axios.get(`/api/states/${form.state_id}/cities`)
-      cities.value = response.data
+      cities.value = response.data || []
     } catch (error) {
       console.error('Error loading cities:', error)
+      cities.value = [] // Ensure cities is always an array
     } finally {
       loadingCities.value = false
     }
@@ -412,9 +413,10 @@ const submit = () => {
 onMounted(async () => {
   try {
     const response = await axios.get('/api/states')
-    states.value = response.data
+    states.value = response.data || []
   } catch (error) {
     console.error('Error loading states:', error)
+    states.value = [] // Ensure states is always an array
   }
 })
 </script>
