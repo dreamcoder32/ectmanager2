@@ -40,7 +40,7 @@
         <div class="d-flex align-center justify-center mb-4">
           <v-icon size="48" color="white" class="mr-3">mdi-truck-delivery</v-icon>
           <div>
-            <h1 class="text-h4 font-weight-bold text-white mb-1">DeliveryPro</h1>
+            <h1 class="text-h4 font-weight-bold text-white mb-1">ECTManager</h1>
             <p class="text-body-2 text-white opacity-90 mb-0">{{ $t('auth.welcome_back') }}</p>
           </div>
         </div>
@@ -119,7 +119,7 @@
         <!-- Footer -->
         <div class="text-center mt-6">
           <p class="text-body-2 text-grey-darken-1 mb-0">
-            © 2024 DeliveryPro. Professional delivery management system.
+            © 2025 ECTManager. Professional delivery management system.
           </p>
         </div>
       </v-card-text>

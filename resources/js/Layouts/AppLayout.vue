@@ -30,7 +30,7 @@
             <v-icon size="32" color="white">mdi-truck-delivery</v-icon>
           </v-avatar>
           <div class="text-left">
-            <h2 class="text-h5 font-weight-bold text-white mb-1">DeliveryPro</h2>
+            <h2 class="text-h5 font-weight-bold text-white mb-1">ECTManager</h2>
             <p class="text-body-2 text-white opacity-80 mb-0">Management System</p>
           </div>
         </div>
@@ -115,7 +115,7 @@
             {{ $t('common.version') }} 2.0.1
           </p>
           <p class="text-caption text-white opacity-50 mb-0">
-            © 2024 DeliveryPro
+            © 2025 ECTManager
           </p>
         </div>
       </template>
