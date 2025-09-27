@@ -21,12 +21,14 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
     private $importedCount = 0;
     private $states = [];
     private $cities = [];
+    private $detailedErrors = [];
 
     public function __construct()
     {
         // Initialize empty arrays - will be populated when needed
         $this->states = [];
         $this->cities = [];
+        $this->detailedErrors = [];
     }
 
     /**
@@ -42,9 +44,20 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
      */
     public function model(array $row): ?Parcel
     {
+        $rowNumber = $this->importedCount + 2; // +2 because we start from row 2 (header) and count from 1
+        
         try {
             // Skip empty rows or rows without required data
             if (empty($row['id']) || empty($row['client'])) {
+                $this->detailedErrors[] = [
+                    'row' => $rowNumber,
+                    'error' => 'Missing required data: ID or Client name is empty',
+                    'data' => $row
+                ];
+                Log::warning("Row {$rowNumber}: Missing required data", [
+                    'id' => $row['id'] ?? 'empty',
+                    'client' => $row['client'] ?? 'empty'
+                ]);
                 return null;
             }
 
@@ -67,6 +80,32 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
             
             // Find city from database (don't create new ones)
             $cityId = $this->findCityInDatabase($cityName, $stateId);
+
+            // Log missing state/city information
+            if (!$stateId && !empty($stateName)) {
+                $this->detailedErrors[] = [
+                    'row' => $rowNumber,
+                    'error' => "State not found in database: {$stateName}",
+                    'data' => ['tracking_number' => $trackingNumber, 'state' => $stateName]
+                ];
+                Log::warning("Row {$rowNumber}: State not found", [
+                    'tracking_number' => $trackingNumber,
+                    'state_name' => $stateName
+                ]);
+            }
+
+            if (!$cityId && !empty($cityName)) {
+                $this->detailedErrors[] = [
+                    'row' => $rowNumber,
+                    'error' => "City not found in database: {$cityName} (State: {$stateName})",
+                    'data' => ['tracking_number' => $trackingNumber, 'city' => $cityName, 'state' => $stateName]
+                ];
+                Log::warning("Row {$rowNumber}: City not found", [
+                    'tracking_number' => $trackingNumber,
+                    'city_name' => $cityName,
+                    'state_name' => $stateName
+                ]);
+            }
 
             // Create parcel
             $parcel = new Parcel([
@@ -101,7 +140,17 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
             return $parcel;
 
         } catch (\Exception $e) {
-            Log::error('Error importing parcel row: ' . $e->getMessage(), ['row' => $row]);
+            $this->detailedErrors[] = [
+                'row' => $rowNumber,
+                'error' => 'Exception during import: ' . $e->getMessage(),
+                'data' => $row
+            ];
+            Log::error("Row {$rowNumber}: Exception during import", [
+                'error' => $e->getMessage(),
+                'tracking_number' => $row['id'] ?? 'unknown',
+                'client' => $row['client'] ?? 'unknown',
+                'trace' => $e->getTraceAsString()
+            ]);
             return null;
         }
     }
@@ -197,6 +246,30 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
             'client.required' => 'Client name is required',
             'total.numeric' => 'Total amount must be a valid number',
         ];
+    }
+
+    /**
+     * Handle validation errors
+     */
+    public function onError(\Throwable $error)
+    {
+        $this->detailedErrors[] = [
+            'row' => 'unknown',
+            'error' => 'Validation error: ' . $error->getMessage(),
+            'data' => []
+        ];
+        Log::error('Excel import validation error', [
+            'error' => $error->getMessage(),
+            'trace' => $error->getTraceAsString()
+        ]);
+    }
+
+    /**
+     * Get detailed errors that occurred during import
+     */
+    public function getDetailedErrors(): array
+    {
+        return $this->detailedErrors;
     }
 
     /**

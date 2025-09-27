@@ -247,10 +247,31 @@ class ParcelController extends Controller
                 
                 $importedCount = $import->getImportedCount();
                 $errors = $import->errors();
+                $detailedErrors = $import->getDetailedErrors();
+                
+                // Log detailed errors if any
+                if (!empty($detailedErrors)) {
+                    Log::warning('Excel import detailed errors', [
+                        'filename' => $file->getClientOriginalName(),
+                        'user_id' => Auth::id(),
+                        'detailed_errors' => $detailedErrors
+                    ]);
+                    
+                    // Log each error individually for better readability
+                    foreach ($detailedErrors as $index => $error) {
+                        Log::warning("Excel import error #{$index}", [
+                            'filename' => $file->getClientOriginalName(),
+                            'row' => $error['row'],
+                            'error' => $error['error'],
+                            'data' => $error['data'] ?? []
+                        ]);
+                    }
+                }
                 
                 Log::info('Excel import completed', [
                     'imported_count' => $importedCount,
                     'errors_count' => count($errors),
+                    'detailed_errors_count' => count($detailedErrors),
                     'filename' => $file->getClientOriginalName(),
                     'user_id' => Auth::id()
                 ]);
