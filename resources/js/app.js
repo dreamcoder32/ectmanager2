@@ -7,6 +7,7 @@ import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 import vuetify from './plugins/vuetify';
 import i18n from './plugins/i18n';
+import { Toast, options } from './plugins/toast';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -23,6 +24,7 @@ createInertiaApp({
             .use(ZiggyVue)
             .use(vuetify)
             .use(i18n)
+            .use(Toast, options)
             .mount(el);
     },
     progress: {

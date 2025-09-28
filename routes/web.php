@@ -50,10 +50,29 @@ Route::middleware(['auth'])->group(function () {
     
     // Stopdesk Payment Routes
     Route::get('/stopdesk-payment', function () {
-        return Inertia::render('StopDeskPayment/Index');
+        // Get recent collections for the logged-in user
+        $recentCollections = \App\Models\Collection::with(['parcel'])
+            ->where('created_by', auth()->id())
+            ->orderBy('collected_at', 'desc')
+            ->limit(20)
+            ->get()
+            ->map(function ($collection) {
+                return [
+                    'id' => $collection->id,
+                    'tracking_number' => $collection->parcel->tracking_number ?? 'N/A',
+                    'cod_amount' => $collection->parcel->cod_amount ?? 0,
+                    'collected_at' => $collection->collected_at,
+                    'changeAmount' => $collection->amount - ($collection->parcel->cod_amount ?? 0),
+                ];
+            });
+
+        return Inertia::render('StopDeskPayment/Index', [
+            'recentCollections' => $recentCollections
+        ]);
     })->name('stopdesk.payment');
     Route::post('parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber']);
     Route::post('parcels/confirm-payment', [ParcelController::class, 'confirmPayment']);
+    Route::post('parcels/create-manual-and-collect', [ParcelController::class, 'createManualParcelAndCollect']);
     
     // Redirect root to dashboard for authenticated users
     Route::get('/', function () {

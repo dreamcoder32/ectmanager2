@@ -24,6 +24,7 @@
         "@mdi/font": "^7.4.47",
         "chart.js": "^4.5.0",
         "vue-i18n": "^10.0.8",
+        "vue-toastification": "^2.0.0-rc.5",
         "vuetify": "^3.10.3"
     }
 }

@@ -7,6 +7,7 @@ use App\Models\State;
 use App\Models\City;
 use App\Models\Company;
 use App\Models\Driver;
+use App\Models\Collection;
 use App\Imports\ParcelsImport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -353,30 +354,50 @@ class ParcelController extends Controller
             'tracking_number' => 'required|string'
         ]);
 
+        // First, check if parcel exists at all
         $parcel = Parcel::with(['company', 'state', 'city'])
             ->where('tracking_number', $request->tracking_number)
-            ->where('status', '!=', 'delivered') // Only show undelivered parcels
             ->first();
 
         if (!$parcel) {
-            return back()->with('flash', [
-                'success' => false,
-                'message' => 'Parcel not found or already delivered'
+            // Parcel doesn't exist - allow manual entry
+            return response()->json([
+                'searchResult' => [
+                    'success' => false,
+                    'message' => 'Parcel not found',
+                    'allow_manual_entry' => true
+                ]
             ]);
         }
 
-        return back()->with('flash', [
-            'success' => true,
-            'parcel' => [
-                'id' => $parcel->id,
-                'tracking_number' => $parcel->tracking_number,
-                'recipient_name' => $parcel->recipient_name,
-                'recipient_phone' => $parcel->recipient_phone,
-                'cod_amount' => $parcel->cod_amount,
-                'status' => $parcel->status,
-                'company' => $parcel->company ? $parcel->company->name : null,
-                'state' => $parcel->state ? $parcel->state->name : null,
-                'city' => $parcel->city ? $parcel->city->name : null,
+        // Check if parcel is already delivered/collected
+        if ($parcel->status === 'delivered') {
+            return response()->json([
+                'searchResult' => [
+                    'success' => false,
+                    'message' => 'Parcel already delivered and collected',
+                    'allow_manual_entry' => false,
+                    'parcel_status' => 'delivered'
+                ]
+            ]);
+        }
+
+        // Parcel exists and not delivered - can be processed
+        return response()->json([
+            'searchResult' => [
+                'success' => true,
+                'parcel' => [
+                    'id' => $parcel->id,
+                    'tracking_number' => $parcel->tracking_number,
+                    'recipient_name' => $parcel->recipient_name,
+                    'recipient_phone' => $parcel->recipient_phone,
+                    'recipient_address' => $parcel->recipient_address,
+                    'cod_amount' => $parcel->cod_amount,
+                    'status' => $parcel->status,
+                    'company' => $parcel->company ? $parcel->company->name : null,
+                    'state' => $parcel->state ? $parcel->state->name : null,
+                    'city' => $parcel->city ? $parcel->city->name : null,
+                ]
             ]
         ]);
     }
@@ -388,63 +409,133 @@ class ParcelController extends Controller
     {
         $request->validate([
             'parcel_id' => 'required|exists:parcels,id',
-            'amount_paid' => 'required|numeric|min:0'
+            'amount_given' => 'required|numeric|min:0'
         ]);
 
-        try {
-            DB::beginTransaction();
+        $parcel = Parcel::findOrFail($request->parcel_id);
+        
+        // Check if COD amount matches or if overpaid
+        if ($request->amount_given < $parcel->cod_amount) {
+            return response()->json([
+                'paymentResult' => [
+                    'success' => false,
+                    'message' => 'Insufficient payment amount'
+                ]
+            ]);
+        }
 
-            $parcel = Parcel::findOrFail($request->parcel_id);
-            
-            // Update parcel status to delivered
-            $parcel->update([
-                'status' => 'delivered',
-                'delivered_at' => now()
+        // Update parcel status to delivered
+        $parcel->update([
+            'status' => 'delivered',
+            'delivered_at' => now(),
+            'amount_paid' => $request->amount_given
+        ]);
+
+        // Create collection record
+        Collection::create([
+            'collected_at' => now(),
+            'parcel_id' => $parcel->id,
+            'created_by' => auth()->id(),
+            'note' => 'Stop desk payment collection',
+            'amount' => $request->amount_given,
+            'driver_id' => null, // Stop desk collections don't have drivers
+            'margin' => null, // Can be calculated later if needed
+            'driver_commission' => null, // No driver commission for stop desk
+        ]);
+
+        $changeAmount = $request->amount_given - $parcel->cod_amount;
+
+        return response()->json([
+            'paymentResult' => [
+                'success' => true,
+                'message' => 'Payment confirmed successfully',
+                'parcel_id' => $parcel->id,
+                'change_amount' => $changeAmount
+            ]
+        ]);
+    }
+
+    /**
+     * Create a manual parcel and process payment at stop desk
+     */
+    public function createManualParcelAndCollect(Request $request)
+    {
+        $request->validate([
+            'tracking_number' => 'required|string|unique:parcels,tracking_number',
+            'recipient_name' => 'required|string|max:255',
+            'recipient_phone' => 'required|string|max:20',
+            'recipient_address' => 'required|string',
+            'cod_amount' => 'required|numeric|min:0.01',
+            'amount_given' => 'required|numeric|min:0.01',
+            'company' => 'nullable|string|max:255',
+            'state' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:255',
+        ]);
+
+        DB::beginTransaction();
+        
+        try {
+            // Create the parcel
+            $parcel = Parcel::create([
+                'tracking_number' => $request->tracking_number,
+                'recipient_name' => $request->recipient_name,
+                'recipient_phone' => $request->recipient_phone,
+                'recipient_address' => $request->recipient_address,
+                'cod_amount' => $request->cod_amount,
+                'company' => $request->company,
+                'state' => $request->state,
+                'city' => $request->city,
+                'status' => 'delivered', // Mark as delivered since payment is collected
+                'delivered_at' => now(),
+                'created_by' => auth()->id(),
             ]);
 
-            // Create collection record
-            $collection = \App\Models\Collection::create([
-                'parcel_id' => $parcel->id,
+            // Create the collection record
+            $collection = Collection::create([
                 'collected_at' => now(),
-                'amount' => $request->amount_paid,
-                'created_by' => Auth::id(),
-                'note' => 'Stopdesk collection payment'
+                'parcel_id' => $parcel->id,
+                'created_by' => auth()->id(),
+                'note' => 'Manual parcel entry and stop desk payment collection',
+                'amount' => $request->amount_given,
+                'driver_id' => null, // Stop desk collections don't have drivers
+                'margin' => null, // Can be calculated later if needed
+                'driver_commission' => null, // No driver commission for stop desk
             ]);
 
             DB::commit();
 
-            Log::info('Stopdesk payment confirmed', [
-                'parcel_id' => $parcel->id,
-                'tracking_number' => $parcel->tracking_number,
-                'amount_paid' => $request->amount_paid,
-                'collected_by' => Auth::id()
-            ]);
+            $changeAmount = $request->amount_given - $parcel->cod_amount;
 
-            return back()->with('flash', [
-                'success' => true,
-                'message' => 'Payment confirmed successfully',
-                'parcel' => [
-                    'id' => $parcel->id,
-                    'tracking_number' => $parcel->tracking_number,
-                    'recipient_name' => $parcel->recipient_name,
-                    'cod_amount' => $parcel->cod_amount,
-                    'amount_paid' => $collection->amount,
-                    'delivered_at' => $parcel->delivered_at
+            return response()->json([
+                'paymentResult' => [
+                    'success' => true,
+                    'message' => 'Manual parcel created and payment confirmed successfully',
+                    'parcel_id' => $parcel->id,
+                    'change_amount' => $changeAmount,
+                    'collection' => [
+                        'id' => $collection->id,
+                        'collected_at' => $collection->collected_at->format('Y-m-d H:i:s'),
+                        'amount' => $collection->amount,
+                        'tracking_number' => $parcel->tracking_number, // Add tracking number directly
+                        'cod_amount' => $parcel->cod_amount, // Add cod_amount directly
+                        'parcel' => [
+                            'id' => $parcel->id,
+                            'tracking_number' => $parcel->tracking_number,
+                            'recipient_name' => $parcel->recipient_name,
+                            'cod_amount' => $parcel->cod_amount,
+                        ]
+                    ]
                 ]
             ]);
-
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::rollback();
+            Log::error('Manual parcel creation failed: ' . $e->getMessage());
             
-            Log::error('Error confirming stopdesk payment', [
-                'parcel_id' => $request->parcel_id,
-                'error' => $e->getMessage(),
-                'user_id' => Auth::id()
-            ]);
-
-            return back()->with('flash', [
-                'success' => false,
-                'message' => 'Error confirming payment'
+            return response()->json([
+                'paymentResult' => [
+                    'success' => false,
+                    'message' => 'Failed to create manual parcel: ' . $e->getMessage()
+                ]
             ]);
         }
     }
