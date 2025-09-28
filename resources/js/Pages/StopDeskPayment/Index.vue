@@ -315,7 +315,7 @@
                         <span class="font-weight-bold">
                           {{ collection.cod_amount }} DA 
                         </span>
-                        - {{ formatTime(collection.collected_at) }}
+                        - {{ formatTimeAgo(collection.collected_at) }}
                       </v-list-item-subtitle>
                      
                     </v-list-item-content>
@@ -599,6 +599,44 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    },
+    
+    formatTimeAgo(date) {
+      const now = new Date()
+      const collectedAt = new Date(date)
+      const diffInSeconds = Math.floor((now - collectedAt) / 1000)
+      
+      if (diffInSeconds < 60) {
+        return this.$t('time.just_now')
+      }
+      
+      const diffInMinutes = Math.floor(diffInSeconds / 60)
+      if (diffInMinutes < 60) {
+        return this.$t('time.minutes_ago', diffInMinutes)
+      }
+      
+      const diffInHours = Math.floor(diffInMinutes / 60)
+      if (diffInHours < 24) {
+        return this.$t('time.hours_ago', diffInHours)
+      }
+      
+      const diffInDays = Math.floor(diffInHours / 24)
+      if (diffInDays < 7) {
+        return this.$t('time.days_ago', diffInDays)
+      }
+      
+      const diffInWeeks = Math.floor(diffInDays / 7)
+      if (diffInWeeks < 4) {
+        return this.$t('time.weeks_ago', diffInWeeks)
+      }
+      
+      const diffInMonths = Math.floor(diffInDays / 30)
+      if (diffInMonths < 12) {
+        return this.$t('time.months_ago', diffInMonths)
+      }
+      
+      const diffInYears = Math.floor(diffInDays / 365)
+      return this.$t('time.years_ago', diffInYears)
     },
     
     cancelManualEntry() {

@@ -54,6 +54,15 @@ const messages = {
       version: 'Version',
       languageChanged: 'Language changed successfully'
     },
+    time: {
+      just_now: 'just now',
+      minutes_ago: '{count} minute ago | {count} minutes ago',
+      hours_ago: '{count} hour ago | {count} hours ago',
+      days_ago: '{count} day ago | {count} days ago',
+      weeks_ago: '{count} week ago | {count} weeks ago',
+      months_ago: '{count} month ago | {count} months ago',
+      years_ago: '{count} year ago | {count} years ago'
+    },
     auth: {
       login: 'Login',
       email: 'Email',
@@ -146,6 +155,15 @@ const messages = {
       version: 'Version',
       languageChanged: 'Langue changée avec succès'
     },
+    time: {
+      just_now: 'à l\'instant',
+      minutes_ago: 'il y a {count} minute | il y a {count} minutes',
+      hours_ago: 'il y a {count} heure | il y a {count} heures',
+      days_ago: 'il y a {count} jour | il y a {count} jours',
+      weeks_ago: 'il y a {count} semaine | il y a {count} semaines',
+      months_ago: 'il y a {count} mois | il y a {count} mois',
+      years_ago: 'il y a {count} an | il y a {count} ans'
+    },
     auth: {
       login: 'Connexion',
       email: 'Email',
@@ -237,6 +255,15 @@ const messages = {
       clear: 'مسح',
       version: 'الإصدار',
       languageChanged: 'تم تغيير اللغة بنجاح'
+    },
+    time: {
+      just_now: 'الآن',
+      minutes_ago: 'منذ {count} دقيقة | منذ {count} دقائق',
+      hours_ago: 'منذ {count} ساعة | منذ {count} ساعات',
+      days_ago: 'منذ {count} يوم | منذ {count} أيام',
+      weeks_ago: 'منذ {count} أسبوع | منذ {count} أسابيع',
+      months_ago: 'منذ {count} شهر | منذ {count} أشهر',
+      years_ago: 'منذ {count} سنة | منذ {count} سنوات'
     },
     auth: {
       login: 'تسجيل الدخول',

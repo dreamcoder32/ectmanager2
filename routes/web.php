@@ -30,9 +30,8 @@ Route::middleware('auth')->group(function () {
 
 // Dashboard routes (protected)
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard/Index');
-    })->name('dashboard');
+    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])->name('dashboard');
     
     // Financial Dashboard
     Route::get('/financial/dashboard', function () {

@@ -201,10 +201,12 @@ export default {
     headers() {
       return [
         { title: this.$t('parcels.tracking_number'), key: 'tracking_number' },
-        { title: this.$t('parcels.sender_name'), key: 'sender_name' },
+        // { title: this.$t('parcels.sender_name'), key: 'sender_name' },
+       { title: this.$t('parcels.phone'), key: 'phone1' },
         { title: this.$t('parcels.receiver_name'), key: 'recipient_name' },
         { title: this.$t('parcels.status'), key: 'status' },
         { title: 'COD Amount', key: 'cod_amount' },
+
         { title: this.$t('parcels.actions'), key: 'actions', sortable: false }
       ]
     },

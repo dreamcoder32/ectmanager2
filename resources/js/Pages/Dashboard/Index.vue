@@ -34,7 +34,7 @@
                 {{ stat.icon }}
               </v-icon>
             </div>
-            <div class="text-h3 font-weight-bold mb-2 text-white">
+            <div class="text-h4 font-weight-bold mb-2 text-white">
               {{ stat.value }}
             </div>
             <div class="text-subtitle-1 text-white opacity-90">
@@ -46,133 +46,7 @@
     </v-row>
 
     <!-- Recent Parcels and Quick Actions -->
-    <v-row>
-      <!-- Recent Parcels -->
-      <v-col cols="12" md="8">
-        <v-card 
-          elevation="1"
-          style="border-radius: 8px; background: white;"
-        >
-          <v-card-title class="pa-4" style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0;">
-            <v-icon left color="#666" size="24">mdi-package-variant</v-icon>
-            <span class="text-h6 font-weight-medium" style="color: #333;">{{ $t('dashboard.recent_parcels') }}</span>
-          </v-card-title>
-          <v-card-text class="pa-0">
-            <v-data-table
-              :headers="parcelHeaders"
-              :items="recentParcels"
-              :items-per-page="5"
-              hide-default-footer
-              class="elevation-0 simple-table"
-            >
-              <template v-slot:[`item.tracking_number`]="{ item }">
-                <v-chip
-                  small
-                  color="primary"
-                  @click="$inertia.visit(`/parcels/${item.id}`)"
-                  class="cursor-pointer"
-                >
-                  {{ item.tracking_number }}
-                </v-chip>
-              </template>
-              
-              <template v-slot:[`item.status`]="{ item }">
-                <v-chip
-                  small
-                  :color="getStatusColor(item.status)"
-                  outlined
-                >
-                  {{ $t(`parcels.status_${item.status}`) }}
-                </v-chip>
-              </template>
-              
-              <template v-slot:[`item.cod_amount`]="{ item }">
-                <span v-if="item.cod_amount">
-                  {{ formatCurrency(item.cod_amount) }}
-                </span>
-                <span v-else class="text--secondary">-</span>
-              </template>
-              
-              <template v-slot:[`item.actions`]="{ item }">
-                <v-btn
-                  icon
-                  small
-                  @click="$inertia.visit(`/parcels/${item.id}`)"
-                >
-                  <v-icon small>mdi-eye</v-icon>
-                </v-btn>
-                <v-btn
-                  icon
-                  small
-                  @click="$inertia.visit(`/parcels/${item.id}/edit`)"
-                >
-                  <v-icon small>mdi-pencil</v-icon>
-                </v-btn>
-              </template>
-            </v-data-table>
-          </v-card-text>
-          <v-card-actions class="pa-4">
-            <v-spacer></v-spacer>
-            <v-btn
-              color="primary"
-              text
-              @click="$inertia.visit('/parcels')"
-            >
-              {{ $t('dashboard.view_all_parcels') }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-col>
-
-      <!-- Quick Actions -->
-      <v-col cols="12" md="4">
-        <v-card 
-          elevation="8"
-          style="border-radius: 16px;
-                 background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-                 border: 1px solid rgba(255,255,255,0.1);"
-        >
-          <v-card-title class="pa-6" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
-            <v-icon left color="white" size="28">mdi-lightning-bolt</v-icon>
-            <span class="text-h5 font-weight-bold text-white">{{ $t('dashboard.quick_actions') }}</span>
-          </v-card-title>
-          <v-card-text class="pa-4">
-            <v-list class="transparent">
-              <v-list-item
-                v-for="action in quickActions"
-                :key="action.title"
-                @click="$inertia.visit(action.route)"
-                class="mb-3 quick-action-item"
-                style="border-radius: 12px;
-                       background: rgba(255,255,255,0.2);
-                       backdrop-filter: blur(10px);
-                       border: 1px solid rgba(255,255,255,0.1);
-                       transition: all 0.3s ease;"
-                @mouseover="$event.target.style.background = 'rgba(255,255,255,0.3)'"
-                @mouseleave="$event.target.style.background = 'rgba(255,255,255,0.2)'"
-              >
-                <v-list-item-icon>
-                  <v-avatar
-                    :color="action.color"
-                    size="40"
-                    style="background: linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.1));"
-                  >
-                    <v-icon color="white" size="20">{{ action.icon }}</v-icon>
-                  </v-avatar>
-                </v-list-item-icon>
-                <v-list-item-content>
-                  <v-list-item-title class="font-weight-bold text-white">{{ $t(action.title) }}</v-list-item-title>
-                  <v-list-item-subtitle class="text-white opacity-80">{{ $t(action.subtitle) }}</v-list-item-subtitle>
-                </v-list-item-content>
-                <v-list-item-action>
-                  <v-icon color="white">mdi-chevron-right</v-icon>
-                </v-list-item-action>
-              </v-list-item>
-            </v-list>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+ 
   </AppLayout>
 </template>
 
@@ -256,7 +130,7 @@ export default {
         {
           title: 'dashboard.total_revenue',
           value: this.formatCurrency(statsData.total_revenue || 0),
-          icon: 'mdi-currency-usd',
+          icon: 'mdi-cash',
           color: 'info'
         }
       ]
@@ -276,9 +150,9 @@ export default {
       return colors[status] || 'grey'
     },
     formatCurrency(amount) {
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('ar', {
         style: 'currency',
-        currency: 'USD'
+        currency: 'DZD'
       }).format(amount)
     }
   }
