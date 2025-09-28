@@ -19,6 +19,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
     use SkipsErrors;
 
     private $importedCount = 0;
+    private $skippedCount = 0;
     private $states = [];
     private $cities = [];
     private $detailedErrors = [];
@@ -63,6 +64,22 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
 
             // Extract data from row using header mapping and clean UTF-8
             $trackingNumber = $this->cleanUtf8((string) $row['id']);
+            
+            // Check if parcel with this tracking number already exists
+            $existingParcel = Parcel::where('tracking_number', $trackingNumber)->first();
+            if ($existingParcel) {
+                $this->detailedErrors[] = [
+                    'row' => $rowNumber,
+                    'error' => "Parcel with tracking number '{$trackingNumber}' already exists - skipped",
+                    'data' => ['tracking_number' => $trackingNumber, 'existing_id' => $existingParcel->id]
+                ];
+                Log::info("Row {$rowNumber}: Duplicate parcel skipped", [
+                    'tracking_number' => $trackingNumber,
+                    'existing_parcel_id' => $existingParcel->id
+                ]);
+                $this->skippedCount++; // Increment skipped count
+                return null; // Skip this row
+            }
             $senderName = $this->cleanUtf8((string) ($row['expediteur'] ?? ''));
             $recipientName = $this->cleanUtf8((string) $row['client']);
             $primaryPhone = $this->cleanUtf8((string) ($row['tel_1'] ?? ''));
@@ -294,6 +311,14 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
     public function getImportedCount(): int
     {
         return $this->importedCount;
+    }
+
+    /**
+     * Get the count of skipped duplicate records
+     */
+    public function getSkippedCount(): int
+    {
+        return $this->skippedCount;
     }
 
     /**

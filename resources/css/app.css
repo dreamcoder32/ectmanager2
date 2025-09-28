@@ -1,3 +1,89 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Vuetify compatibility fixes */
+.v-application {
+  font-family: inherit !important;
+}
+
+/* Fix for Vuetify dropdowns and form elements */
+.v-select .v-input__control,
+.v-text-field .v-input__control,
+.v-autocomplete .v-input__control {
+  min-height: 56px !important;
+}
+
+.v-select .v-input__slot,
+.v-text-field .v-input__slot,
+.v-autocomplete .v-input__slot {
+  padding: 0 12px !important;
+  align-items: center !important;
+}
+
+/* Fix dropdown menu positioning and styling */
+.v-menu__content {
+  box-shadow: 0 2px 4px -1px rgba(0,0,0,.2), 0 4px 5px 0 rgba(0,0,0,.14), 0 1px 10px 0 rgba(0,0,0,.12) !important;
+  border-radius: 4px !important;
+}
+
+.v-list-item {
+  min-height: 48px !important;
+  padding: 0 16px !important;
+}
+
+.v-list-item__content {
+  padding: 12px 0 !important;
+}
+
+/* Fix for outlined variant */
+.v-text-field--outlined .v-input__control,
+.v-select--outlined .v-input__control {
+  background: white !important;
+}
+
+.v-text-field--outlined fieldset,
+.v-select--outlined fieldset {
+  border-color: rgba(0,0,0,0.38) !important;
+}
+
+.v-text-field--outlined:hover fieldset,
+.v-select--outlined:hover fieldset {
+  border-color: rgba(0,0,0,0.87) !important;
+}
+
+.v-text-field--outlined.v-input--is-focused fieldset,
+.v-select--outlined.v-input--is-focused fieldset {
+  border-color: #1976d2 !important;
+  border-width: 2px !important;
+}
+
+/* Fix for dense variant */
+.v-input--dense .v-input__control {
+  min-height: 40px !important;
+}
+
+.v-input--dense .v-input__slot {
+  min-height: 40px !important;
+}
+
+/* Ensure proper z-index for dropdowns */
+.v-menu__content {
+  z-index: 9999 !important;
+}
+
+/* Fix for select dropdown arrow */
+.v-select .v-input__icon--append .v-icon {
+  color: rgba(0,0,0,0.54) !important;
+}
+
+/* Fix for placeholder and label positioning */
+.v-text-field--outlined .v-label,
+.v-select--outlined .v-label {
+  top: 18px !important;
+}
+
+.v-text-field--outlined .v-label--active,
+.v-select--outlined .v-label--active {
+  transform: translateY(-18px) scale(0.75) !important;
+}

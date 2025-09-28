@@ -207,16 +207,17 @@
                       <v-row>
                         <v-col cols="12" md="6">
                           <div class="mb-2">
+                            <v-icon color="primary" size="large" class="pb-2">
+                              mdi-barcode
+                            </v-icon>
                             <strong class="text-h6">{{ parcel.tracking_number }}</strong>
-                            <v-chip size="small" color="info" class="ml-2">
-                              {{ parcel.cod_amount }} DA
-                            </v-chip>
+                           
                           </div>
-                          <p class="text-body-2 text-grey mb-1">
+                          <p class="text-body-1 text-black mb-1">
                             <v-icon size="small" class="mr-1">mdi-account</v-icon>
                             {{ parcel.recipient_name }}
                           </p>
-                          <p class="text-body-2 text-grey">
+                          <p class="text-body-1 text-black">
                             <v-icon size="small" class="mr-1">mdi-phone</v-icon>
                             {{ parcel.recipient_phone }}
                           </p>
@@ -224,14 +225,17 @@
                         
                         <v-col cols="12" md="6">
                           <v-row align="center">
-                            <v-col cols="6" class="mt-8">
+                            <v-col cols="6" class="">
+                               <v-chip size="medium" color="info" class=" p-2 text-h5" label>
+                              {{ parseInt(parcel.cod_amount) }} DA
+                            </v-chip>
                               <v-text-field
                                 v-model.number="parcel.amountGiven"
                                 :label="$t('stopdesk_payment.amount_given')"
                                 type="number"
                                 variant="solo"
-                                flat
-                                density="compact"
+                                 outlined
+                    dense   
                                 suffix="DA"
                                 @input="calculateChange(parcel)"
                               ></v-text-field>
@@ -312,8 +316,8 @@
                         {{ collection.tracking_number }}
                       </v-list-item-title>
                       <v-list-item-subtitle class="text-caption ">
-                        <span class="font-weight-bold">
-                          {{ collection.cod_amount }} DA 
+                        <span class="font-weight-bold ">
+                          {{ parseInt(collection.cod_amount) }} DA 
                         </span>
                         - {{ formatTimeAgo(collection.collected_at) }}
                       </v-list-item-subtitle>
@@ -324,7 +328,7 @@
                 
                 <!-- Total Sum at the bottom -->
                 <v-divider></v-divider>
-                <div class="pa-4 bg-grey-lighten-5">
+                <div class="pa-4 bg-grey-lighten-5 fixed-bottom-total">
                   <div class="d-flex justify-space-between align-center">
                     <span class="text-body-2 font-weight-medium text-grey-darken-2">
                       Total Collections:
@@ -748,5 +752,17 @@ export default {
 /* Focus styles for barcode input */
 .v-text-field--focused .v-field {
   box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+/* Fixed bottom total collections */
+.fixed-bottom-total {
+  position: fixed !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1000 !important;
+  background: #f5f5f5 !important;
+  border-top: 1px solid #e0e0e0 !important;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1) !important;
 }
 </style>

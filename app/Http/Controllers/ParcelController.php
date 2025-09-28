@@ -247,6 +247,7 @@ class ParcelController extends Controller
                 DB::commit();
                 
                 $importedCount = $import->getImportedCount();
+                $skippedCount = $import->getSkippedCount();
                 $errors = $import->errors();
                 $detailedErrors = $import->getDetailedErrors();
                 
@@ -271,6 +272,7 @@ class ParcelController extends Controller
                 
                 Log::info('Excel import completed', [
                     'imported_count' => $importedCount,
+                    'skipped_count' => $skippedCount,
                     'errors_count' => count($errors),
                     'detailed_errors_count' => count($detailedErrors),
                     'filename' => $file->getClientOriginalName(),
@@ -282,15 +284,22 @@ class ParcelController extends Controller
                         'success' => false,
                         'message' => 'Import completed with some errors',
                         'imported_count' => $importedCount,
+                        'skipped_count' => $skippedCount,
                         'errors' => $errors,
                         'has_errors' => true
                     ], 422);
                 }
                 
+                $message = "Successfully imported {$importedCount} parcels";
+                if ($skippedCount > 0) {
+                    $message .= " ({$skippedCount} duplicates skipped)";
+                }
+                
                 return response()->json([
                     'success' => true,
-                    'message' => "Successfully imported {$importedCount} parcels",
+                    'message' => $message,
                     'imported_count' => $importedCount,
+                    'skipped_count' => $skippedCount,
                     'errors' => [],
                     'has_errors' => false
                 ]);
