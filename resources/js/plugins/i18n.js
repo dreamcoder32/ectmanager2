@@ -69,6 +69,28 @@ const messages = {
       monthly_revenue: 'Monthly Revenue',
       pending_payments: 'Pending Payments',
       completed_payments: 'Completed Payments'
+    },
+    stopdesk_payment: {
+      barcode_scanner: 'Barcode Scanner',
+      scan_or_type: 'Scan or type tracking number',
+      search: 'SEARCH',
+      pending_payments: 'Pending Payments',
+      no_parcels_queue: 'No parcels in queue',
+      scan_barcode_add: 'Scan a barcode to add parcels',
+      recipient_name: 'Recipient Name',
+      recipient_phone: 'Recipient Phone',
+      recipient_address: 'Recipient Address',
+      company: 'Company',
+      state: 'State',
+      city: 'City',
+      cancel: 'Cancel',
+      add_to_queue: 'Add to Queue',
+      amount_given: 'Amount Given',
+      change: 'Change',
+      remove: 'Remove',
+      confirm_payment: 'Confirm Payment',
+      recent_collections: 'Recent Collections',
+      no_recent_collections: 'No recent collections'
     }
   },
   fr: {
@@ -139,6 +161,28 @@ const messages = {
       monthly_revenue: 'Revenus mensuels',
       pending_payments: 'Paiements en attente',
       completed_payments: 'Paiements terminés'
+    },
+    stopdesk_payment: {
+      barcode_scanner: 'Scanner de codes-barres',
+      scan_or_type: 'Scanner ou saisir le numéro de suivi',
+      search: 'RECHERCHER',
+      pending_payments: 'Paiements en attente',
+      no_parcels_queue: 'Aucun colis en file d\'attente',
+      scan_barcode_add: 'Scanner un code-barres pour ajouter des colis',
+      recipient_name: 'Nom du destinataire',
+      recipient_phone: 'Téléphone du destinataire',
+      recipient_address: 'Adresse du destinataire',
+      company: 'Entreprise',
+      state: 'État',
+      city: 'Ville',
+      cancel: 'Annuler',
+      add_to_queue: 'Ajouter à la file',
+      amount_given: 'Montant donné',
+      change: 'Monnaie',
+      remove: 'Supprimer',
+      confirm_payment: 'Confirmer le paiement',
+      recent_collections: 'Collections récentes',
+      no_recent_collections: 'Aucune collection récente'
     }
   },
   ar: {
@@ -209,6 +253,28 @@ const messages = {
       monthly_revenue: 'الإيرادات الشهرية',
       pending_payments: 'المدفوعات المعلقة',
       completed_payments: 'المدفوعات المكتملة'
+    },
+    stopdesk_payment: {
+      barcode_scanner: 'ماسح الباركود',
+      scan_or_type: 'امسح أو اكتب رقم التتبع',
+      search: 'بحث',
+      pending_payments: 'المدفوعات المعلقة',
+      no_parcels_queue: 'لا توجد طرود في الطابور',
+      scan_barcode_add: 'امسح الباركود لإضافة الطرود',
+      recipient_name: 'اسم المستلم',
+      recipient_phone: 'هاتف المستلم',
+      recipient_address: 'عنوان المستلم',
+      company: 'الشركة',
+      state: 'الولاية',
+      city: 'المدينة',
+      cancel: 'إلغاء',
+      add_to_queue: 'إضافة إلى الطابور',
+      amount_given: 'المبلغ المدفوع',
+      change: 'الباقي',
+      remove: 'إزالة',
+      confirm_payment: 'تأكيد الدفع',
+      recent_collections: 'التحصيلات الأخيرة',
+      no_recent_collections: 'لا توجد تحصيلات أخيرة'
     }
   }
 }

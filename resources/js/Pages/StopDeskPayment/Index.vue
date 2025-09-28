@@ -28,13 +28,13 @@
             >
               <v-card-title class="pa-4 bg-primary text-white">
                 <v-icon left>mdi-barcode-scan</v-icon>
-                Barcode Scanner
+                {{ $t('stopdesk_payment.barcode_scanner') }}
               </v-card-title>
               <v-card-text class="pa-4">
                 <v-text-field
                   ref="barcodeInput"
                   v-model="barcodeInput"
-                  label="Scan or type tracking number"
+                  :label="$t('stopdesk_payment.scan_or_type')"
                   prepend-inner-icon="mdi-barcode"
                   variant="outlined"
                   size="large"
@@ -52,7 +52,7 @@
                       :loading="searching"
                       size="large"
                     >
-                      Search
+                      {{ $t('stopdesk_payment.search') }}
                     </v-btn>
                   </template>
                 </v-text-field>
@@ -104,7 +104,7 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="manualParcel.recipient_name"
-                      label="Recipient Name"
+                      :label="$t('stopdesk_payment.recipient_name')"
                       prepend-inner-icon="mdi-account"
                       variant="outlined"
                       required
@@ -113,7 +113,7 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="manualParcel.recipient_phone"
-                      label="Recipient Phone"
+                      :label="$t('stopdesk_payment.recipient_phone')"
                       prepend-inner-icon="mdi-phone"
                       variant="outlined"
                       required
@@ -122,7 +122,7 @@
                   <v-col cols="12">
                     <v-text-field
                       v-model="manualParcel.recipient_address"
-                      label="Recipient Address"
+                      :label="$t('stopdesk_payment.recipient_address')"
                       prepend-inner-icon="mdi-map-marker"
                       variant="outlined"
                       required
@@ -131,7 +131,7 @@
                   <v-col cols="12" md="4">
                     <v-text-field
                       v-model="manualParcel.company"
-                      label="Company (Optional)"
+                      :label="$t('stopdesk_payment.company')"
                       prepend-inner-icon="mdi-domain"
                       variant="outlined"
                     ></v-text-field>
@@ -139,7 +139,7 @@
                   <v-col cols="12" md="4">
                     <v-text-field
                       v-model="manualParcel.state"
-                      label="State (Optional)"
+                      :label="$t('stopdesk_payment.state')"
                       prepend-inner-icon="mdi-map"
                       variant="outlined"
                     ></v-text-field>
@@ -147,7 +147,7 @@
                   <v-col cols="12" md="4">
                     <v-text-field
                       v-model="manualParcel.city"
-                      label="City (Optional)"
+                      :label="$t('stopdesk_payment.city')"
                       prepend-inner-icon="mdi-city"
                       variant="outlined"
                     ></v-text-field>
@@ -160,7 +160,7 @@
                       @click="cancelManualEntry"
                       class="mr-2"
                     >
-                      Cancel
+                      {{ $t('stopdesk_payment.cancel') }}
                     </v-btn>
                     <v-btn 
                       color="success" 
@@ -168,7 +168,7 @@
                       :disabled="!isManualParcelValid"
                     >
                       <v-icon left>mdi-plus</v-icon>
-                      Add to Queue
+                      {{ $t('stopdesk_payment.add_to_queue') }}
                     </v-btn>
                   </v-col>
                 </v-row>
@@ -182,13 +182,13 @@
             >
               <v-card-title class="pa-4 bg-orange text-white">
                 <v-icon left>mdi-package-variant</v-icon>
-                Pending Payments ({{ activeParcels.length }})
+                {{ $t('stopdesk_payment.pending_payments') }} ({{ activeParcels.length }})
               </v-card-title>
               <v-card-text class="pa-0">
                 <div v-if="activeParcels.length === 0" class="text-center pa-8">
                   <v-icon size="64" color="grey-lighten-1">mdi-package-variant-closed</v-icon>
-                  <p class="text-h6 text-grey mt-4">No parcels in queue</p>
-                  <p class="text-body-2 text-grey">Scan a barcode to add parcels</p>
+                  <p class="text-h6 text-grey mt-4">{{ $t('stopdesk_payment.no_parcels_queue') }}</p>
+                  <p class="text-body-2 text-grey">{{ $t('stopdesk_payment.scan_barcode_add') }}</p>
                 </div>
                 
                 <v-list v-else>
@@ -227,9 +227,10 @@
                             <v-col cols="6" class="mt-8">
                               <v-text-field
                                 v-model.number="parcel.amountGiven"
-                                label="Amount Given"
+                                :label="$t('stopdesk_payment.amount_given')"
                                 type="number"
-                                variant="outlined"
+                                variant="solo"
+                                flat
                                 density="compact"
                                 suffix="DA"
                                 @input="calculateChange(parcel)"
@@ -237,7 +238,7 @@
                             </v-col>
                             <v-col cols="6">
                               <div class="change-display">
-                                <label class="text-caption text-grey-darken-1 mb-1 d-block">Change</label>
+                                <label class="text-caption text-grey-darken-1 mb-1 d-block">{{ $t('stopdesk_payment.change') }}</label>
                                 <div 
                                   class="text-h6 font-weight-bold pa-3 rounded border"
                                   :class="parcel.changeAmount >= 0 ? 'text-success bg-success-lighten-5 border-success' : 'text-error bg-error-lighten-5 border-error'"
@@ -257,7 +258,7 @@
                               class="mr-2"
                             >
                               <v-icon left size="small">mdi-close</v-icon>
-                              Remove
+                              {{ $t('stopdesk_payment.remove') }}
                             </v-btn>
                             <v-btn
                               color="success"
@@ -266,7 +267,7 @@
                               size="small"
                             >
                               <v-icon left size="small">mdi-check</v-icon>
-                              Confirm Payment
+                              {{ $t('stopdesk_payment.confirm_payment') }}
                             </v-btn>
                           </div>
                         </v-col>
@@ -286,12 +287,12 @@
             >
               <v-card-title class="pa-4 bg-success text-white">
                 <v-icon left>mdi-check-circle</v-icon>
-                Recent Collections
+                {{ $t('stopdesk_payment.recent_collections') }} <b> ({{recentCollections.length}}) </b>
               </v-card-title>
               <v-card-text class="pa-0" style="max-height: 600px; overflow-y: auto;">
                 <div v-if="recentCollections.length === 0" class="text-center pa-4">
                   <v-icon size="48" color="grey-lighten-1">mdi-history</v-icon>
-                  <p class="text-body-2 text-grey mt-2">No recent collections</p>
+                  <p class="text-body-2 text-grey mt-2">{{ $t('stopdesk_payment.no_recent_collections') }}</p>
                 </div>
                 
                 <v-list v-else density="compact">
@@ -310,8 +311,11 @@
                       <v-list-item-title class="text-body-2 font-weight-medium">
                         {{ collection.tracking_number }}
                       </v-list-item-title>
-                      <v-list-item-subtitle class="text-caption">
-                        {{ collection.cod_amount }} DA - {{ formatTime(collection.collected_at) }}
+                      <v-list-item-subtitle class="text-caption ">
+                        <span class="font-weight-bold">
+                          {{ collection.cod_amount }} DA 
+                        </span>
+                        - {{ formatTime(collection.collected_at) }}
                       </v-list-item-subtitle>
                      
                     </v-list-item-content>
@@ -330,11 +334,16 @@
 import { router } from '@inertiajs/vue3'
 import axios from 'axios'
 import AppLayout from '@/Layouts/AppLayout.vue'
+import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'StopDeskPayment',
   components: {
     AppLayout
+  },
+  setup() {
+    const { t } = useI18n()
+    return { t }
   },
   props: {
     recentCollections: {
