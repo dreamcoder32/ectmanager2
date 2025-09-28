@@ -8,10 +8,10 @@
               >
           Stop Desk Payment
         </span>
-        <v-chip variant="outlined" size="large">
+        <!-- <v-chip variant="outlined" size="large">
           <v-icon left>mdi-store</v-icon>
           Agent Interface
-        </v-chip>
+        </v-chip> -->
       </div>
     </template>
     
