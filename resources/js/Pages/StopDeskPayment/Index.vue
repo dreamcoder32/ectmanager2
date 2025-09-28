@@ -321,6 +321,19 @@
                     </v-list-item-content>
                   </v-list-item>
                 </v-list>
+                
+                <!-- Total Sum at the bottom -->
+                <v-divider></v-divider>
+                <div class="pa-4 bg-grey-lighten-5">
+                  <div class="d-flex justify-space-between align-center">
+                    <span class="text-body-2 font-weight-medium text-grey-darken-2">
+                      Total Collections:
+                    </span>
+                    <span class="text-h6 font-weight-bold text-success">
+                      {{ totalRecentCollections.toLocaleString() }} DA
+                    </span>
+                  </div>
+                </div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -655,6 +668,12 @@ export default {
              this.manualParcel.recipient_address &&
              this.manualParcel.cod_amount &&
              this.manualParcel.cod_amount > 0
+    },
+    
+    totalRecentCollections() {
+      return this.recentCollections.reduce((total, collection) => {
+        return total + (parseFloat(collection.cod_amount) || 0)
+      }, 0)
     }
   }
 }
