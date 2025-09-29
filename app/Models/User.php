@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -26,7 +27,18 @@ class User extends Authenticatable
         'role',
         'is_active',
         'assigned_states',
-        // Salary fields
+        // Personal Information
+        'first_name',
+        'last_name',
+        'date_of_birth',
+        'identity_card_number',
+        'national_identification_number',
+        // Employment Information
+        'started_working_at',
+        'payment_day_of_month',
+        'monthly_salary',
+        'manager_id',
+        // Legacy salary fields (keeping for backward compatibility)
         'salary_amount',
         'salary_currency',
         'salary_payment_day',
@@ -60,12 +72,25 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'assigned_states' => 'array',
+            // New user management fields
+            'date_of_birth' => 'date',
+            'started_working_at' => 'date',
+            'monthly_salary' => 'decimal:2',
+            // Legacy salary fields
             'salary_amount' => 'decimal:2',
             'salary_start_date' => 'date',
             'salary_is_active' => 'boolean',
             'commission_rate' => 'decimal:2',
             'commission_is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Get the user's name (accessor for display_name).
+     */
+    public function getNameAttribute(): string
+    {
+        return $this->display_name ?? '';
     }
 
     /**
@@ -98,6 +123,14 @@ class User extends Authenticatable
     public function commissionPayments(): HasMany
     {
         return $this->hasMany(CommissionPayment::class);
+    }
+
+    /**
+     * Get the collections created by the user.
+     */
+    public function collections(): HasMany
+    {
+        return $this->hasMany(Collection::class, 'created_by');
     }
 
     /**
@@ -183,5 +216,45 @@ class User extends Authenticatable
 
         // For fixed_per_parcel, the amount represents the number of parcels
         return $amount * $this->commission_rate;
+    }
+
+    /**
+     * Get the manager (supervisor) of this user.
+     */
+    public function manager()
+    {
+        return $this->belongsTo(User::class, 'manager_id');
+    }
+
+    /**
+     * Get the subordinates (agents) managed by this user.
+     */
+    public function subordinates()
+    {
+        return $this->hasMany(User::class, 'manager_id');
+    }
+
+    /**
+     * Get the full name of the user.
+     */
+    public function getFullNameAttribute(): string
+    {
+        return trim(($this->first_name ?? '') . ' ' . ($this->last_name ?? ''));
+    }
+
+    /**
+     * Check if user is a supervisor (has subordinates).
+     */
+    public function isSupervisor(): bool
+    {
+        return $this->subordinates()->exists();
+    }
+
+    /**
+     * Check if user has a manager assigned.
+     */
+    public function hasManager(): bool
+    {
+        return !is_null($this->manager_id);
     }
 }

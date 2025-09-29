@@ -3,9 +3,14 @@
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\SalaryPaymentController;
 use App\Http\Controllers\CommissionPaymentController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\FinancialDashboardController;
+use App\Http\Controllers\MoneyCaseController;
 use App\Http\Controllers\ParcelController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RecolteController;
+use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -47,11 +52,50 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('parcels', ParcelController::class);
     Route::post('parcels/import-excel', [ParcelController::class, 'importExcel'])->name('parcels.import-excel');
     
+    // Money Case Management Routes (Admin and Supervisor only)
+    Route::middleware(['role:admin,supervisor'])->group(function () {
+        Route::resource('money-cases', MoneyCaseController::class);
+        Route::get('money-cases/{moneyCase}/update-balance', [MoneyCaseController::class, 'updateBalance'])->name('money-cases.update-balance');
+    });
+    
+    // API route for getting active cases (for dropdowns)
+    Route::get('api/money-cases/active', [MoneyCaseController::class, 'getActiveCases'])->name('api.money-cases.active');
+    
+    // Money case activation route for stopdesk
+    Route::post('money-cases/activate', [MoneyCaseController::class, 'activateForUser'])->name('money-cases.activate');
+    
+    // Expense Management Routes - All authenticated users can access
+    Route::resource('expenses', ExpenseController::class);
+    
+    // Expense approval routes - Only supervisors and admins
+    Route::middleware(['role:admin,supervisor'])->group(function () {
+        Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve');
+        Route::post('expenses/{expense}/mark-as-paid', [ExpenseController::class, 'markAsPaid'])->name('expenses.mark-as-paid');
+        Route::post('expenses/{expense}/reject', [ExpenseController::class, 'reject'])->name('expenses.reject');
+    });
+    
+    // Expense Category Management Routes - Admin only
+    Route::middleware(['role:admin'])->group(function () {
+        Route::resource('expense-categories', ExpenseCategoryController::class);
+        Route::post('expense-categories/{expenseCategory}/toggle-status', [ExpenseCategoryController::class, 'toggleStatus'])->name('expense-categories.toggle-status');
+    });
+    
+    // Recolte Management Routes (Admin and Supervisor only)
+    Route::middleware(['role:admin,supervisor'])->group(function () {
+        Route::resource('recoltes', RecolteController::class);
+    });
+    
+    // User Management Routes (Supervisor and Admin only)
+    Route::middleware(['role:admin,supervisor'])->group(function () {
+        Route::resource('users', UserController::class);
+    });
+    
     // Stopdesk Payment Routes
     Route::get('/stopdesk-payment', function () {
-        // Get recent collections for the logged-in user
+        // Get recent collections for the logged-in user, excluding those that have been recolted
         $recentCollections = \App\Models\Collection::with(['parcel'])
             ->where('created_by', auth()->id())
+            ->whereDoesntHave('recoltes') // Exclude collections that are part of any recolte
             ->orderBy('collected_at', 'desc')
             ->limit(20)
             ->get()
@@ -65,9 +109,42 @@ Route::middleware(['auth'])->group(function () {
                 ];
             });
 
-        return Inertia::render('StopDeskPayment/Index', [
-            'recentCollections' => $recentCollections
+        // Debug: Log the query for troubleshooting
+        \Log::info('Stopdesk collections query', [
+            'user_id' => auth()->id(),
+            'total_collections' => \App\Models\Collection::where('created_by', auth()->id())->count(),
+            'collections_with_recoltes' => \App\Models\Collection::where('created_by', auth()->id())->whereHas('recoltes')->count(),
+            'collections_without_recoltes' => \App\Models\Collection::where('created_by', auth()->id())->whereDoesntHave('recoltes')->count(),
+            'filtered_count' => $recentCollections->count()
         ]);
+
+        // Get active money cases for case selection
+        $activeCases = \App\Models\MoneyCase::where('status', 'active')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($case) {
+                return [
+                    'id' => $case->id,
+                    'name' => $case->name,
+                    'description' => $case->description,
+                    'balance' => $case->calculated_balance,
+                    'currency' => $case->currency,
+                ];
+            });
+
+        // Get flash data if available
+        $flashData = [];
+        if (session()->has('searchResult')) {
+            $flashData['searchResult'] = session('searchResult');
+        }
+        if (session()->has('paymentResult')) {
+            $flashData['paymentResult'] = session('paymentResult');
+        }
+
+        return Inertia::render('StopDeskPayment/Index', array_merge([
+            'recentCollections' => $recentCollections,
+            'activeCases' => $activeCases
+        ], $flashData));
     })->name('stopdesk.payment');
     Route::post('parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber']);
     Route::post('parcels/confirm-payment', [ParcelController::class, 'confirmPayment']);

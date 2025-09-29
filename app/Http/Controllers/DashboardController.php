@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Parcel;
 use App\Models\Collection;
+use App\Models\MoneyCase;
+use App\Models\Expense;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
@@ -21,9 +23,13 @@ class DashboardController extends Controller
         // Get recent parcels
         $recentParcels = $this->getRecentParcels();
         
+        // Get money case statistics
+        $caseStats = $this->getCaseStats();
+        
         return Inertia::render('Dashboard/Index', [
             'stats' => $stats,
-            'recentParcels' => $recentParcels
+            'recentParcels' => $recentParcels,
+            'caseStats' => $caseStats
         ]);
     }
     
@@ -75,5 +81,35 @@ class DashboardController extends Controller
                     'city' => $parcel->city ? ['name' => $parcel->city->name] : null,
                 ];
             });
+    }
+    
+    /**
+     * Get money case statistics for the dashboard.
+     */
+    private function getCaseStats()
+    {
+        // Get all active money cases with their balances
+        $activeCases = MoneyCase::where('status', 'active')
+            ->withCount(['collections', 'expenses'])
+            ->get()
+            ->map(function ($case) {
+                $case->calculated_balance = $case->calculateBalance();
+                return $case;
+            });
+        
+        // Calculate totals
+        $totalBalance = $activeCases->sum('calculated_balance');
+        $totalCollections = Collection::sum('amount');
+        $totalExpenses = Expense::where('status', 'approved')->sum('amount');
+        $pendingExpenses = Expense::where('status', 'pending')->sum('amount');
+        
+        return [
+            'total_balance' => $totalBalance,
+            'total_collections' => $totalCollections,
+            'total_expenses' => $totalExpenses,
+            'pending_expenses' => $pendingExpenses,
+            'active_cases_count' => $activeCases->count(),
+            'cases' => $activeCases->take(5) // Top 5 cases for quick view
+        ];
     }
 }

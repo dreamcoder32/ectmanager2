@@ -14,7 +14,7 @@ class Expense extends Model
         'title',
         'amount',
         'currency',
-        'category',
+        'category_id',
         'description',
         'expense_date',
         'status',
@@ -27,6 +27,7 @@ class Expense extends Model
         'paid_by',
         'approved_at',
         'paid_at',
+        'case_id',
     ];
 
     protected function casts(): array
@@ -38,6 +39,14 @@ class Expense extends Model
             'approved_at' => 'datetime',
             'paid_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Get the expense category.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ExpenseCategory::class, 'category_id');
     }
 
     /**
@@ -83,11 +92,19 @@ class Expense extends Model
     }
 
     /**
+     * Get the money case this expense belongs to.
+     */
+    public function moneyCase(): BelongsTo
+    {
+        return $this->belongsTo(MoneyCase::class, 'case_id');
+    }
+
+    /**
      * Scope a query to filter by category.
      */
-    public function scopeByCategory($query, $category)
+    public function scopeByCategory($query, $categoryId)
     {
-        return $query->where('category', $category);
+        return $query->where('category_id', $categoryId);
     }
 
     /**
@@ -136,6 +153,22 @@ class Expense extends Model
     public function scopeByReferenceType($query, $referenceType)
     {
         return $query->where('reference_type', $referenceType);
+    }
+
+    /**
+     * Scope a query to filter expenses by user (for agents to see only their own).
+     */
+    public function scopeByUser($query, $userId)
+    {
+        return $query->where('created_by', $userId);
+    }
+
+    /**
+     * Scope a query to filter expenses that need approval.
+     */
+    public function scopeNeedsApproval($query)
+    {
+        return $query->where('status', 'pending');
     }
 
     /**

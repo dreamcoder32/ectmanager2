@@ -45,6 +45,106 @@
       </v-col>
     </v-row>
 
+    <!-- Money Case Statistics - Only visible to admin and supervisor -->
+    <v-row class="mb-6" v-if="caseStats && ($page.props.auth.user.role === 'admin' || $page.props.auth.user.role === 'supervisor')">
+      <v-col cols="12">
+        <v-card elevation="3" style="border-radius: 16px;">
+          <v-card-title class="pa-4 bg-gradient-primary text-white">
+            <v-icon left>mdi-wallet</v-icon>
+            Money Case Overview
+          </v-card-title>
+          <v-card-text class="pa-0">
+            <v-row class="ma-0">
+              <v-col cols="12" sm="6" md="3" class="pa-3">
+                <div class="text-center">
+                  <v-avatar color="success" size="48" class="mb-2">
+                    <v-icon color="white">mdi-cash-plus</v-icon>
+                  </v-avatar>
+                  <div class="text-h5 font-weight-bold">{{ formatCurrency(caseStats.total_balance) }}</div>
+                  <div class="text-subtitle-2 text--secondary">Total Balance</div>
+                </div>
+              </v-col>
+              <v-col cols="12" sm="6" md="3" class="pa-3">
+                <div class="text-center">
+                  <v-avatar color="info" size="48" class="mb-2">
+                    <v-icon color="white">mdi-trending-up</v-icon>
+                  </v-avatar>
+                  <div class="text-h5 font-weight-bold">{{ caseStats.total_collections }}</div>
+                  <div class="text-subtitle-2 text--secondary">Total Collections</div>
+                </div>
+              </v-col>
+              <v-col cols="12" sm="6" md="3" class="pa-3">
+                <div class="text-center">
+                  <v-avatar color="error" size="48" class="mb-2">
+                    <v-icon color="white">mdi-cash-minus</v-icon>
+                  </v-avatar>
+                  <div class="text-h5 font-weight-bold">{{ formatCurrency(caseStats.total_expenses) }}</div>
+                  <div class="text-subtitle-2 text--secondary">Approved Expenses</div>
+                </div>
+              </v-col>
+              <v-col cols="12" sm="6" md="3" class="pa-3">
+                <div class="text-center">
+                  <v-avatar color="warning" size="48" class="mb-2">
+                    <v-icon color="white">mdi-clock-outline</v-icon>
+                  </v-avatar>
+                  <div class="text-h5 font-weight-bold">{{ formatCurrency(caseStats.pending_expenses) }}</div>
+                  <div class="text-subtitle-2 text--secondary">Pending Expenses</div>
+                </div>
+              </v-col>
+            </v-row>
+            
+            <!-- Active Cases Quick View -->
+            <v-divider></v-divider>
+            <div class="pa-4">
+              <div class="d-flex align-center justify-space-between mb-3">
+                <h3 class="text-h6">Active Cases ({{ caseStats.active_cases_count }})</h3>
+                <v-btn 
+                  color="primary" 
+                  variant="text" 
+                  size="small"
+                  :href="'/money-cases'"
+                >
+                  View All
+                  <v-icon right>mdi-arrow-right</v-icon>
+                </v-btn>
+              </div>
+              <v-row>
+                 <v-col 
+                   v-for="moneyCase in caseStats.cases" 
+                   :key="moneyCase.id"
+                   cols="12" 
+                   sm="6" 
+                   md="4"
+                 >
+                   <v-card outlined style="border-radius: 8px;">
+                     <v-card-text class="pa-3">
+                       <div class="d-flex align-center justify-space-between mb-2">
+                         <h4 class="text-subtitle-1 font-weight-bold">{{ moneyCase.name }}</h4>
+                         <v-chip 
+                           :color="moneyCase.calculated_balance >= 0 ? 'success' : 'error'"
+                           size="small"
+                           text-color="white"
+                         >
+                           {{ formatCurrency(moneyCase.calculated_balance) }}
+                         </v-chip>
+                       </div>
+                       <div class="text-caption text--secondary mb-2">
+                         {{ moneyCase.description || 'No description' }}
+                       </div>
+                       <div class="d-flex justify-space-between text-caption">
+                         <span>Collections: {{ moneyCase.collections_count }}</span>
+                         <span>Expenses: {{ moneyCase.expenses_count }}</span>
+                       </div>
+                     </v-card-text>
+                   </v-card>
+                 </v-col>
+               </v-row>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Recent Parcels and Quick Actions -->
  
   </AppLayout>
@@ -66,6 +166,17 @@ export default {
     recentParcels: {
       type: Array,
       default: () => []
+    },
+    caseStats: {
+      type: Object,
+      default: () => ({
+        totalBalance: 0,
+        totalCollections: 0,
+        totalExpenses: 0,
+        pendingExpenses: 0,
+        activeCases: 0,
+        cases: []
+      })
     }
   },
   data() {
@@ -129,7 +240,7 @@ export default {
         },
         {
           title: 'dashboard.total_revenue',
-          value: this.formatCurrency(statsData.total_revenue || 0),
+          value: statsData.total_revenue  || 0,
           icon: 'mdi-cash',
           color: 'info'
         }

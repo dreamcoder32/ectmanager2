@@ -29,11 +29,11 @@
                margin: 4px;
                transition: all 0.2s ease;"
       >
-        <v-list-item-avatar class="mr-3">
+        <template v-slot:prepend>
           <v-icon :color="currentLocale === language.code ? 'primary' : 'grey'" size="20">
             {{ language.icon }}
           </v-icon>
-        </v-list-item-avatar>
+        </template>
         <v-list-item-title 
           :class="{ 'text-primary font-weight-bold': currentLocale === language.code }"
         >

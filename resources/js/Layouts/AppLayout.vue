@@ -89,8 +89,80 @@
           </span>
         </v-list-item>
 
-        <!-- Additional Menu Items -->
         <v-list-item 
+          @click="$inertia.visit('/recoltes')" 
+          link
+          :class="{ 'sidebar-item-active': $page.component.startsWith('Recoltes/') }"
+          class="sidebar-item mb-2 d-flex align-center"
+          style="border-radius: 12px; 
+                 transition: all 0.3s ease;
+                 backdrop-filter: blur(10px);
+                 min-height: 48px;
+                 padding: 12px 16px;"
+        >
+          <v-icon color="white" size="24" class="mr-4">mdi-cash-multiple</v-icon>
+          <span class="text-white font-weight-medium text-body-1">
+            Collection Transfer
+          </span>
+        </v-list-item>
+
+        <v-list-item 
+          @click="$inertia.visit('/expenses')" 
+          link
+          :class="{ 'sidebar-item-active': $page.component.startsWith('Expense/') }"
+          class="sidebar-item mb-2 d-flex align-center"
+          style="border-radius: 12px; 
+                 transition: all 0.3s ease;
+                 backdrop-filter: blur(10px);
+                 min-height: 48px;
+                 padding: 12px 16px;"
+        >
+          <v-icon color="white" size="24" class="mr-4">mdi-receipt</v-icon>
+          <span class="text-white font-weight-medium text-body-1">
+            {{t('navigation.expenses')}}
+          </span>
+        </v-list-item>
+
+        <!-- Admin Only: Expense Categories -->
+        <v-list-item 
+          v-if="$page.props.auth.user.role === 'admin'"
+          @click="$inertia.visit('/expense-categories')" 
+          link
+          :class="{ 'sidebar-item-active': $page.component.startsWith('ExpenseCategory/') }"
+          class="sidebar-item mb-2 d-flex align-center"
+          style="border-radius: 12px; 
+                 transition: all 0.3s ease;
+                 backdrop-filter: blur(10px);
+                 min-height: 48px;
+                 padding: 12px 16px;"
+        >
+          <v-icon color="white" size="24" class="mr-4">mdi-tag-multiple</v-icon>
+          <span class="text-white font-weight-medium text-body-1">
+            Expense Categories
+          </span>
+        </v-list-item>
+
+        <!-- Supervisor & Admin Only: User Management -->
+        <v-list-item 
+          v-if="$page.props.auth.user.role === 'admin' || $page.props.auth.user.role === 'supervisor'"
+          @click="$inertia.visit('/users')" 
+          link
+          :class="{ 'sidebar-item-active': $page.component.startsWith('Users/') }"
+          class="sidebar-item mb-2 d-flex align-center"
+          style="border-radius: 12px; 
+                 transition: all 0.3s ease;
+                 backdrop-filter: blur(10px);
+                 min-height: 48px;
+                 padding: 12px 16px;"
+        >
+          <v-icon color="white" size="24" class="mr-4">mdi-account-group</v-icon>
+          <span class="text-white font-weight-medium text-body-1">
+            User Management
+          </span>
+        </v-list-item>
+
+        <!-- Additional Menu Items -->
+        <!-- <v-list-item 
           @click="$inertia.visit('/reports')" 
           link
           class="sidebar-item mb-2 d-flex align-center"
@@ -104,8 +176,8 @@
           <span class="text-white font-weight-medium text-body-1">
             {{ $t('navigation.reports') }}
           </span>
-        </v-list-item>
-
+        </v-list-item> -->
+<!-- 
         <v-list-item 
           @click="$inertia.visit('/settings')" 
           link
@@ -120,7 +192,7 @@
           <span class="text-white font-weight-medium text-body-1">
             {{ $t('navigation.settings') }}
           </span>
-        </v-list-item>
+        </v-list-item> -->
       </v-list>
 
       <!-- Footer Section -->

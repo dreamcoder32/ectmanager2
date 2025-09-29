@@ -52,7 +52,8 @@ const messages = {
       import: 'Import',
       clear: 'Clear',
       version: 'Version',
-      languageChanged: 'Language changed successfully'
+      languageChanged: 'Language changed successfully',
+      currency:'Da'
     },
     time: {
       just_now: 'just now',
@@ -80,12 +81,16 @@ const messages = {
       completed_payments: 'Completed Payments'
     },
     stopdesk_payment: {
+      title: 'Stop Desk Payment',
       barcode_scanner: 'Barcode Scanner',
       scan_or_type: 'Scan or type tracking number',
       search: 'SEARCH',
       pending_payments: 'Pending Payments',
       no_parcels_queue: 'No parcels in queue',
       scan_barcode_add: 'Scan a barcode to add parcels',
+      manual_parcel_entry: 'Manual Parcel Entry',
+      tracking_number: 'Tracking Number',
+      cod_amount: 'COD Amount (DA)',
       recipient_name: 'Recipient Name',
       recipient_phone: 'Recipient Phone',
       recipient_address: 'Recipient Address',
@@ -99,13 +104,57 @@ const messages = {
       remove: 'Remove',
       confirm_payment: 'Confirm Payment',
       recent_collections: 'Recent Collections',
-      no_recent_collections: 'No recent collections'
+      no_recent_collections: 'No recent collections',
+      total_collections: 'Total Collections',
+      money_case: 'Money Case',
+      select_money_case: 'Select Money Case for All Collections',
+      case_active: 'Case Active',
+      no_case_selected: 'No Case Selected'
+    },
+    expenses: {
+      title: 'Expense Management',
+      create_new: 'Create New Expense',
+      status: {
+        pending: 'Pending',
+        approved: 'Approved',
+        paid: 'Paid',
+        rejected: 'Rejected'
+      },
+      filter_by_status: 'Filter by Status',
+      filter_by_category: 'Filter by Category',
+      search_placeholder: 'Search expenses...',
+      clear_filters: 'Clear Filters',
+      table: {
+        title: 'Title',
+        amount: 'Amount',
+        category: 'Category',
+        status: 'Status',
+        money_case: 'Money Case',
+        created_by: 'Created By',
+        date: 'Date'
+      },
+      no_category: 'No category',
+      no_case_assigned: 'No case assigned',
+      approve: 'Approve',
+      mark_as_paid: 'Mark as Paid',
+      reject: 'Reject',
+      payment_method: 'Payment Method',
+      payment_date: 'Payment Date',
+      delete_confirmation: 'Are you sure you want to delete this expense? This action cannot be undone.',
+      payment_methods: {
+        cash: 'Cash',
+        bank_transfer: 'Bank Transfer',
+        check: 'Check',
+        card: 'Card'
+      }
     }
   },
   fr: {
     navigation: {
       dashboard: 'Tableau de bord',
       parcels: 'Colis',
+            expenses: 'Depenses',
+
       reports: 'Rapports',
       settings: 'Paramètres',
       profile: 'Profil',
@@ -153,7 +202,9 @@ const messages = {
       import: 'Importer',
       clear: 'Effacer',
       version: 'Version',
-      languageChanged: 'Langue changée avec succès'
+      languageChanged: 'Langue changée avec succès',
+            currency:'Da'
+
     },
     time: {
       just_now: 'à l\'instant',
@@ -181,26 +232,72 @@ const messages = {
       completed_payments: 'Paiements terminés'
     },
     stopdesk_payment: {
-      barcode_scanner: 'Scanner de codes-barres',
-      scan_or_type: 'Scanner ou saisir le numéro de suivi',
+      title: 'Paiement au Bureau d\'Arrêt',
+      barcode_scanner: 'Scanner de Code-barres',
+      scan_or_type: 'Scanner ou taper le numéro de suivi',
       search: 'RECHERCHER',
-      pending_payments: 'Paiements en attente',
+      pending_payments: 'Paiements en Attente',
       no_parcels_queue: 'Aucun colis en file d\'attente',
       scan_barcode_add: 'Scanner un code-barres pour ajouter des colis',
-      recipient_name: 'Nom du destinataire',
-      recipient_phone: 'Téléphone du destinataire',
-      recipient_address: 'Adresse du destinataire',
+      manual_parcel_entry: 'Saisie Manuelle de Colis',
+      tracking_number: 'Numéro de Suivi',
+      cod_amount: 'Montant COD (DA)',
+      recipient_name: 'Nom du Destinataire',
+      recipient_phone: 'Téléphone du Destinataire',
+      recipient_address: 'Adresse du Destinataire',
       company: 'Entreprise',
       state: 'État',
       city: 'Ville',
       cancel: 'Annuler',
-      add_to_queue: 'Ajouter à la file',
-      amount_given: 'Montant donné',
+      add_to_queue: 'Ajouter à la File',
+      amount_given: 'Montant Donné',
       change: 'Monnaie',
       remove: 'Supprimer',
-      confirm_payment: 'Confirmer le paiement',
-      recent_collections: 'Collections récentes',
-      no_recent_collections: 'Aucune collection récente'
+      confirm_payment: 'Confirmer le Paiement',
+      recent_collections: 'Collections Récentes',
+      no_recent_collections: 'Aucune collection récente',
+      total_collections: 'Total des Collections',
+      money_case: 'Caisse',
+      select_money_case: 'Sélectionner une Caisse pour Toutes les Collections',
+      case_active: 'Caisse Active',
+      no_case_selected: 'Aucune Caisse Sélectionnée'
+    },
+    expenses: {
+      title: 'Gestion des Dépenses',
+      create_new: 'Créer une Nouvelle Dépense',
+      status: {
+        pending: 'En Attente',
+        approved: 'Approuvé',
+        paid: 'Payé',
+        rejected: 'Rejeté'
+      },
+      filter_by_status: 'Filtrer par Statut',
+      filter_by_category: 'Filtrer par Catégorie',
+      search_placeholder: 'Rechercher des dépenses...',
+      clear_filters: 'Effacer les Filtres',
+      table: {
+        title: 'Titre',
+        amount: 'Montant',
+        category: 'Catégorie',
+        status: 'Statut',
+        money_case: 'Caisse',
+        created_by: 'Créé par',
+        date: 'Date'
+      },
+      no_category: 'Aucune catégorie',
+      no_case_assigned: 'Aucune caisse assignée',
+      approve: 'Approuver',
+      mark_as_paid: 'Marquer comme Payé',
+      reject: 'Rejeter',
+      payment_method: 'Méthode de Paiement',
+      payment_date: 'Date de Paiement',
+      delete_confirmation: 'Êtes-vous sûr de vouloir supprimer cette dépense? Cette action ne peut pas être annulée.',
+      payment_methods: {
+        cash: 'Espèces',
+        bank_transfer: 'Virement Bancaire',
+        check: 'Chèque',
+        card: 'Carte'
+      }
     }
   },
   ar: {
@@ -254,7 +351,9 @@ const messages = {
       import: 'استيراد',
       clear: 'مسح',
       version: 'الإصدار',
-      languageChanged: 'تم تغيير اللغة بنجاح'
+      languageChanged: 'تم تغيير اللغة بنجاح',
+            currency:'دج'
+
     },
     time: {
       just_now: 'الآن',
@@ -282,12 +381,16 @@ const messages = {
       completed_payments: 'المدفوعات المكتملة'
     },
     stopdesk_payment: {
+      title: 'دفع مكتب التوقف',
       barcode_scanner: 'ماسح الباركود',
       scan_or_type: 'امسح أو اكتب رقم التتبع',
       search: 'بحث',
       pending_payments: 'المدفوعات المعلقة',
       no_parcels_queue: 'لا توجد طرود في الطابور',
       scan_barcode_add: 'امسح الباركود لإضافة الطرود',
+      manual_parcel_entry: 'إدخال الطرد يدوياً',
+      tracking_number: 'رقم التتبع',
+      cod_amount: 'مبلغ الدفع عند الاستلام (دج)',
       recipient_name: 'اسم المستلم',
       recipient_phone: 'هاتف المستلم',
       recipient_address: 'عنوان المستلم',
@@ -301,7 +404,49 @@ const messages = {
       remove: 'إزالة',
       confirm_payment: 'تأكيد الدفع',
       recent_collections: 'التحصيلات الأخيرة',
-      no_recent_collections: 'لا توجد تحصيلات أخيرة'
+      no_recent_collections: 'لا توجد تحصيلات أخيرة',
+      total_collections: 'إجمالي التحصيلات',
+      money_case: 'صندوق المال',
+      select_money_case: 'اختر صندوق المال لجميع التحصيلات',
+      case_active: 'الصندوق نشط',
+      no_case_selected: 'لم يتم اختيار صندوق'
+    },
+    expenses: {
+      title: 'إدارة المصروفات',
+      create_new: 'إنشاء مصروف جديد',
+      status: {
+        pending: 'معلق',
+        approved: 'موافق عليه',
+        paid: 'مدفوع',
+        rejected: 'مرفوض'
+      },
+      filter_by_status: 'تصفية حسب الحالة',
+      filter_by_category: 'تصفية حسب الفئة',
+      search_placeholder: 'البحث في المصروفات...',
+      clear_filters: 'مسح المرشحات',
+      table: {
+        title: 'العنوان',
+        amount: 'المبلغ',
+        category: 'الفئة',
+        status: 'الحالة',
+        money_case: 'صندوق المال',
+        created_by: 'أنشأ بواسطة',
+        date: 'التاريخ'
+      },
+      no_category: 'لا توجد فئة',
+      no_case_assigned: 'لم يتم تعيين صندوق',
+      approve: 'موافقة',
+      mark_as_paid: 'تحديد كمدفوع',
+      reject: 'رفض',
+      payment_method: 'طريقة الدفع',
+      payment_date: 'تاريخ الدفع',
+      delete_confirmation: 'هل أنت متأكد من أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء.',
+      payment_methods: {
+        cash: 'نقداً',
+        bank_transfer: 'تحويل بنكي',
+        check: 'شيك',
+        card: 'بطاقة'
+      }
     }
   }
 }

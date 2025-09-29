@@ -17,11 +17,14 @@ class Collection extends Model
         'driver_id',
         'margin',
         'driver_commission',
+        'case_id',
+        'amount_given'
     ];
 
     protected $casts = [
         'collected_at' => 'datetime',
         'amount' => 'decimal:2',
+        'amount_given'=> 'decimal:2',
         'margin' => 'decimal:2',
         'driver_commission' => 'decimal:2',
     ];
@@ -67,6 +70,14 @@ class Collection extends Model
     }
 
     /**
+     * Get the money case this collection belongs to.
+     */
+    public function moneyCase(): BelongsTo
+    {
+        return $this->belongsTo(MoneyCase::class, 'case_id');
+    }
+
+    /**
      * Scope a query to filter by driver.
      */
     public function scopeByDriver($query, $driverId)
@@ -108,6 +119,14 @@ class Collection extends Model
         return $query->whereHas('parcel', function ($q) {
             $q->where('delivery_type', 'stop_desk');
         });
+    }
+
+    /**
+     * Get the recoltes associated with this collection
+     */
+    public function recoltes()
+    {
+        return $this->belongsToMany(Recolte::class, 'recolte_collections');
     }
 
     /**

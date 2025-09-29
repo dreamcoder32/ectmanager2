@@ -392,23 +392,22 @@ class ParcelController extends Controller
         }
 
         // Parcel exists and not delivered - can be processed
-        return response()->json([
-            'searchResult' => [
-                'success' => true,
-                'parcel' => [
-                    'id' => $parcel->id,
-                    'tracking_number' => $parcel->tracking_number,
-                    'recipient_name' => $parcel->recipient_name,
-                    'recipient_phone' => $parcel->recipient_phone,
-                    'recipient_address' => $parcel->recipient_address,
-                    'cod_amount' => $parcel->cod_amount,
-                    'status' => $parcel->status,
-                    'company' => $parcel->company ? $parcel->company->name : null,
-                    'state' => $parcel->state ? $parcel->state->name : null,
-                    'city' => $parcel->city ? $parcel->city->name : null,
-                ]
-            ]
-        ]);
+ // CORRECT - this creates flash.searchResult directly
+return back()->with('searchResult', [
+    'success' => true,
+    'parcel' => [
+        'id' => $parcel->id,
+        'tracking_number' => $parcel->tracking_number,
+        'recipient_name' => $parcel->recipient_name,
+        'recipient_phone' => $parcel->recipient_phone,
+        'recipient_address' => $parcel->recipient_address,
+        'cod_amount' => $parcel->cod_amount,
+        'status' => $parcel->status,
+        'company' => $parcel->company ? $parcel->company->name : null,
+        'state' => $parcel->state ? $parcel->state->name : null,
+        'city' => $parcel->city ? $parcel->city->name : null,
+    ]
+]);
     }
 
     /**
@@ -418,50 +417,112 @@ class ParcelController extends Controller
     {
         $request->validate([
             'parcel_id' => 'required|exists:parcels,id',
-            'amount_given' => 'required|numeric|min:0'
+            'amount_given' => 'required|numeric|min:0',
+            'case_id' => 'nullable|exists:money_cases,id'
         ]);
 
-        $parcel = Parcel::findOrFail($request->parcel_id);
+     
+        DB::beginTransaction();
         
-        // Check if COD amount matches or if overpaid
-        if ($request->amount_given < $parcel->cod_amount) {
-            return response()->json([
+        try {
+            $parcel = Parcel::findOrFail($request->parcel_id);
+            // Check if COD amount matches or if overpaid
+            if ($request->amount_given < $parcel->cod_amount) {
+                return back()->with([
+                    'paymentResult' => [
+                        'success' => false,
+                        'message' => 'Insufficient payment amount'
+                    ]
+                ]);
+            }
+
+
+
+            // Get and activate the money case for the user
+            // $moneyCase = \App\Models\MoneyCase::findOrFail($request->case_id);
+            
+            // Check if case is active and available
+            // if (!$moneyCase->is_active) {
+            //     return back()->with([
+            //         'paymentResult' => [
+            //             'success' => false,
+            //             'message' => 'Selected money case is not active'
+            //         ]
+            //     ]);
+            // }
+
+            // Activate case for current user
+            // $moneyCase->activateForUser(auth()->id());
+            // Update parcel status to delivered
+            $parcel->update([
+                'status' => 'delivered',
+                'delivered_at' => now(),
+                'amount_paid' => $parcel->cod_amount
+            ]);
+
+
+                                    // return $parcel;
+
+            // Create collection record
+            $collection = Collection::create([
+                'collected_at' => now(),
+                'parcel_id' => $parcel->id,
+                'created_by' => auth()->id(),
+                'note' => 'Stop desk payment collection',
+                'amount' => $parcel->cod_amount,
+                'amount_given' => $request->amount_given,
+                'driver_id' => null, // Stop desk collections don't have drivers
+                'margin' => null, // Can be calculated later if needed
+                'driver_commission' => null, // No driver commission for stop desk
+                'case_id' => $request->case_id,
+            ]);
+
+            // Money case balance is now calculated dynamically
+
+            DB::commit();
+
+            $changeAmount = $request->amount_given - $parcel->cod_amount;
+
+            // Get updated recent collections for the user
+            $recentCollections = \App\Models\Collection::with(['parcel'])
+                ->where('created_by', auth()->id())
+                ->orderBy('collected_at', 'desc')
+                ->limit(20)
+                ->get()
+                ->map(function ($collection) {
+                    return [
+                        'id' => $collection->id,
+                        'tracking_number' => $collection->parcel->tracking_number ?? 'N/A',
+                        'cod_amount' => $collection->parcel->cod_amount ?? 0,
+                        'collected_at' => $collection->collected_at,
+                        'changeAmount' => $collection->amount - ($collection->parcel->cod_amount ?? 0),
+                    ];
+                });
+
+return back()->with('recentCollections', ['success' => true,
+                    'message' => 'Payment confirmed successfully',
+                    'parcel_id' => $parcel->id,
+                    'change_amount' => $changeAmount,
+                                    'recentCollections' => $recentCollections
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Payment confirmation failed', [
+                'parcel_id' => $request->parcel_id,
+                'amount_given' => $request->amount_given,
+                'case_id' => $request->case_id,
+                'user_id' => auth()->id(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return back()->with([
                 'paymentResult' => [
                     'success' => false,
-                    'message' => 'Insufficient payment amount'
+                    'message' => 'Payment confirmation failed: ' . $e->getMessage()
                 ]
             ]);
         }
-
-        // Update parcel status to delivered
-        $parcel->update([
-            'status' => 'delivered',
-            'delivered_at' => now(),
-            'amount_paid' => $request->amount_given
-        ]);
-
-        // Create collection record
-        Collection::create([
-            'collected_at' => now(),
-            'parcel_id' => $parcel->id,
-            'created_by' => auth()->id(),
-            'note' => 'Stop desk payment collection',
-            'amount' => $request->amount_given,
-            'driver_id' => null, // Stop desk collections don't have drivers
-            'margin' => null, // Can be calculated later if needed
-            'driver_commission' => null, // No driver commission for stop desk
-        ]);
-
-        $changeAmount = $request->amount_given - $parcel->cod_amount;
-
-        return response()->json([
-            'paymentResult' => [
-                'success' => true,
-                'message' => 'Payment confirmed successfully',
-                'parcel_id' => $parcel->id,
-                'change_amount' => $changeAmount
-            ]
-        ]);
     }
 
     /**
@@ -479,11 +540,28 @@ class ParcelController extends Controller
             'company' => 'nullable|string|max:255',
             'state' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
+            'case_id' => 'required|exists:money_cases,id'
         ]);
 
         DB::beginTransaction();
         
         try {
+            // Get and activate the money case for the user
+            $moneyCase = \App\Models\MoneyCase::findOrFail($request->case_id);
+            
+            // Check if case is active and available
+            if (!$moneyCase->is_active) {
+                return back()->with([
+                    'paymentResult' => [
+                        'success' => false,
+                        'message' => 'Selected money case is not active'
+                    ]
+                ]);
+            }
+
+            // Activate case for current user
+            $moneyCase->activateForUser(auth()->id());
+
             // Create the parcel
             $parcel = Parcel::create([
                 'tracking_number' => $request->tracking_number,
@@ -509,13 +587,33 @@ class ParcelController extends Controller
                 'driver_id' => null, // Stop desk collections don't have drivers
                 'margin' => null, // Can be calculated later if needed
                 'driver_commission' => null, // No driver commission for stop desk
+                'case_id' => $request->case_id,
             ]);
+
+            // Update money case balance
+            $moneyCase->increment('balance', $request->amount_given);
 
             DB::commit();
 
             $changeAmount = $request->amount_given - $parcel->cod_amount;
 
-            return response()->json([
+            // Get updated recent collections for the user
+            $recentCollections = \App\Models\Collection::with(['parcel'])
+                ->where('created_by', auth()->id())
+                ->orderBy('collected_at', 'desc')
+                ->limit(20)
+                ->get()
+                ->map(function ($collection) {
+                    return [
+                        'id' => $collection->id,
+                        'tracking_number' => $collection->parcel->tracking_number ?? 'N/A',
+                        'cod_amount' => $collection->parcel->cod_amount ?? 0,
+                        'collected_at' => $collection->collected_at,
+                        'changeAmount' => $collection->amount - ($collection->parcel->cod_amount ?? 0),
+                    ];
+                });
+
+            return back()->with([
                 'paymentResult' => [
                     'success' => true,
                     'message' => 'Manual parcel created and payment confirmed successfully',
@@ -534,13 +632,14 @@ class ParcelController extends Controller
                             'cod_amount' => $parcel->cod_amount,
                         ]
                     ]
-                ]
+                ],
+                'recentCollections' => $recentCollections
             ]);
         } catch (\Exception $e) {
             DB::rollback();
             Log::error('Manual parcel creation failed: ' . $e->getMessage());
             
-            return response()->json([
+            return back()->with([
                 'paymentResult' => [
                     'success' => false,
                     'message' => 'Failed to create manual parcel: ' . $e->getMessage()

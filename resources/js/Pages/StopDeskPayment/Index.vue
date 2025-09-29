@@ -4,14 +4,9 @@
     
     <template #title>
       <div class="d-flex justify-space-between align-center">
-        <span class="text-h4 font-weight-bold" 
-              >
-          Stop Desk Payment
+        <span class="text-h4 font-weight-bold">
+          {{ $t('stopdesk_payment.title') }}
         </span>
-        <!-- <v-chip variant="outlined" size="large">
-          <v-icon left>mdi-store</v-icon>
-          Agent Interface
-        </v-chip> -->
       </div>
     </template>
     
@@ -68,7 +63,7 @@
             >
               <v-card-title class="pa-4 bg-warning text-white">
                 <v-icon left>mdi-package-variant-plus</v-icon>
-                Manual Parcel Entry
+                {{ $t('stopdesk_payment.manual_parcel_entry') }}
                 <v-spacer></v-spacer>
                 <v-btn 
                   icon 
@@ -85,7 +80,7 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="manualParcel.tracking_number"
-                      label="Tracking Number"
+                      :label="$t('stopdesk_payment.tracking_number')"
                       prepend-inner-icon="mdi-barcode"
                       variant="outlined"
                       required
@@ -94,7 +89,7 @@
                   <v-col cols="12" md="6">
                     <v-text-field
                       v-model="manualParcel.cod_amount"
-                      label="COD Amount (DA)"
+                      :label="$t('stopdesk_payment.cod_amount')"
                       prepend-inner-icon="mdi-currency-usd"
                       variant="outlined"
                       type="number"
@@ -179,6 +174,7 @@
             <v-card 
               elevation="2"
               style="border-radius: 12px;"
+              class="mb-2"
             >
               <v-card-title class="pa-4 bg-orange text-white">
                 <v-icon left>mdi-package-variant</v-icon>
@@ -203,7 +199,7 @@
                       </v-avatar>
                     </template>
                     
-                    <v-list-item-content>
+                    <template v-slot:default>
                       <v-row>
                         <v-col cols="12" md="6">
                           <div class="mb-2">
@@ -211,7 +207,6 @@
                               mdi-barcode
                             </v-icon>
                             <strong class="text-h6">{{ parcel.tracking_number }}</strong>
-                           
                           </div>
                           <p class="text-body-1 text-black mb-1">
                             <v-icon size="small" class="mr-1">mdi-account</v-icon>
@@ -226,16 +221,16 @@
                         <v-col cols="12" md="6">
                           <v-row align="center">
                             <v-col cols="6" class="">
-                               <v-chip size="medium" color="info" class=" p-2 text-h5" label>
-                              {{ parseInt(parcel.cod_amount) }} DA
-                            </v-chip>
+                              <v-chip size="medium" color="info" class=" p-2 text-h5" label>
+                                {{ parseInt(parcel.cod_amount) }} DA
+                              </v-chip>
                               <v-text-field
                                 v-model.number="parcel.amountGiven"
                                 :label="$t('stopdesk_payment.amount_given')"
                                 type="number"
                                 variant="solo"
-                                 outlined
-                    dense   
+                                outlined
+                                dense   
                                 suffix="DA"
                                 @input="calculateChange(parcel)"
                               ></v-text-field>
@@ -247,12 +242,12 @@
                                   class="text-h6 font-weight-bold pa-3 rounded border"
                                   :class="parcel.changeAmount >= 0 ? 'text-success bg-success-lighten-5 border-success' : 'text-error bg-error-lighten-5 border-error'"
                                 >
-                                  {{ parcel.changeAmount }} DA
+                                  {{ parcel.changeAmount }} {{ $t('common.currency') }}
                                 </div>
                               </div>
                             </v-col>
                           </v-row>
-                          
+
                           <div class="d-flex justify-end mt-2">
                             <v-btn
                               color="error"
@@ -276,7 +271,7 @@
                           </div>
                         </v-col>
                       </v-row>
-                    </v-list-item-content>
+                    </template>
                   </v-list-item>
                 </v-list>
               </v-card-text>
@@ -305,36 +300,37 @@
                     :key="`collection-${collection.id}-${index}`"
                     class="pa-3 border-b"
                   >
+
+                  
                     <template v-slot:prepend>
                       <v-avatar size="32" color="success">
                         <v-icon size="16">mdi-check</v-icon>
                       </v-avatar>
                     </template>
                     
-                    <v-list-item-content>
+                    <template v-slot:default>
                       <v-list-item-title class="text-body-2 font-weight-medium">
                         {{ collection.tracking_number }}
                       </v-list-item-title>
                       <v-list-item-subtitle class="text-caption ">
                         <span class="font-weight-bold ">
-                          {{ parseInt(collection.cod_amount) }} DA 
+                          {{ parseInt(collection.cod_amount) }} {{ $t('common.currency') }}
                         </span>
                         - {{ formatTimeAgo(collection.collected_at) }}
                       </v-list-item-subtitle>
-                     
-                    </v-list-item-content>
+                    </template>
                   </v-list-item>
                 </v-list>
                 
                 <!-- Total Sum at the bottom -->
                 <v-divider></v-divider>
-                <div class="pa-4 bg-grey-lighten-5 fixed-bottom-total">
+                <div class="pa-4 bg-grey-lighten-5">
                   <div class="d-flex justify-space-between align-center">
                     <span class="text-body-2 font-weight-medium text-grey-darken-2">
-                      Total Collections:
+                      {{ $t('stopdesk_payment.total_collections') }}:
                     </span>
                     <span class="text-h6 font-weight-bold text-success">
-                      {{ totalRecentCollections.toLocaleString() }} DA
+                      {{ totalRecentCollections }} {{ $t('common.currency') }}
                     </span>
                   </div>
                 </div>
@@ -342,21 +338,96 @@
             </v-card>
           </v-col>
         </v-row>
+        
+        <!-- Global Money Case Selection - Fixed at Bottom -->
+        <v-card 
+          class="case-selection-card"
+          elevation="4"
+          style="
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0;
+            z-index: 1000;
+            border-radius: 0;
+            height: 80px;
+            box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+          "
+        >
+          <v-card-text class="pa-3 d-flex align-center justify-center" style="height: 100%;">
+            <div class="d-flex align-center w-100" style="max-width: 1200px;">
+              <v-icon color="primary" size="large" class="mr-3">mdi-cash-register
+</v-icon>
+              <span class="text-body-1 font-weight-bold mr-4">{{ $t('stopdesk_payment.money_case') }}:</span>
+              
+              <v-select
+                v-model="selectedCaseId"
+                :items="activeCases"
+                item-title="name"
+                item-value="id"
+                :placeholder="$t('stopdesk_payment.select_money_case')"
+                variant="outlined"
+                clearable
+                prepend-inner-icon="mdi-briefcase"
+                @update:model-value="activateCase"
+                density="compact"
+                class="flex-grow-1 mr-4"
+                style="max-width: 400px;"
+              >
+                <template v-slot:item="{ props, item }">
+                  <v-list-item v-bind="props">
+                    <template v-slot:title>
+                      <div class="d-flex justify-space-between align-center">
+                        <span>{{ item.raw.name }}</span>
+                        <v-chip size="x-small" color="primary" variant="outlined">
+                          {{ item.raw.balance }} {{ item.raw.currency }}
+                        </v-chip>
+                      </div>
+                    </template>
+                    <template v-slot:subtitle>
+                      {{ item.raw.description }}
+                    </template>
+                  </v-list-item>
+                </template>
+                <template v-slot:selection="{ item }">
+                  <div class="d-flex align-center">
+                    <span class="mr-2">{{ item.raw.name }}</span>
+                    <v-chip size="x-small" color="primary" variant="outlined">
+                      {{ item.raw.balance }} {{ item.raw.currency }}
+                    </v-chip>
+                  </div>
+                </template>
+              </v-select>
+              
+              <v-chip 
+                :color="selectedCaseId ? 'success' : 'warning'" 
+                variant="elevated"
+                size="large"
+              >
+                <v-icon left size="small">
+                  {{ selectedCaseId ? 'mdi-check-circle' : 'mdi-alert-circle' }}
+                </v-icon>
+                {{ selectedCaseId ? $t('stopdesk_payment.case_active') : $t('stopdesk_payment.no_case_selected') }}
+              </v-chip>
+            </div>
+          </v-card-text>
+        </v-card>
+        
       </v-container>
     </template>
   </AppLayout>
 </template>
 
 <script>
-import { router } from '@inertiajs/vue3'
-import axios from 'axios'
+import { router, Head } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
 import { useI18n } from 'vue-i18n'
 
 export default {
   name: 'StopDeskPayment',
   components: {
-    AppLayout
+    AppLayout,
+    Head
   },
   setup() {
     const { t } = useI18n()
@@ -366,7 +437,11 @@ export default {
     recentCollections: {
       type: Array,
       default: () => []
-    }
+    },
+    activeCases: {
+      type: Array,
+      default: () => []
+    },
   },
   data() {
     return {
@@ -374,6 +449,7 @@ export default {
       searching: false,
       activeParcels: [],
       showManualEntry: false,
+      selectedCaseId: null, // Global case selection
       manualParcel: {
         tracking_number: '',
         recipient_name: '',
@@ -401,97 +477,121 @@ export default {
       this.searching = true
       
       try {
-        const response = await axios.post('/parcels/search-by-tracking', {
+        router.post('/parcels/search-by-tracking', {
           tracking_number: this.barcodeInput
-        })
-        
-        console.log('Full response:', response)
-        console.log('Response data:', response.data)
-        
-        const data = response.data.searchResult
-        console.log('Search result data:', data)
-        console.log('data.success:', data.success)
-        console.log('data.allow_manual_entry:', data.allow_manual_entry)
-        console.log('data.message:', data.message)
-        
-        if (data && data.success) {
-          console.log('SUCCESS BRANCH: Parcel found and valid')
-          if (data.parcel) {
-            // Check if parcel is already in the list
-            const existingIndex = this.activeParcels.findIndex(p => p.id === data.parcel.id)
-            if (existingIndex === -1) {
-              // Add parcel to active list with payment fields
-              const parcel = {
-                ...data.parcel,
-                amountGiven: null,
-                changeAmount: 0
-              }
-              this.activeParcels.push(parcel)
-              this.showManualEntry = false // Hide manual entry if shown
-              console.log('Parcel added to active list, manual entry hidden')
+        }, {
+          preserveState: true,
+          preserveScroll: true,
+          onSuccess: (page) => {
+            console.log('=== SEARCH SUCCESS DEBUG ===')
+            console.log('Page props flash:', page.props.flash)
+            
+            // With back()->with(), the data will be in flash
+            const searchData = page.props.searchResult
+            
+            if (searchData) {
+              console.log('Search data found:', searchData)
+              this.handleSearchResponse(searchData)
+            } else {
+              console.warn('No searchResult in flash data')
+              console.log('Available flash keys:', Object.keys(page.props.flash || {}))
+              this.handleSearchError('No response data received')
             }
+            
+            this.resetSearchState()
+          },
+          onError: (errors) => {
+            console.error('=== SEARCH ERROR DEBUG ===')
+            console.error('Validation errors:', errors)
+            this.handleSearchError(errors)
+            this.resetSearchState()
+          },
+          onFinish: () => {
+            this.searching = false
           }
-        } else {
-          console.log('ELSE BRANCH: Parcel not found or not valid')
-          // Check if manual entry should be allowed
-          if (data && data.allow_manual_entry === false) {
-            console.log('DELIVERED PARCEL BRANCH: Manual entry NOT allowed')
-            console.log('Current showManualEntry before change:', this.showManualEntry)
-            
-            // Parcel exists but is already delivered - show message and don't allow manual entry
-            // this.$toast.warning(data.message || 'Parcel already delivered and collected')
-            
-            // Explicitly hide manual entry form
-            this.showManualEntry = false
-            
-            // Also reset the manual parcel data
-            this.resetManualParcel()
-            
-            console.log('Manual entry set to false, toast shown')
-            console.log('Current showManualEntry after change:', this.showManualEntry)
-            
-            // Force Vue to update the DOM
-            this.$nextTick(() => {
-              console.log('After nextTick - showManualEntry:', this.showManualEntry)
-            })
-          } else if (data && data.allow_manual_entry === true) {
-            console.log('NOT FOUND BRANCH: Manual entry allowed')
-            // Parcel not found - show manual entry form
-            this.showManualEntry = true
-            this.manualParcel.tracking_number = this.barcodeInput
-            console.log('Manual entry set to true, tracking number populated')
-          } else {
-            console.log('UNKNOWN RESPONSE STRUCTURE')
-            console.log('data:', data)
-            // Default behavior - don't show manual entry for unknown responses
-            this.showManualEntry = false
-          }
-        }
-        
-        console.log('Final showManualEntry value:', this.showManualEntry)
-        
+        })
       } catch (error) {
-        console.error('Search error:', error)
-        // Only show manual entry form on actual network/server errors, not for delivered parcels
-        if (error.response && error.response.status === 422) {
-          // Validation error - don't show manual entry
-          this.$toast.error('Invalid tracking number format')
+        console.error('Search exception:', error)
+        this.handleSearchError(error)
+        this.resetSearchState()
+      }
+    },
+
+    handleSearchResponse(data) {
+      console.log('Processing search response:', data)
+      
+      if (data.success) {
+        console.log('SUCCESS: Parcel found')
+        
+        if (data.parcel) {
+          // Check if parcel already exists in queue
+          const existingIndex = this.activeParcels.findIndex(p => 
+            p.tracking_number === data.parcel.tracking_number || p.id === data.parcel.id
+          )
+          
+          if (existingIndex === -1) {
+            // Add new parcel to queue
+            const parcel = {
+              ...data.parcel,
+              amountGiven: null,
+              changeAmount: 0
+            }
+            this.activeParcels.push(parcel)
+            console.log('Parcel added to queue:', parcel.tracking_number)
+          } else {
+            console.log('Parcel already in queue')
+          }
+          
           this.showManualEntry = false
-        } else {
-          // Network or server error - allow manual entry
+        }
+      } else {
+        console.log('FAIL: Parcel not found or invalid')
+        
+        // Handle different failure scenarios
+        if (data.allow_manual_entry === true) {
+          console.log('Showing manual entry form')
           this.showManualEntry = true
           this.manualParcel.tracking_number = this.barcodeInput
+        } else if (data.allow_manual_entry === false) {
+          console.log('Manual entry not allowed')
+          this.showManualEntry = false
+          this.resetManualParcel()
+        } else {
+          console.log('Unknown response structure')
+          this.showManualEntry = false
         }
-      } finally {
-        this.searching = false
-        this.barcodeInput = ''
-        // Refocus on input for next scan
-        this.$nextTick(() => {
-          if (this.$refs.barcodeInput) {
-            this.$refs.barcodeInput.focus()
-          }
-        })
       }
+    },
+
+    handleSearchError(errors) {
+      console.log('Handling search error:', errors)
+      
+      if (typeof errors === 'object' && errors.tracking_number) {
+        // Validation error
+        console.log('Validation error')
+        this.showManualEntry = false
+      } else if (typeof errors === 'string') {
+        // Generic error message
+        console.log('Generic error')
+        this.showManualEntry = false
+      } else {
+        // Network or server error - allow manual entry as fallback
+        console.log('Network/server error - allowing manual entry')
+        this.showManualEntry = true
+        this.manualParcel.tracking_number = this.barcodeInput
+      }
+    },
+
+    resetSearchState() {
+      this.barcodeInput = ''
+      this.searching = false
+      
+      // Refocus on input for next scan
+      this.$nextTick(() => {
+        if (this.$refs.barcodeInput) {
+          this.$refs.barcodeInput.focus()
+        }
+      })
     },
     
     calculateChange(parcel) {
@@ -502,7 +602,7 @@ export default {
       }
     },
     
-    async confirmPayment(parcel, index) {
+    confirmPayment(parcel, index) {
       if (!parcel.amountGiven || parcel.amountGiven < parcel.cod_amount) {
         return
       }
@@ -513,82 +613,72 @@ export default {
         return
       }
 
-      try {
-        const response = await axios.post('/parcels/confirm-payment', {
-          parcel_id: parcel.id,
-          amount_given: parcel.amountGiven
-        })
-        
-        const result = response.data.paymentResult
-        if (result && result.success) {
-          // Remove parcel from active list
-          this.activeParcels.splice(index, 1)
+      router.post('/parcels/confirm-payment', {
+        parcel_id: parcel.id,
+        amount_given: parcel.amountGiven,
+        case_id: this.selectedCaseId
+      }, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: (page) => {
+          console.log('Payment confirmed successfully');
           
-          // Add to recent collections at the top
-          const newCollection = {
-            id: Date.now(), // Temporary ID for display
-            collected_at: new Date().toISOString(),
-            amount: parcel.amountGiven,
-            tracking_number: parcel.tracking_number, // Add tracking number directly
-            cod_amount: parcel.cod_amount, // Add cod_amount directly
-            parcel: {
-              id: parcel.id,
-              tracking_number: parcel.tracking_number,
-              recipient_name: parcel.recipient_name,
-              cod_amount: parcel.cod_amount
-            }
+          // Remove parcel from active parcels (pending payments)
+          this.activeParcels.splice(index, 1);
+          
+          // Update recent collections if provided in response
+          if (page.props.recentCollections && page.props.recentCollections.recentCollections) {
+            this.recentCollections = page.props.recentCollections.recentCollections;
           }
-          
-          this.recentCollections.unshift(newCollection)
-          
-          // Keep only last 20 collections
-          if (this.recentCollections.length > 20) {
-            this.recentCollections = this.recentCollections.slice(0, 20)
-          }
+        },
+        onError: (errors) => {
+          console.error('Payment confirmation error:', errors)
         }
-      } catch (error) {
-        console.error('Payment confirmation error:', error)
-      }
+      })
     },
     
-    async confirmManualParcelPayment(parcel, index) {
-      try {
-        const response = await axios.post('/parcels/create-manual-and-collect', {
-          tracking_number: parcel.tracking_number,
-          recipient_name: parcel.recipient_name,
-          recipient_phone: parcel.recipient_phone,
-          recipient_address: parcel.recipient_address,
-          cod_amount: parcel.cod_amount,
-          amount_given: parcel.amountGiven,
-          company: parcel.company,
-          state: parcel.state,
-          city: parcel.city
-        })
-        
-        const result = response.data.paymentResult
-        if (result && result.success) {
-          // Remove parcel from active list
-          this.activeParcels.splice(index, 1)
-          
-          // Add to recent collections at the top
-          if (result.collection) {
-            this.recentCollections.unshift(result.collection)
+    confirmManualParcelPayment(parcel, index) {
+      router.post('/parcels/create-manual-and-collect', {
+        tracking_number: parcel.tracking_number,
+        recipient_name: parcel.recipient_name,
+        recipient_phone: parcel.recipient_phone,
+        recipient_address: parcel.recipient_address,
+        cod_amount: parcel.cod_amount,
+        amount_given: parcel.amountGiven,
+        company: parcel.company,
+        state: parcel.state,
+        city: parcel.city,
+        case_id: this.selectedCaseId
+      }, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: (page) => {
+          console.log('successsss')
+          const result = page.props.paymentResult || page.props.paymentResult
+          if (result && result.success) {
+            // Remove parcel from active list
+            this.activeParcels.splice(index, 1)
             
-            // Keep only last 20 collections
-            if (this.recentCollections.length > 20) {
-              this.recentCollections = this.recentCollections.slice(0, 20)
+            // Add to recent collections at the top
+            if (result.collection) {
+              this.recentCollections.unshift(result.collection)
+              
+              // Keep only last 20 collections
+              if (this.recentCollections.length > 20) {
+                this.recentCollections = this.recentCollections.slice(0, 20)
+              }
             }
           }
+        },
+        onError: (errors) => {
+          console.error('Manual parcel creation error:', errors)
         }
-      } catch (error) {
-        console.error('Manual parcel creation error:', error)
-      }
+      })
     },
     
     removeParcel(index) {
       const parcel = this.activeParcels[index]
       this.activeParcels.splice(index, 1)
-      this.$toast.info(`Removed ${parcel.tracking_number} from queue`)
       
       // Refocus on barcode input
       this.$nextTick(() => {
@@ -667,6 +757,30 @@ export default {
         state: '',
         city: ''
       }
+    },
+    
+    activateCase(caseId) {
+      if (!caseId) return
+      
+      router.post('/money-cases/activate', {
+        case_id: caseId
+      }, {
+        preserveState: true,
+        preserveScroll: true,
+        onSuccess: (page) => {
+          console.log('Case activation success:', page.props.flash)
+          if (page.props.flash?.success) {
+            console.log('Money case activated successfully:', page.props.flash.message)
+          }
+        },
+        onError: (errors) => {
+          console.error('Case activation error:', errors)
+          if (errors.case_activation) {
+            console.error('Case activation failed:', errors.case_activation)
+          }
+          this.selectedCaseId = null
+        }
+      })
     },
     
     addManualParcel() {
