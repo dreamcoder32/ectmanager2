@@ -415,10 +415,13 @@ return back()->with('searchResult', [
      */
     public function confirmPayment(Request $request)
     {
+        // Check if user can collect without money case
+        $canCollectWithoutCase = auth()->user()->can_collect_stopdesk;
+        
         $request->validate([
             'parcel_id' => 'required|exists:parcels,id',
             'amount_given' => 'required|numeric|min:0',
-            'case_id' => 'nullable|exists:money_cases,id'
+            'case_id' => $canCollectWithoutCase ? 'nullable|exists:money_cases,id' : 'required|exists:money_cases,id'
         ]);
 
      
@@ -530,6 +533,9 @@ return back()->with('recentCollections', ['success' => true,
      */
     public function createManualParcelAndCollect(Request $request)
     {
+        // Check if user can collect without money case
+        $canCollectWithoutCase = auth()->user()->can_collect_stopdesk;
+        
         $request->validate([
             'tracking_number' => 'required|string|unique:parcels,tracking_number',
             'recipient_name' => 'required|string|max:255',
@@ -540,27 +546,32 @@ return back()->with('recentCollections', ['success' => true,
             'company' => 'nullable|string|max:255',
             'state' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
-            'case_id' => 'required|exists:money_cases,id'
+            'case_id' => $canCollectWithoutCase ? 'nullable|exists:money_cases,id' : 'required|exists:money_cases,id'
         ]);
 
         DB::beginTransaction();
         
         try {
-            // Get and activate the money case for the user
-            $moneyCase = \App\Models\MoneyCase::findOrFail($request->case_id);
+            $moneyCase = null;
             
-            // Check if case is active and available
-            if (!$moneyCase->is_active) {
-                return back()->with([
-                    'paymentResult' => [
-                        'success' => false,
-                        'message' => 'Selected money case is not active'
-                    ]
-                ]);
-            }
+            // Only handle money case if case_id is provided
+            if ($request->case_id) {
+                // Get and activate the money case for the user
+                $moneyCase = \App\Models\MoneyCase::findOrFail($request->case_id);
+                
+                // Check if case is active and available
+                if (!$moneyCase->is_active) {
+                    return back()->with([
+                        'paymentResult' => [
+                            'success' => false,
+                            'message' => 'Selected money case is not active'
+                        ]
+                    ]);
+                }
 
-            // Activate case for current user
-            $moneyCase->activateForUser(auth()->id());
+                // Activate case for current user
+                $moneyCase->activateForUser(auth()->id());
+            }
 
             // Create the parcel
             $parcel = Parcel::create([
@@ -590,8 +601,10 @@ return back()->with('recentCollections', ['success' => true,
                 'case_id' => $request->case_id,
             ]);
 
-            // Update money case balance
-            $moneyCase->increment('balance', $request->amount_given);
+            // Update money case balance only if case is provided
+            if ($moneyCase) {
+                $moneyCase->increment('balance', $request->amount_given);
+            }
 
             DB::commit();
 

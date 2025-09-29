@@ -118,19 +118,31 @@ Route::middleware(['auth'])->group(function () {
             'filtered_count' => $recentCollections->count()
         ]);
 
-        // Get active money cases for case selection
+        // Get active money cases for case selection - show free cases and cases used by current user
+        $currentUserId = auth()->id();
         $activeCases = \App\Models\MoneyCase::where('status', 'active')
+            ->where(function ($query) use ($currentUserId) {
+                $query->whereNull('last_active_by') // Free cases
+                      ->orWhere('last_active_by', $currentUserId); // Cases used by current user
+            })
             ->orderBy('name')
             ->get()
-            ->map(function ($case) {
+            ->map(function ($case) use ($currentUserId) {
                 return [
                     'id' => $case->id,
                     'name' => $case->name,
                     'description' => $case->description,
                     'balance' => $case->calculated_balance,
                     'currency' => $case->currency,
+                    'is_user_active' => $case->last_active_by === $currentUserId,
                 ];
             });
+
+        // Find the user's last active case
+        $userLastActiveCase = \App\Models\MoneyCase::where('status', 'active')
+            ->where('last_active_by', $currentUserId)
+            ->orderBy('last_activated_at', 'desc')
+            ->first();
 
         // Get flash data if available
         $flashData = [];
@@ -143,7 +155,14 @@ Route::middleware(['auth'])->group(function () {
 
         return Inertia::render('StopDeskPayment/Index', array_merge([
             'recentCollections' => $recentCollections,
-            'activeCases' => $activeCases
+            'activeCases' => $activeCases,
+            'userLastActiveCaseId' => $userLastActiveCase ? $userLastActiveCase->id : null,
+            'auth' => [
+                'user' => [
+                    'id' => auth()->user()->id,
+                    'can_collect_stopdesk' => auth()->user()->can_collect_stopdesk ?? false
+                ]
+            ]
         ], $flashData));
     })->name('stopdesk.payment');
     Route::post('parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber']);

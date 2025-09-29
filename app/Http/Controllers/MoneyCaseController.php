@@ -154,6 +154,13 @@ class MoneyCaseController extends Controller
             ]);
         }
 
+        // Check if case is already in use by another user
+        if ($moneyCase->last_active_by !== null && $moneyCase->last_active_by !== auth()->id()) {
+            return back()->withErrors([
+                'case_activation' => 'Money case is currently in use by another user'
+            ]);
+        }
+
         // Activate the case for the current user
         $moneyCase->activateForUser(auth()->id());
 

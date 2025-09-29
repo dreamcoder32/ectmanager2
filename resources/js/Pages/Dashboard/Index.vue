@@ -119,7 +119,9 @@
                    <v-card outlined style="border-radius: 8px;">
                      <v-card-text class="pa-3">
                        <div class="d-flex align-center justify-space-between mb-2">
-                         <h4 class="text-subtitle-1 font-weight-bold">{{ moneyCase.name }}</h4>
+                         <h4 class="text-subtitle-1 font-weight-bold">
+                          <v-icon>mdi-cash-register</v-icon>
+                          {{ moneyCase.name }}</h4>
                          <v-chip 
                            :color="moneyCase.calculated_balance >= 0 ? 'success' : 'error'"
                            size="small"
@@ -130,6 +132,19 @@
                        </div>
                        <div class="text-caption text--secondary mb-2">
                          {{ moneyCase.description || 'No description' }}
+                       </div>
+                       <!-- Money Case Status -->
+                       <div class="mb-2">
+                         <v-chip 
+                           :color="moneyCase.last_active_by ? 'info' : 'success'"
+                           size="small"
+                           variant="outlined"
+                         >
+                           <v-icon left size="small">
+                             {{ moneyCase.last_active_by ? 'mdi-account-lock' : 'mdi-check-circle' }}
+                           </v-icon>
+                           {{ moneyCase.last_active_by ? `Occupied by ${moneyCase.last_active_user.uid || 'Unknown'}` : 'Free' }}
+                         </v-chip>
                        </div>
                        <div class="d-flex justify-space-between text-caption">
                          <span>Collections: {{ moneyCase.collections_count }}</span>

@@ -88,8 +88,9 @@ class DashboardController extends Controller
      */
     private function getCaseStats()
     {
-        // Get all active money cases with their balances
+        // Get all active money cases with their balances and user information
         $activeCases = MoneyCase::where('status', 'active')
+            ->with('lastActiveUser:id,uid') // Load the user who last activated the case
             ->withCount(['collections', 'expenses'])
             ->get()
             ->map(function ($case) {

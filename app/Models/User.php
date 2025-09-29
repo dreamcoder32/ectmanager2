@@ -27,6 +27,7 @@ class User extends Authenticatable
         'role',
         'is_active',
         'assigned_states',
+        'can_collect_stopdesk',
         // Personal Information
         'first_name',
         'last_name',
@@ -72,6 +73,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
             'assigned_states' => 'array',
+            'can_collect_stopdesk' => 'boolean',
             // New user management fields
             'date_of_birth' => 'date',
             'started_working_at' => 'date',

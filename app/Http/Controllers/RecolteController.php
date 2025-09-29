@@ -95,6 +95,15 @@ class RecolteController extends BaseController
             // Attach the selected collections and update their case_id if provided
             $collections = Collection::whereIn('id', $request->collection_ids)->get();
             
+            // Free money cases for collections being recolted
+            $casesToFree = $collections->whereNotNull('case_id')->pluck('case_id')->unique();
+            foreach ($casesToFree as $caseId) {
+                $moneyCase = \App\Models\MoneyCase::find($caseId);
+                if ($moneyCase) {
+                    $moneyCase->update(['last_active_by' => null]);
+                }
+            }
+            
             if ($request->case_id) {
                 // Update collections to assign them to the selected case
                 $collections->each(function($collection) use ($request) {

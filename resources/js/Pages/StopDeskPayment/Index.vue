@@ -280,6 +280,7 @@
 
           <!-- Recent Collections Sidebar -->
           <v-col cols="12" md="4">
+            <!-- Recent Collections Card -->
             <v-card 
               elevation="2"
               style="border-radius: 12px; position: sticky; top: 20px;"
@@ -339,79 +340,78 @@
           </v-col>
         </v-row>
         
-        <!-- Global Money Case Selection - Fixed at Bottom -->
-        <v-card 
-          class="case-selection-card"
-          elevation="4"
+        <!-- Money Case Selection - Fixed at Bottom Right -->
+        <div 
+          ref="caseSelectionContainer"
+          :class="['case-selection-container', { 'shake-animation': isShaking }]"
           style="
             position: fixed; 
-            bottom: 0; 
-            left: 0; 
-            right: 0;
+            bottom: 20px; 
+            right: 20px;
             z-index: 1000;
-            border-radius: 0;
-            height: 80px;
-            box-shadow: 0 -4px 16px rgba(0,0,0,0.1);
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            width: 260px;
           "
         >
-          <v-card-text class="pa-3 d-flex align-center justify-center" style="height: 100%;">
-            <div class="d-flex align-center w-100" style="max-width: 1200px;">
-              <v-icon color="primary" size="large" class="mr-3">mdi-cash-register
-</v-icon>
-              <span class="text-body-1 font-weight-bold mr-4">{{ $t('stopdesk_payment.money_case') }}:</span>
-              
-              <v-select
-                v-model="selectedCaseId"
-                :items="activeCases"
-                item-title="name"
-                item-value="id"
-                :placeholder="$t('stopdesk_payment.select_money_case')"
-                variant="outlined"
-                clearable
-                prepend-inner-icon="mdi-briefcase"
-                @update:model-value="activateCase"
-                density="compact"
-                class="flex-grow-1 mr-4"
-                style="max-width: 400px;"
-              >
-                <template v-slot:item="{ props, item }">
-                  <v-list-item v-bind="props">
-                    <template v-slot:title>
-                      <div class="d-flex justify-space-between align-center">
-                        <span>{{ item.raw.name }}</span>
-                        <v-chip size="x-small" color="primary" variant="outlined">
-                          {{ item.raw.balance }} {{ item.raw.currency }}
-                        </v-chip>
-                      </div>
-                    </template>
-                    <template v-slot:subtitle>
-                      {{ item.raw.description }}
-                    </template>
-                  </v-list-item>
-                </template>
-                <template v-slot:selection="{ item }">
-                  <div class="d-flex align-center">
-                    <span class="mr-2">{{ item.raw.name }}</span>
+          <div class="d-flex align-center mb-3">
+            <v-icon color="primary" class="mr-2">mdi-cash-register</v-icon>
+            <span class="text-body-1 font-weight-bold">{{ $t('stopdesk_payment.money_case') }}:</span>
+          </div>
+          
+          <v-select
+            v-model="selectedCaseId"
+            :items="activeCases"
+            item-title="name"
+            item-value="id"
+            :placeholder="$t('stopdesk_payment.select_money_case')"
+            variant="outlined"
+            clearable
+            prepend-inner-icon="mdi-briefcase"
+            @update:model-value="activateCase"
+            density="compact"
+            class="mb-3"
+            :disabled="canCollectWithoutCase && !selectedCaseId"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props">
+                <template v-slot:title>
+                  <div class="d-flex justify-space-between align-center">
+                    <span>{{ item.raw.name }}</span>
                     <v-chip size="x-small" color="primary" variant="outlined">
                       {{ item.raw.balance }} {{ item.raw.currency }}
                     </v-chip>
                   </div>
                 </template>
-              </v-select>
-              
-              <v-chip 
-                :color="selectedCaseId ? 'success' : 'warning'" 
-                variant="elevated"
-                size="large"
-              >
-                <v-icon left size="small">
-                  {{ selectedCaseId ? 'mdi-check-circle' : 'mdi-alert-circle' }}
-                </v-icon>
-                {{ selectedCaseId ? $t('stopdesk_payment.case_active') : $t('stopdesk_payment.no_case_selected') }}
-              </v-chip>
-            </div>
-          </v-card-text>
-        </v-card>
+                <template v-slot:subtitle>
+                  {{ item.raw.description }}
+                </template>
+              </v-list-item>
+            </template>
+            <template v-slot:selection="{ item }">
+              <div class="d-flex align-center">
+                <span class="mr-2">{{ item.raw.name }}</span>
+                <v-chip size="x-small" color="primary" variant="outlined">
+                  {{ item.raw.balance }} {{ item.raw.currency }}
+                </v-chip>
+              </div>
+            </template>
+          </v-select>
+          
+          <v-chip 
+            :color="selectedCaseId ? 'success' : (canCollectWithoutCase ? 'info' : 'warning')" 
+            variant="elevated"
+            size="small"
+            class="w-100 justify-center"
+          >
+            <v-icon left size="small">
+              {{ selectedCaseId ? 'mdi-check-circle' : (canCollectWithoutCase ? 'mdi-account-check' : 'mdi-alert-circle') }}
+            </v-icon>
+            {{ selectedCaseId ? $t('stopdesk_payment.case_active') : (canCollectWithoutCase ? $t('stopdesk_payment.can_collect_without_case') : $t('stopdesk_payment.no_case_selected')) }}
+          </v-chip>
+        </div>
         
       </v-container>
     </template>
@@ -442,6 +442,14 @@ export default {
       type: Array,
       default: () => []
     },
+    userLastActiveCaseId: {
+      type: Number,
+      default: null
+    },
+    auth: {
+      type: Object,
+      default: () => ({})
+    }
   },
   data() {
     return {
@@ -450,6 +458,7 @@ export default {
       activeParcels: [],
       showManualEntry: false,
       selectedCaseId: null, // Global case selection
+      isShaking: false, // For shake animation
       manualParcel: {
         tracking_number: '',
         recipient_name: '',
@@ -463,6 +472,11 @@ export default {
     }
   },
   mounted() {
+    // Set the user's last active case if available
+    if (this.userLastActiveCaseId && this.activeCases.some(c => c.id === this.userLastActiveCaseId)) {
+      this.selectedCaseId = this.userLastActiveCaseId
+    }
+    
     // Focus on barcode input when component mounts
     this.$nextTick(() => {
       if (this.$refs.barcodeInput) {
@@ -607,6 +621,12 @@ export default {
         return
       }
 
+      // Check if user needs to select a case and hasn't selected one
+      if (!this.canCollectWithoutCase && !this.selectedCaseId) {
+        this.triggerShakeAnimation()
+        return
+      }
+
       // Handle manual parcels differently
       if (parcel.isManual) {
         this.confirmManualParcelPayment(parcel, index)
@@ -638,6 +658,12 @@ export default {
     },
     
     confirmManualParcelPayment(parcel, index) {
+      // Check if user needs to select a case and hasn't selected one
+      if (!this.canCollectWithoutCase && !this.selectedCaseId) {
+        this.triggerShakeAnimation()
+        return
+      }
+
       router.post('/parcels/create-manual-and-collect', {
         tracking_number: parcel.tracking_number,
         recipient_name: parcel.recipient_name,
@@ -733,6 +759,13 @@ export default {
       return this.$t('time.years_ago', diffInYears)
     },
     
+    triggerShakeAnimation() {
+      this.isShaking = true
+      setTimeout(() => {
+        this.isShaking = false
+      }, 600) // Duration matches the CSS animation duration
+    },
+    
     cancelManualEntry() {
       this.showManualEntry = false
       this.resetManualParcel()
@@ -826,6 +859,10 @@ export default {
              this.manualParcel.cod_amount > 0
     },
     
+    canCollectWithoutCase() {
+      return this.auth?.user?.can_collect_stopdesk ?? false
+    },
+    
     totalRecentCollections() {
       return this.recentCollections.reduce((total, collection) => {
         return total + (parseFloat(collection.cod_amount) || 0)
@@ -878,5 +915,20 @@ export default {
   background: #f5f5f5 !important;
   border-top: 1px solid #e0e0e0 !important;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Shake animation for case selection */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.shake-animation {
+  animation: shake 0.6s ease-in-out;
+}
+
+.case-selection-container {
+  transition: all 0.3s ease;
 }
 </style>

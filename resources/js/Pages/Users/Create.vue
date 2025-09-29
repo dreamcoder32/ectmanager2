@@ -206,6 +206,27 @@
                       inset
                     ></v-switch>
                   </v-col>
+
+                  <!-- Can Collect StopDesk -->
+                  <v-col cols="12" md="6">
+                    <v-switch
+                      v-model="form.can_collect_stopdesk"
+                      label="Can Collect Without Money Case"
+                      color="primary"
+                      :error-messages="errors.can_collect_stopdesk"
+                      inset
+                    >
+                      <template #label>
+                        <div class="d-flex align-center">
+                          <v-icon class="mr-2" size="small">mdi-cash-multiple</v-icon>
+                          Can Collect Without Money Case
+                        </div>
+                      </template>
+                    </v-switch>
+                    <div class="text-caption text-grey-darken-1 mt-1">
+                      Allow this user to collect payments at stop desks without selecting a money case
+                    </div>
+                  </v-col>
                 </v-row>
 
                 <!-- Action Buttons -->
@@ -264,7 +285,8 @@ const form = useForm({
   started_working_at: '',
   monthly_salary: '',
   payment_day_of_month: null,
-  is_active: true
+  is_active: true,
+  can_collect_stopdesk: false
 })
 
 const roleOptions = [

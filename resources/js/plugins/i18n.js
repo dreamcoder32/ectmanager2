@@ -109,7 +109,8 @@ const messages = {
       money_case: 'Money Case',
       select_money_case: 'Select Money Case for All Collections',
       case_active: 'Case Active',
-      no_case_selected: 'No Case Selected'
+      no_case_selected: 'No Case Selected',
+      can_collect_without_case: 'Can Collect Without Case'
     },
     expenses: {
       title: 'Expense Management',
@@ -260,7 +261,8 @@ const messages = {
       money_case: 'Caisse',
       select_money_case: 'Sélectionner une Caisse pour Toutes les Collections',
       case_active: 'Caisse Active',
-      no_case_selected: 'Aucune Caisse Sélectionnée'
+      no_case_selected: 'Aucune Caisse Sélectionnée',
+      can_collect_without_case: 'Peut Collecter Sans Caisse'
     },
     expenses: {
       title: 'Gestion des Dépenses',
@@ -409,7 +411,8 @@ const messages = {
       money_case: 'صندوق المال',
       select_money_case: 'اختر صندوق المال لجميع التحصيلات',
       case_active: 'الصندوق نشط',
-      no_case_selected: 'لم يتم اختيار صندوق'
+      no_case_selected: 'لم يتم اختيار صندوق',
+      can_collect_without_case: 'يمكن التحصيل بدون صندوق'
     },
     expenses: {
       title: 'إدارة المصروفات',

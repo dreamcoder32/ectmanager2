@@ -46,7 +46,6 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'display_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|in:admin,supervisor,agent',
@@ -58,7 +57,8 @@ class UserController extends Controller
             'started_working_at' => 'nullable|date',
             'payment_day_of_month' => 'nullable|integer|min:1|max:31',
             'monthly_salary' => 'nullable|numeric|min:0',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'can_collect_stopdesk' => 'boolean'
         ]);
 
         if ($validator->fails()) {
@@ -80,7 +80,8 @@ class UserController extends Controller
             'payment_day_of_month' => $request->payment_day_of_month ?? 1,
             'monthly_salary' => $request->monthly_salary ?? 0,
             'manager_id' => null, // No manager assignment - supervisors manage all agents
-            'is_active' => $request->is_active ?? true
+            'is_active' => $request->is_active ?? true,
+            'can_collect_stopdesk' => $request->can_collect_stopdesk ?? false
         ]);
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
@@ -127,7 +128,8 @@ class UserController extends Controller
             'started_working_at' => 'nullable|date',
             'payment_day_of_month' => 'nullable|integer|min:1|max:31',
             'monthly_salary' => 'nullable|numeric|min:0',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'can_collect_stopdesk' => 'boolean'
         ]);
 
         if ($validator->fails()) {
@@ -147,7 +149,8 @@ class UserController extends Controller
             'payment_day_of_month' => $request->payment_day_of_month,
             'monthly_salary' => $request->monthly_salary,
             'manager_id' => null, // No manager assignment - supervisors manage all agents
-            'is_active' => $request->is_active ?? true
+            'is_active' => $request->is_active ?? true,
+            'can_collect_stopdesk' => $request->can_collect_stopdesk ?? false
         ];
 
         // Only update password if provided
