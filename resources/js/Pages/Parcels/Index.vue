@@ -207,7 +207,7 @@ export default {
         { title: this.$t('parcels.status'), key: 'status' },
         { title: 'COD Amount', key: 'cod_amount' },
 
-        { title: this.$t('parcels.actions'), key: 'actions', sortable: false }
+        // { title: this.$t('parcels.actions'), key: 'actions', sortable: false }
       ]
     },
     statusOptions() {

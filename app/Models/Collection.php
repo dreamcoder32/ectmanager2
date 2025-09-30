@@ -18,7 +18,8 @@ class Collection extends Model
         'margin',
         'driver_commission',
         'case_id',
-        'amount_given'
+        'amount_given',
+        'parcel_type'
     ];
 
     protected $casts = [
@@ -151,5 +152,38 @@ class Collection extends Model
     public function getNetAmountAttribute(): float
     {
         return $this->amount - ($this->driver_commission ?? 0);
+    }
+
+    /**
+     * Calculate margin based on parcel type and company commission.
+     * For stopdesk collections, margin is calculated from company commission.
+     * For home_delivery collections, margin is calculated from home_delivery_commission.
+     */
+    public function calculateMargin(): float
+    {
+        if ($this->parcel && $this->parcel->company) {
+            // If parcel_type is stopdesk, calculate margin from company commission
+            if ($this->parcel_type === 'stopdesk') {
+                \Log::info('stopdesk margin '.$this->parcel->company->commission);
+                return $this->parcel->company->commission ?? 0;
+            }
+            
+            // If parcel_type is home_delivery, calculate margin from home_delivery_commission
+            if ($this->parcel_type === 'home_delivery') {
+                \Log::info('home delivery margin '.$this->parcel->company->home_delivery_commission);
+                return $this->parcel->company->home_delivery_commission ?? 0;
+            }
+        }
+        
+        // Fallback to existing margin if no company or parcel_type
+        return $this->margin ?? 0;
+    }
+
+    /**
+     * Get the calculated margin attribute.
+     */
+    public function getCalculatedMarginAttribute(): float
+    {
+        return $this->calculateMargin();
     }
 }

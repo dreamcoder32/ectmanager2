@@ -3,8 +3,13 @@
     <Head title="Collection Transfer" />
     
     <AppLayout>
-      <template #title>
-        <div class="d-flex justify-space-between align-center">
+ 
+      
+      <template #content>
+        <v-container fluid>
+          <!-- Recoltes Data Table -->
+
+          <div class="d-flex justify-space-between align-center">
           <span class="text-h4 font-weight-bold" 
                 style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
                        -webkit-background-clip: text;
@@ -23,11 +28,6 @@
             Create New Recolte
           </v-btn>
         </div>
-      </template>
-      
-      <template #content>
-        <v-container fluid>
-          <!-- Recoltes Data Table -->
           <v-card 
             elevation="1"
             style="border-radius: 8px; background: white;"

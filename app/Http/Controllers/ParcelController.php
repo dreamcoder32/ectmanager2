@@ -421,7 +421,8 @@ return back()->with('searchResult', [
         $request->validate([
             'parcel_id' => 'required|exists:parcels,id',
             'amount_given' => 'required|numeric|min:0',
-            'case_id' => $canCollectWithoutCase ? 'nullable|exists:money_cases,id' : 'required|exists:money_cases,id'
+            'case_id' => $canCollectWithoutCase ? 'nullable|exists:money_cases,id' : 'required|exists:money_cases,id',
+            'parcel_type' => 'required|in:stopdesk,home_delivery'
         ]);
 
      
@@ -466,6 +467,16 @@ return back()->with('searchResult', [
 
                                     // return $parcel;
 
+            // Calculate margin based on parcel type and company commission
+            $margin = 0;
+            if ($parcel->company) {
+                if ($request->parcel_type === 'stopdesk') {
+                    $margin = $parcel->company->commission ?? 0;
+                } elseif ($request->parcel_type === 'home_delivery') {
+                    $margin = $parcel->company->home_delivery_commission ?? 0;
+                }
+            }
+
             // Create collection record
             $collection = Collection::create([
                 'collected_at' => now(),
@@ -475,9 +486,10 @@ return back()->with('searchResult', [
                 'amount' => $parcel->cod_amount,
                 'amount_given' => $request->amount_given,
                 'driver_id' => null, // Stop desk collections don't have drivers
-                'margin' => null, // Can be calculated later if needed
+                'margin' => $margin,
                 'driver_commission' => null, // No driver commission for stop desk
                 'case_id' => $request->case_id,
+                'parcel_type' => $request->parcel_type,
             ]);
 
             // Money case balance is now calculated dynamically
@@ -487,7 +499,7 @@ return back()->with('searchResult', [
             $changeAmount = $request->amount_given - $parcel->cod_amount;
 
             // Get updated recent collections for the user
-            $recentCollections = \App\Models\Collection::with(['parcel'])
+            $recentCollections = \App\Models\Collection::with(['parcel.company'])
                 ->where('created_by', auth()->id())
                 ->orderBy('collected_at', 'desc')
                 ->limit(20)
@@ -499,6 +511,8 @@ return back()->with('searchResult', [
                         'cod_amount' => $collection->parcel->cod_amount ?? 0,
                         'collected_at' => $collection->collected_at,
                         'changeAmount' => $collection->amount - ($collection->parcel->cod_amount ?? 0),
+                        'parcel_type' => $collection->parcel_type ?? 'stopdesk',
+                        'calculated_margin' => $collection->calculateMargin(),
                     ];
                 });
 
@@ -546,7 +560,8 @@ return back()->with('recentCollections', ['success' => true,
             'company' => 'nullable|string|max:255',
             'state' => 'nullable|string|max:255',
             'city' => 'nullable|string|max:255',
-            'case_id' => $canCollectWithoutCase ? 'nullable|exists:money_cases,id' : 'required|exists:money_cases,id'
+            'case_id' => $canCollectWithoutCase ? 'nullable|exists:money_cases,id' : 'required|exists:money_cases,id',
+            'parcel_type' => 'required|in:stopdesk,home_delivery'
         ]);
 
         DB::beginTransaction();
@@ -588,6 +603,16 @@ return back()->with('recentCollections', ['success' => true,
                 'created_by' => auth()->id(),
             ]);
 
+            // Calculate margin based on parcel type and company commission
+            $margin = 0;
+            if ($parcel->company) {
+                if ($request->parcel_type === 'stopdesk') {
+                    $margin = $parcel->company->commission ?? 0;
+                } elseif ($request->parcel_type === 'home_delivery') {
+                    $margin = $parcel->company->home_delivery_commission ?? 0;
+                }
+            }
+
             // Create the collection record
             $collection = Collection::create([
                 'collected_at' => now(),
@@ -596,9 +621,10 @@ return back()->with('recentCollections', ['success' => true,
                 'note' => 'Manual parcel entry and stop desk payment collection',
                 'amount' => $request->amount_given,
                 'driver_id' => null, // Stop desk collections don't have drivers
-                'margin' => null, // Can be calculated later if needed
+                'margin' => $margin,
                 'driver_commission' => null, // No driver commission for stop desk
                 'case_id' => $request->case_id,
+                'parcel_type' => $request->parcel_type,
             ]);
 
             // Update money case balance only if case is provided

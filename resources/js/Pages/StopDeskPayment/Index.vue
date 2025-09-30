@@ -248,6 +248,32 @@
                             </v-col>
                           </v-row>
 
+                          <!-- Parcel Type Toggle -->
+                          <v-row class="mt-2">
+                            <v-col cols="12">
+                              <div class="d-flex align-center">
+                                <v-icon class="mr-2" color="primary">mdi-package-variant</v-icon>
+                                <span class="text-body-1 mr-4">Type:</span>
+                                <v-btn-toggle
+                                  v-model="parcel.parcel_type"
+                                  color="primary"
+                                  variant="outlined"
+                                  mandatory
+                                  density="compact"
+                                >
+                                  <v-btn value="stopdesk" size="small">
+                                    <v-icon left size="small">mdi-store</v-icon>
+                                    Stopdesk
+                                  </v-btn>
+                                  <v-btn value="home_delivery" size="small">
+                                    <v-icon left size="small">mdi-home</v-icon>
+                                    À domicile
+                                  </v-btn>
+                                </v-btn-toggle>
+                              </div>
+                            </v-col>
+                          </v-row>
+
                           <div class="d-flex justify-end mt-2">
                             <v-btn
                               color="error"
@@ -548,7 +574,8 @@ export default {
             const parcel = {
               ...data.parcel,
               amountGiven: null,
-              changeAmount: 0
+              changeAmount: 0,
+              parcel_type: 'stopdesk' // Default to stopdesk
             }
             this.activeParcels.push(parcel)
             console.log('Parcel added to queue:', parcel.tracking_number)
@@ -636,7 +663,8 @@ export default {
       router.post('/parcels/confirm-payment', {
         parcel_id: parcel.id,
         amount_given: parcel.amountGiven,
-        case_id: this.selectedCaseId
+        case_id: this.selectedCaseId,
+        parcel_type: parcel.parcel_type || 'stopdesk'
       }, {
         preserveState: true,
         preserveScroll: true,
@@ -674,7 +702,8 @@ export default {
         company: parcel.company,
         state: parcel.state,
         city: parcel.city,
-        case_id: this.selectedCaseId
+        case_id: this.selectedCaseId,
+        parcel_type: parcel.parcel_type || 'stopdesk'
       }, {
         preserveState: true,
         preserveScroll: true,
@@ -832,6 +861,7 @@ export default {
         city: this.manualParcel.city || null,
         amountGiven: null,
         changeAmount: 0,
+        parcel_type: 'stopdesk', // Default to stopdesk for manual parcels
         isManual: true // Flag to identify manual parcels
       }
       

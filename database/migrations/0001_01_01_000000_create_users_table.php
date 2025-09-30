@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('uid')->unique(); // Firebase UID or custom
             $table->string('email')->unique();
             $table->string('display_name')->nullable();
-            $table->enum('role', ['admin', 'agent'])->default('agent');
+            $table->enum('role', ['admin', 'supervisor', 'agent'])->default('agent');
             $table->boolean('is_active')->default(true);
             $table->json('assigned_states')->nullable(); // Array of wilaya codes for agents
             $table->timestamp('email_verified_at')->nullable();

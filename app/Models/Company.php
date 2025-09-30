@@ -11,10 +11,19 @@ class Company extends Model
         'name',
         'code',
         'is_active',
+        'commission',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'commission' => 'decimal:2',
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     */
+    protected $hidden = [
+        'commission',
     ];
 
     /**

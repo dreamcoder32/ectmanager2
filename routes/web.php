@@ -8,7 +8,7 @@ use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\FinancialDashboardController;
 use App\Http\Controllers\MoneyCaseController;
 use App\Http\Controllers\ParcelController;
-use App\Http\Controllers\ProfileController;
+// use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RecolteController;
 use App\Http\Controllers\UserController;
 use Illuminate\Foundation\Application;
@@ -44,9 +44,9 @@ Route::middleware(['auth'])->group(function () {
     })->name('financial.dashboard');
     
     // Profile routes
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
     // Parcel Management Routes
     Route::resource('parcels', ParcelController::class);
@@ -168,34 +168,34 @@ Route::middleware(['auth'])->group(function () {
     Route::post('parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber']);
     Route::post('parcels/confirm-payment', [ParcelController::class, 'confirmPayment']);
     Route::post('parcels/create-manual-and-collect', [ParcelController::class, 'createManualParcelAndCollect']);
+});
+
+// API Routes for Financial Management
+Route::prefix('api')->group(function () {
+    // Financial Dashboard Routes
+    Route::get('financial-dashboard', [FinancialDashboardController::class, 'index']);
+    Route::get('financial-summary', [FinancialDashboardController::class, 'summary']);
     
-    // Redirect root to dashboard for authenticated users
-    Route::get('/', function () {
-        return redirect()->route('dashboard');
-    });
+    // Salary Payment Routes
+    Route::apiResource('salary-payments', SalaryPaymentController::class);
+    Route::post('salary-payments/{salaryPayment}/mark-as-paid', [SalaryPaymentController::class, 'markAsPaid']);
+    Route::post('salary-payments/generate-monthly', [SalaryPaymentController::class, 'generateMonthlyPayments']);
+    Route::get('salary-payments-statistics', [SalaryPaymentController::class, 'statistics']);
     
-    // API Routes for Financial Management
-    Route::prefix('api')->group(function () {
-        // Financial Dashboard Routes
-        Route::get('financial-dashboard', [FinancialDashboardController::class, 'index']);
-        Route::get('financial-summary', [FinancialDashboardController::class, 'summary']);
-        
-        // Salary Payment Routes
-        Route::apiResource('salary-payments', SalaryPaymentController::class);
-        Route::post('salary-payments/{salaryPayment}/mark-as-paid', [SalaryPaymentController::class, 'markAsPaid']);
-        Route::post('salary-payments/generate-monthly', [SalaryPaymentController::class, 'generateMonthlyPayments']);
-        Route::get('salary-payments-statistics', [SalaryPaymentController::class, 'statistics']);
-        
-        // Commission Payment Routes
-        Route::apiResource('commission-payments', CommissionPaymentController::class);
-        Route::post('commission-payments/{commissionPayment}/mark-as-paid', [CommissionPaymentController::class, 'markAsPaid']);
-        Route::post('commission-payments/calculate', [CommissionPaymentController::class, 'calculateCommissions']);
-        Route::post('commission-payments/generate', [CommissionPaymentController::class, 'generateCommissionPayments']);
-        Route::get('commission-payments-statistics', [CommissionPaymentController::class, 'statistics']);
-        
-        // State and City API Routes
-        Route::get('states', [ParcelController::class, 'getStates']);
-        Route::get('cities', [ParcelController::class, 'getCities']);
-        Route::get('states/{state}/cities', [ParcelController::class, 'getCitiesByState']);
-    });
+    // Commission Payment Routes
+    Route::apiResource('commission-payments', CommissionPaymentController::class);
+    Route::post('commission-payments/{commissionPayment}/mark-as-paid', [CommissionPaymentController::class, 'markAsPaid']);
+    Route::post('commission-payments/calculate', [CommissionPaymentController::class, 'calculateCommissions']);
+    Route::post('commission-payments/generate', [CommissionPaymentController::class, 'generateCommissionPayments']);
+    Route::get('commission-payments-statistics', [CommissionPaymentController::class, 'statistics']);
+    
+    // State and City API Routes
+    Route::get('states', [ParcelController::class, 'getStates']);
+    Route::get('cities', [ParcelController::class, 'getCities']);
+    Route::get('states/{state}/cities', [ParcelController::class, 'getCitiesByState']);
+});
+
+// Redirect root to dashboard for authenticated users
+Route::get('/', function () {
+    return redirect()->route('dashboard');
 });
