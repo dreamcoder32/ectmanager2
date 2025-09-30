@@ -1,211 +1,172 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
-use App\Http\Controllers\SalaryPaymentController;
-use App\Http\Controllers\CommissionPaymentController;
-use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\ExpenseCategoryController;
-use App\Http\Controllers\FinancialDashboardController;
-use App\Http\Controllers\MoneyCaseController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ParcelController;
-// use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RecolteController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// Authentication routes
+Route::get('/', function () {
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
+});
+
+
+
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
+
+// Custom Authentication Routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
-    
-    // Redirect unauthenticated users to login
-    Route::get('/', function () {
-        return redirect()->route('login');
-    });
-});
-                                                                                                        
-Route::get('/test-session', function () {
-    session(['test_key' => 'test_value_' . now()]);
-    return response()->json([
-        'session_id' => session()->getId(),
-        'test_value' => session('test_key'),
-        'driver' => config('session.driver'),
-        'connection' => config('session.connection'),
-    ]);
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
 });
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::get('/user', [AuthController::class, 'user']);
+    Route::get('/user', [AuthController::class, 'user'])->name('user');
 });
 
-// Dashboard routes (protected)
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+// Import additional controllers
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\RecolteController;
+use App\Http\Controllers\SalaryPaymentController;
+use App\Http\Controllers\CommissionPaymentController;
+use App\Http\Controllers\MoneyCaseController;
+use App\Http\Controllers\FinancialDashboardController;
+
+// Parcel routes
 Route::middleware(['auth'])->group(function () {
-    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])->name('dashboard');
+    Route::get('/parcels', [ParcelController::class, 'index'])->name('parcels.index');
+    Route::get('/parcels/create', [ParcelController::class, 'create'])->name('parcels.create');
+    Route::post('/parcels', [ParcelController::class, 'store'])->name('parcels.store');
+    Route::get('/parcels/{parcel}', [ParcelController::class, 'show'])->name('parcels.show');
+    Route::get('/parcels/{parcel}/edit', [ParcelController::class, 'edit'])->name('parcels.edit');
+    Route::put('/parcels/{parcel}', [ParcelController::class, 'update'])->name('parcels.update');
+    Route::delete('/parcels/{parcel}', [ParcelController::class, 'destroy'])->name('parcels.destroy');
     
-    // Financial Dashboard
-    Route::get('/financial/dashboard', function () {
-        return Inertia::render('Financial/Dashboard');
-    })->name('financial.dashboard');
+    // Bulk import
+    Route::get('/parcels/import/form', [ParcelController::class, 'importForm'])->name('parcels.import.form');
+    Route::post('/parcels/import', [ParcelController::class, 'import'])->name('parcels.import');
     
-    // Profile routes
-    // Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    
-    // Parcel Management Routes
-    Route::resource('parcels', ParcelController::class);
-    Route::post('parcels/import-excel', [ParcelController::class, 'importExcel'])->name('parcels.import-excel');
-    
-    // Money Case Management Routes (Admin and Supervisor only)
-    Route::middleware(['role:admin,supervisor'])->group(function () {
-        Route::resource('money-cases', MoneyCaseController::class);
-        Route::get('money-cases/{moneyCase}/update-balance', [MoneyCaseController::class, 'updateBalance'])->name('money-cases.update-balance');
-    });
-    
-    // API route for getting active cases (for dropdowns)
-    Route::get('api/money-cases/active', [MoneyCaseController::class, 'getActiveCases'])->name('api.money-cases.active');
-    
-    // Money case activation route for stopdesk
+    // Search by tracking number
+    Route::post('/parcels/search-by-tracking', [ParcelController::class, 'searchByTracking'])->name('parcels.search-by-tracking');
+});
+
+// Stopdesk Payment routes
+Route::middleware(['auth'])->group(function () {
+
+        Route::post('parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber']);
     Route::post('money-cases/activate', [MoneyCaseController::class, 'activateForUser'])->name('money-cases.activate');
-    
-    // Expense Management Routes - All authenticated users can access
-    Route::resource('expenses', ExpenseController::class);
-    
-    // Expense approval routes - Only supervisors and admins
-    Route::middleware(['role:admin,supervisor'])->group(function () {
-        Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve');
-        Route::post('expenses/{expense}/mark-as-paid', [ExpenseController::class, 'markAsPaid'])->name('expenses.mark-as-paid');
-        Route::post('expenses/{expense}/reject', [ExpenseController::class, 'reject'])->name('expenses.reject');
-    });
-    
-    // Expense Category Management Routes - Admin only
-    Route::middleware(['role:admin'])->group(function () {
-        Route::resource('expense-categories', ExpenseCategoryController::class);
-        Route::post('expense-categories/{expenseCategory}/toggle-status', [ExpenseCategoryController::class, 'toggleStatus'])->name('expense-categories.toggle-status');
-    });
-    
-    // Recolte Management Routes (Admin and Supervisor only)
-    Route::middleware(['role:admin,supervisor'])->group(function () {
-        Route::resource('recoltes', RecolteController::class);
-    });
-    
-    // User Management Routes (Supervisor and Admin only)
-    Route::middleware(['role:admin,supervisor'])->group(function () {
-        Route::resource('users', UserController::class);
-    });
-    
-    // Stopdesk Payment Routes
-    Route::get('/stopdesk-payment', function () {
-        // Get recent collections for the logged-in user, excluding those that have been recolted
-        $recentCollections = \App\Models\Collection::with(['parcel'])
-            ->where('created_by', auth()->id())
-            ->whereDoesntHave('recoltes') // Exclude collections that are part of any recolte
-            ->orderBy('collected_at', 'desc')
-            ->limit(20)
-            ->get()
-            ->map(function ($collection) {
-                return [
-                    'id' => $collection->id,
-                    'tracking_number' => $collection->parcel->tracking_number ?? 'N/A',
-                    'cod_amount' => $collection->parcel->cod_amount ?? 0,
-                    'collected_at' => $collection->collected_at,
-                    'changeAmount' => $collection->amount - ($collection->parcel->cod_amount ?? 0),
-                ];
-            });
-
-        // Debug: Log the query for troubleshooting
-        \Log::info('Stopdesk collections query', [
-            'user_id' => auth()->id(),
-            'total_collections' => \App\Models\Collection::where('created_by', auth()->id())->count(),
-            'collections_with_recoltes' => \App\Models\Collection::where('created_by', auth()->id())->whereHas('recoltes')->count(),
-            'collections_without_recoltes' => \App\Models\Collection::where('created_by', auth()->id())->whereDoesntHave('recoltes')->count(),
-            'filtered_count' => $recentCollections->count()
-        ]);
-
-        // Get active money cases for case selection - show free cases and cases used by current user
-        $currentUserId = auth()->id();
-        $activeCases = \App\Models\MoneyCase::where('status', 'active')
-            ->where(function ($query) use ($currentUserId) {
-                $query->whereNull('last_active_by') // Free cases
-                      ->orWhere('last_active_by', $currentUserId); // Cases used by current user
-            })
-            ->orderBy('name')
-            ->get()
-            ->map(function ($case) use ($currentUserId) {
-                return [
-                    'id' => $case->id,
-                    'name' => $case->name,
-                    'description' => $case->description,
-                    'balance' => $case->calculated_balance,
-                    'currency' => $case->currency,
-                    'is_user_active' => $case->last_active_by === $currentUserId,
-                ];
-            });
-
-        // Find the user's last active case
-        $userLastActiveCase = \App\Models\MoneyCase::where('status', 'active')
-            ->where('last_active_by', $currentUserId)
-            ->orderBy('last_activated_at', 'desc')
-            ->first();
-
-        // Get flash data if available
-        $flashData = [];
-        if (session()->has('searchResult')) {
-            $flashData['searchResult'] = session('searchResult');
-        }
-        if (session()->has('paymentResult')) {
-            $flashData['paymentResult'] = session('paymentResult');
-        }
-
-        return Inertia::render('StopDeskPayment/Index', array_merge([
-            'recentCollections' => $recentCollections,
-            'activeCases' => $activeCases,
-            'userLastActiveCaseId' => $userLastActiveCase ? $userLastActiveCase->id : null,
-            'auth' => [
-                'user' => [
-                    'id' => auth()->user()->id,
-                    'can_collect_stopdesk' => auth()->user()->can_collect_stopdesk ?? false
-                ]
-            ]
-        ], $flashData));
-    })->name('stopdesk.payment');
-    Route::post('parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber']);
     Route::post('parcels/confirm-payment', [ParcelController::class, 'confirmPayment']);
-    Route::post('parcels/create-manual-and-collect', [ParcelController::class, 'createManualParcelAndCollect']);
+
+    Route::get('/stopdesk-payment', [ParcelController::class, 'stopDeskPayment'])->name('stopdesk-payment.index');
+    Route::post('/stopdesk-payment/search', [ParcelController::class, 'searchForStopDesk'])->name('stopdesk-payment.search');
+    Route::post('/stopdesk-payment/collect', [ParcelController::class, 'collectStopDesk'])->name('stopdesk-payment.collect');
 });
 
-// API Routes for Financial Management
-Route::prefix('api')->group(function () {
-    // Financial Dashboard Routes
-    Route::get('financial-dashboard', [FinancialDashboardController::class, 'index']);
-    Route::get('financial-summary', [FinancialDashboardController::class, 'summary']);
-    
-    // Salary Payment Routes
-    Route::apiResource('salary-payments', SalaryPaymentController::class);
-    Route::post('salary-payments/{salaryPayment}/mark-as-paid', [SalaryPaymentController::class, 'markAsPaid']);
-    Route::post('salary-payments/generate-monthly', [SalaryPaymentController::class, 'generateMonthlyPayments']);
-    Route::get('salary-payments-statistics', [SalaryPaymentController::class, 'statistics']);
-    
-    // Commission Payment Routes
-    Route::apiResource('commission-payments', CommissionPaymentController::class);
-    Route::post('commission-payments/{commissionPayment}/mark-as-paid', [CommissionPaymentController::class, 'markAsPaid']);
-    Route::post('commission-payments/calculate', [CommissionPaymentController::class, 'calculateCommissions']);
-    Route::post('commission-payments/generate', [CommissionPaymentController::class, 'generateCommissionPayments']);
-    Route::get('commission-payments-statistics', [CommissionPaymentController::class, 'statistics']);
-    
-    // State and City API Routes
-    Route::get('states', [ParcelController::class, 'getStates']);
-    Route::get('cities', [ParcelController::class, 'getCities']);
-    Route::get('states/{state}/cities', [ParcelController::class, 'getCitiesByState']);
+// Collection Transfer (Recoltes) routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/recoltes', [RecolteController::class, 'index'])->name('recoltes.index');
+    Route::get('/recoltes/create', [RecolteController::class, 'create'])->name('recoltes.create');
+    Route::post('/recoltes', [RecolteController::class, 'store'])->name('recoltes.store');
+    Route::get('/recoltes/{recolte}', [RecolteController::class, 'show'])->name('recoltes.show');
+    Route::get('/recoltes/{recolte}/edit', [RecolteController::class, 'edit'])->name('recoltes.edit');
+    Route::put('/recoltes/{recolte}', [RecolteController::class, 'update'])->name('recoltes.update');
+    Route::delete('/recoltes/{recolte}', [RecolteController::class, 'destroy'])->name('recoltes.destroy');
 });
 
-// Redirect root to dashboard for authenticated users
-Route::get('/', function () {
-    return redirect()->route('dashboard');
+// Expense routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+    Route::get('/expenses/create', [ExpenseController::class, 'create'])->name('expenses.create');
+    Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+    Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
+    Route::get('/expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
+    Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
+    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    Route::post('/expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve');
+    Route::post('/expenses/{expense}/pay', [ExpenseController::class, 'pay'])->name('expenses.pay');
 });
+
+// Expense Category routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/expense-categories', [ExpenseCategoryController::class, 'index'])->name('expense-categories.index');
+    Route::get('/expense-categories/create', [ExpenseCategoryController::class, 'create'])->name('expense-categories.create');
+    Route::post('/expense-categories', [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
+    Route::get('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'show'])->name('expense-categories.show');
+    Route::get('/expense-categories/{expenseCategory}/edit', [ExpenseCategoryController::class, 'edit'])->name('expense-categories.edit');
+    Route::put('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
+    Route::delete('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
+});
+
+// User Management routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/users', [UserController::class, 'index'])->name('users.index');
+    Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+    Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+});
+
+// Salary Payment routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/salary-payments', [SalaryPaymentController::class, 'index'])->name('salary-payments.index');
+    Route::get('/salary-payments/create', [SalaryPaymentController::class, 'create'])->name('salary-payments.create');
+    Route::post('/salary-payments', [SalaryPaymentController::class, 'store'])->name('salary-payments.store');
+    Route::get('/salary-payments/{salaryPayment}', [SalaryPaymentController::class, 'show'])->name('salary-payments.show');
+    Route::get('/salary-payments/{salaryPayment}/edit', [SalaryPaymentController::class, 'edit'])->name('salary-payments.edit');
+    Route::put('/salary-payments/{salaryPayment}', [SalaryPaymentController::class, 'update'])->name('salary-payments.update');
+    Route::delete('/salary-payments/{salaryPayment}', [SalaryPaymentController::class, 'destroy'])->name('salary-payments.destroy');
+    Route::post('/salary-payments/generate-monthly', [SalaryPaymentController::class, 'generateMonthlyPayments'])->name('salary-payments.generate-monthly');
+    Route::get('/salary-payments/statistics', [SalaryPaymentController::class, 'statistics'])->name('salary-payments.statistics');
+});
+
+// Commission Payment routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/commission-payments', [CommissionPaymentController::class, 'index'])->name('commission-payments.index');
+    Route::get('/commission-payments/create', [CommissionPaymentController::class, 'create'])->name('commission-payments.create');
+    Route::post('/commission-payments', [CommissionPaymentController::class, 'store'])->name('commission-payments.store');
+    Route::get('/commission-payments/{commissionPayment}', [CommissionPaymentController::class, 'show'])->name('commission-payments.show');
+    Route::get('/commission-payments/{commissionPayment}/edit', [CommissionPaymentController::class, 'edit'])->name('commission-payments.edit');
+    Route::put('/commission-payments/{commissionPayment}', [CommissionPaymentController::class, 'update'])->name('commission-payments.update');
+    Route::delete('/commission-payments/{commissionPayment}', [CommissionPaymentController::class, 'destroy'])->name('commission-payments.destroy');
+    Route::post('/commission-payments/generate-monthly', [CommissionPaymentController::class, 'generateMonthlyPayments'])->name('commission-payments.generate-monthly');
+    Route::get('/commission-payments/statistics', [CommissionPaymentController::class, 'statistics'])->name('commission-payments.statistics');
+});
+
+// Money Case routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/money-cases', [MoneyCaseController::class, 'index'])->name('money-cases.index');
+    Route::get('/money-cases/create', [MoneyCaseController::class, 'create'])->name('money-cases.create');
+    Route::post('/money-cases', [MoneyCaseController::class, 'store'])->name('money-cases.store');
+    Route::get('/money-cases/{moneyCase}', [MoneyCaseController::class, 'show'])->name('money-cases.show');
+    Route::get('/money-cases/{moneyCase}/edit', [MoneyCaseController::class, 'edit'])->name('money-cases.edit');
+    Route::put('/money-cases/{moneyCase}', [MoneyCaseController::class, 'update'])->name('money-cases.update');
+    Route::delete('/money-cases/{moneyCase}', [MoneyCaseController::class, 'destroy'])->name('money-cases.destroy');
+});
+
+// Financial Dashboard routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/financial-dashboard', [FinancialDashboardController::class, 'index'])->name('financial-dashboard.index');
+    Route::get('/financial-dashboard/reports', [FinancialDashboardController::class, 'reports'])->name('financial-dashboard.reports');
+});
+
+// require __DIR__.'/auth.php';

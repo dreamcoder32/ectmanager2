@@ -354,6 +354,79 @@ class ParcelController extends Controller
         }
     }
 
+    public function stopDeskPayment(Request $request){
+        $recentCollections = \App\Models\Collection::with(['parcel'])
+            ->where('created_by', auth()->id())
+            ->whereDoesntHave('recoltes') // Exclude collections that are part of any recolte
+            ->orderBy('collected_at', 'desc')
+            ->limit(20)
+            ->get()
+            ->map(function ($collection) {
+                return [
+                    'id' => $collection->id,
+                    'tracking_number' => $collection->parcel->tracking_number ?? 'N/A',
+                    'cod_amount' => $collection->parcel->cod_amount ?? 0,
+                    'collected_at' => $collection->collected_at,
+                    'changeAmount' => $collection->amount - ($collection->parcel->cod_amount ?? 0),
+                ];
+            });
+
+        // Debug: Log the query for troubleshooting
+        \Log::info('Stopdesk collections query', [
+            'user_id' => auth()->id(),
+            'total_collections' => \App\Models\Collection::where('created_by', auth()->id())->count(),
+            'collections_with_recoltes' => \App\Models\Collection::where('created_by', auth()->id())->whereHas('recoltes')->count(),
+            'collections_without_recoltes' => \App\Models\Collection::where('created_by', auth()->id())->whereDoesntHave('recoltes')->count(),
+            'filtered_count' => $recentCollections->count()
+        ]);
+
+        // Get active money cases for case selection - show free cases and cases used by current user
+        $currentUserId = auth()->id();
+        $activeCases = \App\Models\MoneyCase::where('status', 'active')
+            ->where(function ($query) use ($currentUserId) {
+                $query->whereNull('last_active_by') // Free cases
+                      ->orWhere('last_active_by', $currentUserId); // Cases used by current user
+            })
+            ->orderBy('name')
+            ->get()
+            ->map(function ($case) use ($currentUserId) {
+                return [
+                    'id' => $case->id,
+                    'name' => $case->name,
+                    'description' => $case->description,
+                    'balance' => $case->calculated_balance,
+                    'currency' => $case->currency,
+                    'is_user_active' => $case->last_active_by === $currentUserId,
+                ];
+            });
+
+        // Find the user's last active case
+        $userLastActiveCase = \App\Models\MoneyCase::where('status', 'active')
+            ->where('last_active_by', $currentUserId)
+            ->orderBy('last_activated_at', 'desc')
+            ->first();
+
+        // Get flash data if available
+        $flashData = [];
+        if (session()->has('searchResult')) {
+            $flashData['searchResult'] = session('searchResult');
+        }
+        if (session()->has('paymentResult')) {
+            $flashData['paymentResult'] = session('paymentResult');
+        }
+
+        return Inertia::render('StopDeskPayment/Index', array_merge([
+            'recentCollections' => $recentCollections,
+            'activeCases' => $activeCases,
+            'userLastActiveCaseId' => $userLastActiveCase ? $userLastActiveCase->id : null,
+            'auth' => [
+                'user' => [
+                    'id' => auth()->user()->id,
+                    'can_collect_stopdesk' => auth()->user()->can_collect_stopdesk ?? false
+                ]
+            ]
+        ], $flashData));
+    }
     /**
      * Search for a parcel by tracking number for stopdesk payment
      */

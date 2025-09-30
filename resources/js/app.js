@@ -11,6 +11,13 @@ import { Toast, options } from './plugins/toast';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+// Configure Inertia.js to include CSRF token in all requests
+router.defaults = router.defaults || {};
+router.defaults.headers = {
+  'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+  'X-Requested-With': 'XMLHttpRequest',
+};
+
 // Function to get CSRF token from meta tag
 function getCSRFToken() {
   const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
@@ -21,6 +28,10 @@ function getCSRFToken() {
 function refreshCSRFToken() {
   const token = getCSRFToken()
   if (token) {
+    // Update Inertia router default headers
+    if (router.defaults && router.defaults.headers) {
+      router.defaults.headers['X-CSRF-TOKEN'] = token
+    }
     // Update Axios default headers if available
     if (window.axios) {
       window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token
