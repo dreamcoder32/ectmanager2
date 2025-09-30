@@ -26,6 +26,16 @@ Route::middleware('guest')->group(function () {
     });
 });
 
+Route::get('/test-session', function () {
+    session(['test_key' => 'test_value_' . now()]);
+    return response()->json([
+        'session_id' => session()->getId(),
+        'test_value' => session('test_key'),
+        'driver' => config('session.driver'),
+        'connection' => config('session.connection'),
+    ]);
+});
+
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
