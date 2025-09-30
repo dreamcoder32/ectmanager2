@@ -25,7 +25,7 @@ Route::middleware('guest')->group(function () {
         return redirect()->route('login');
     });
 });
-
+                                                                                                        
 Route::get('/test-session', function () {
     session(['test_key' => 'test_value_' . now()]);
     return response()->json([
