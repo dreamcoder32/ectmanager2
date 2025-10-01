@@ -2,9 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Cairo font for multilingual support */
+* {
+  font-family: 'Cairo', sans-serif !important;
+}
+
 /* Vuetify compatibility fixes */
 .v-application {
-  font-family: inherit !important;
+  font-family: 'Cairo', sans-serif !important;
+}
+
+/* Ensure all text elements use Cairo */
+body, html, input, textarea, select, button, label, span, div, p, h1, h2, h3, h4, h5, h6 {
+  font-family: 'Cairo', sans-serif !important;
+}
+
+/* RTL/LTR support for multilingual content */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="ltr"] {
+  text-align: left;
+}
+
+/* Improve font rendering for Arabic text */
+.v-application {
+  font-feature-settings: "liga" 1, "kern" 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure proper font weights for Cairo */
+.v-application .v-btn,
+.v-application .v-card-title,
+.v-application .v-list-item-title {
+  font-weight: 500;
+}
+
+/* Better line height for Arabic text */
+.v-application {
+  line-height: 1.6;
 }
 
 /* Enhanced Vuetify dropdown styling */

@@ -357,8 +357,9 @@ class ParcelController extends Controller
     public function stopDeskPayment(Request $request){
         $recentCollections = \App\Models\Collection::with(['parcel'])
             ->where('created_by', auth()->id())
+            // ->whereDate('collected_at', today()) // Only show today's collections
             ->whereDoesntHave('recoltes') // Exclude collections that are part of any recolte
-            ->orderBy('collected_at', 'desc')
+            // ->orderBy('collected_at', 'desc')
             ->limit(20)
             ->get()
             ->map(function ($collection) {
@@ -367,7 +368,9 @@ class ParcelController extends Controller
                     'tracking_number' => $collection->parcel->tracking_number ?? 'N/A',
                     'cod_amount' => $collection->parcel->cod_amount ?? 0,
                     'collected_at' => $collection->collected_at,
-                    'changeAmount' => $collection->amount - ($collection->parcel->cod_amount ?? 0),
+                    'changeAmount' => $collection->amount_given - ($collection->parcel->cod_amount ?? 0),
+                    'parcel_type' => $collection->parcel_type ?? 'stopdesk',
+                    'amount_collected' => $collection->amount_given,
                 ];
             });
 
@@ -548,7 +551,7 @@ class ParcelController extends Controller
                 'parcel_id' => $parcel->id,
                 'created_by' => auth()->id(),
                 'note' => 'Stop desk payment collection',
-                'amount' => $parcel->cod_amount,
+                'amount' => $parcel->cod_amount, // Amount actually collected
                 'amount_given' => $request->amount_given,
                 'driver_id' => null, // Stop desk collections don't have drivers
                 'margin' => $margin,
@@ -561,31 +564,33 @@ class ParcelController extends Controller
 
             DB::commit();
 
-            $changeAmount = $request->amount_given - $parcel->cod_amount;
+            // $changeAmount = $request->amount_given - $parcel->cod_amount;
 
-            // Get updated recent collections for the user
-            $recentCollections = \App\Models\Collection::with(['parcel.company'])
-                ->where('created_by', auth()->id())
-                ->orderBy('collected_at', 'desc')
-                ->limit(20)
-                ->get()
-                ->map(function ($collection) {
-                    return [
-                        'id' => $collection->id,
-                        'tracking_number' => $collection->parcel->tracking_number ?? 'N/A',
-                        'cod_amount' => $collection->parcel->cod_amount ?? 0,
-                        'collected_at' => $collection->collected_at,
-                        'changeAmount' => $collection->amount - ($collection->parcel->cod_amount ?? 0),
-                        'parcel_type' => $collection->parcel_type ?? 'stopdesk',
-                        'calculated_margin' => $collection->calculateMargin(),
-                    ];
-                });
+            // Get updated recent collections for the user (today only)
+            $recentCollections = \App\Models\Collection::with(['parcel'])
+            ->where('created_by', auth()->id())
+            // ->whereDate('collected_at', today()) // Only show today's collections
+            ->whereDoesntHave('recoltes') // Exclude collections that are part of any recolte
+            ->orderBy('collected_at', 'desc')
+            // ->limit(20)
+            ->get()
+            ->map(function ($collection) {
+                return [
+                    'id' => $collection->id,
+                    'tracking_number' => $collection->parcel->tracking_number ?? 'N/A',
+                    'cod_amount' => $collection->parcel->cod_amount ?? 0,
+                    'collected_at' => $collection->collected_at,
+                    'changeAmount' => $collection->amount_given - ($collection->parcel->cod_amount ?? 0),
+                    'parcel_type' => $collection->parcel_type ?? 'stopdesk',
+                    'amount_collected' => $collection->amount_given,
+                ];
+            });
 
             return response()->json([
                 'success' => true,
                 'message' => 'Payment confirmed successfully',
                 'parcel_id' => $parcel->id,
-                'change_amount' => $changeAmount,
+                // 'change_amount' => $changeAmount,
                 'recentCollections' => $recentCollections
             ]);
         } catch (\Exception $e) {
@@ -686,6 +691,7 @@ class ParcelController extends Controller
                 'created_by' => auth()->id(),
                 'note' => 'Manual parcel entry and stop desk payment collection',
                 'amount' => $request->amount_given,
+                'amount_given' => $request->amount_given,
                 'driver_id' => null, // Stop desk collections don't have drivers
                 'margin' => $margin,
                 'driver_commission' => null, // No driver commission for stop desk
@@ -702,11 +708,12 @@ class ParcelController extends Controller
 
             $changeAmount = $request->amount_given - $parcel->cod_amount;
 
-            // Get updated recent collections for the user
+            // Get updated recent collections for the user (today only)
             $recentCollections = \App\Models\Collection::with(['parcel'])
                 ->where('created_by', auth()->id())
+                // ->whereDate('collected_at', today())
                 ->orderBy('collected_at', 'desc')
-                ->limit(20)
+                // ->limit(20)
                 ->get()
                 ->map(function ($collection) {
                     return [
@@ -714,7 +721,9 @@ class ParcelController extends Controller
                         'tracking_number' => $collection->parcel->tracking_number ?? 'N/A',
                         'cod_amount' => $collection->parcel->cod_amount ?? 0,
                         'collected_at' => $collection->collected_at,
-                        'changeAmount' => $collection->amount - ($collection->parcel->cod_amount ?? 0),
+                        'changeAmount' => $collection->amount_given - ($collection->parcel->cod_amount ?? 0),
+                        'parcel_type' => $collection->parcel_type ?? 'stopdesk',
+                        'amount_collected' => $collection->amount_given,
                     ];
                 });
 
