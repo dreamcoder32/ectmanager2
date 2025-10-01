@@ -89,8 +89,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/recoltes/create', [RecolteController::class, 'create'])->name('recoltes.create');
     Route::post('/recoltes', [RecolteController::class, 'store'])->name('recoltes.store');
     Route::get('/recoltes/{recolte}', [RecolteController::class, 'show'])->name('recoltes.show');
-    Route::get('/recoltes/{recolte}/edit', [RecolteController::class, 'edit'])->name('recoltes.edit');
-    Route::put('/recoltes/{recolte}', [RecolteController::class, 'update'])->name('recoltes.update');
+    // Route::get('/recoltes/{recolte}/edit', [RecolteController::class, 'edit'])->name('recoltes.edit');
+    // Route::put('/recoltes/{recolte}', [RecolteController::class, 'update'])->name('recoltes.update');
     // Route::delete('/recoltes/{recolte}', [RecolteController::class, 'destroy'])->name('recoltes.destroy');
 });
 
@@ -100,7 +100,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/expenses/create', [ExpenseController::class, 'create'])->name('expenses.create');
     Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
     Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
-    Route::get('/expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
+    // Route::get('/expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
     Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
     // Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
     Route::post('/expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve');
