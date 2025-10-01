@@ -342,7 +342,7 @@
                       </v-list-item-title>
                       <v-list-item-subtitle class="text-caption ">
                         <span class="font-weight-bold ">
-                          {{ parseInt(collection.amount_collected || collection.cod_amount) }} {{ $t('common.currency') }}
+                          {{ parseInt(collection.cod_amount ) }} {{ $t('common.currency') }}
                         </span>
                         - {{ formatTimeAgo(collection.collected_at) }}
                       </v-list-item-subtitle>
@@ -905,7 +905,7 @@ export default {
     
     totalRecentCollections() {
       return this.localRecentCollections.reduce((total, collection) => {
-        return total + (parseFloat(collection.amount_collected || collection.cod_amount) || 0)
+        return total + (parseFloat(collection.cod_amount) || 0)
       }, 0)
     }
   }
