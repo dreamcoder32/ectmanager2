@@ -91,7 +91,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/recoltes/{recolte}', [RecolteController::class, 'show'])->name('recoltes.show');
     Route::get('/recoltes/{recolte}/edit', [RecolteController::class, 'edit'])->name('recoltes.edit');
     Route::put('/recoltes/{recolte}', [RecolteController::class, 'update'])->name('recoltes.update');
-    Route::delete('/recoltes/{recolte}', [RecolteController::class, 'destroy'])->name('recoltes.destroy');
+    // Route::delete('/recoltes/{recolte}', [RecolteController::class, 'destroy'])->name('recoltes.destroy');
 });
 
 // Expense routes
@@ -102,7 +102,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/expenses/{expense}', [ExpenseController::class, 'show'])->name('expenses.show');
     Route::get('/expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
     Route::put('/expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
-    Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+    // Route::delete('/expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
     Route::post('/expenses/{expense}/approve', [ExpenseController::class, 'approve'])->name('expenses.approve');
     Route::post('/expenses/{expense}/pay', [ExpenseController::class, 'pay'])->name('expenses.pay');
 });
@@ -115,7 +115,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'show'])->name('expense-categories.show');
     Route::get('/expense-categories/{expenseCategory}/edit', [ExpenseCategoryController::class, 'edit'])->name('expense-categories.edit');
     Route::put('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
-    Route::delete('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
+    // Route::delete('/expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
 });
 
 // User Management routes
@@ -126,7 +126,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    // Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 });
 
 // Salary Payment routes
@@ -137,7 +137,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/salary-payments/{salaryPayment}', [SalaryPaymentController::class, 'show'])->name('salary-payments.show');
     Route::get('/salary-payments/{salaryPayment}/edit', [SalaryPaymentController::class, 'edit'])->name('salary-payments.edit');
     Route::put('/salary-payments/{salaryPayment}', [SalaryPaymentController::class, 'update'])->name('salary-payments.update');
-    Route::delete('/salary-payments/{salaryPayment}', [SalaryPaymentController::class, 'destroy'])->name('salary-payments.destroy');
+    // Route::delete('/salary-payments/{salaryPayment}', [SalaryPaymentController::class, 'destroy'])->name('salary-payments.destroy');
     Route::post('/salary-payments/generate-monthly', [SalaryPaymentController::class, 'generateMonthlyPayments'])->name('salary-payments.generate-monthly');
     Route::get('/salary-payments/statistics', [SalaryPaymentController::class, 'statistics'])->name('salary-payments.statistics');
 });
@@ -150,7 +150,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/commission-payments/{commissionPayment}', [CommissionPaymentController::class, 'show'])->name('commission-payments.show');
     Route::get('/commission-payments/{commissionPayment}/edit', [CommissionPaymentController::class, 'edit'])->name('commission-payments.edit');
     Route::put('/commission-payments/{commissionPayment}', [CommissionPaymentController::class, 'update'])->name('commission-payments.update');
-    Route::delete('/commission-payments/{commissionPayment}', [CommissionPaymentController::class, 'destroy'])->name('commission-payments.destroy');
+    // Route::delete('/commission-payments/{commissionPayment}', [CommissionPaymentController::class, 'destroy'])->name('commission-payments.destroy');
     Route::post('/commission-payments/generate-monthly', [CommissionPaymentController::class, 'generateMonthlyPayments'])->name('commission-payments.generate-monthly');
     Route::get('/commission-payments/statistics', [CommissionPaymentController::class, 'statistics'])->name('commission-payments.statistics');
 });
@@ -163,7 +163,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/money-cases/{moneyCase}', [MoneyCaseController::class, 'show'])->name('money-cases.show');
     Route::get('/money-cases/{moneyCase}/edit', [MoneyCaseController::class, 'edit'])->name('money-cases.edit');
     Route::put('/money-cases/{moneyCase}', [MoneyCaseController::class, 'update'])->name('money-cases.update');
-    Route::delete('/money-cases/{moneyCase}', [MoneyCaseController::class, 'destroy'])->name('money-cases.destroy');
+    // Route::delete('/money-cases/{moneyCase}', [MoneyCaseController::class, 'destroy'])->name('money-cases.destroy');
 });
 
 // Financial Dashboard routes
