@@ -7,11 +7,12 @@
   font-family: inherit !important;
 }
 
-/* Fix for Vuetify dropdowns and form elements */
+/* Enhanced Vuetify dropdown styling */
 .v-select .v-input__control,
 .v-text-field .v-input__control,
 .v-autocomplete .v-input__control {
   min-height: 56px !important;
+  border-radius: 8px !important;
 }
 
 .v-select .v-input__slot,
@@ -19,43 +20,97 @@
 .v-autocomplete .v-input__slot {
   padding: 0 12px !important;
   align-items: center !important;
+  border-radius: 8px !important;
 }
 
-/* Fix dropdown menu positioning and styling */
-.v-menu__content {
-  box-shadow: 0 2px 4px -1px rgba(0,0,0,.2), 0 4px 5px 0 rgba(0,0,0,.14), 0 1px 10px 0 rgba(0,0,0,.12) !important;
-  border-radius: 4px !important;
+/* Enhanced dropdown menu styling */
+.v-menu__content,
+.custom-dropdown-menu {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08) !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(0,0,0,0.05) !important;
+  backdrop-filter: blur(10px) !important;
+  background: rgba(255,255,255,0.95) !important;
+  overflow: hidden !important;
+  max-height: 320px !important;
+  z-index: 9999 !important;
+}
+
+.v-list {
+  padding: 8px 0 !important;
+  background: transparent !important;
 }
 
 .v-list-item {
   min-height: 48px !important;
   padding: 0 16px !important;
+  margin: 2px 8px !important;
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  position: relative !important;
 }
 
 .v-list-item__content {
   padding: 12px 0 !important;
 }
 
-/* Fix for outlined variant */
+.v-list-item:hover {
+  background: rgba(25, 118, 210, 0.08) !important;
+  transform: translateX(2px) !important;
+}
+
+.v-list-item--active {
+  background: rgba(25, 118, 210, 0.12) !important;
+  color: #1976d2 !important;
+  font-weight: 500 !important;
+}
+
+.v-list-item--active:hover {
+  background: rgba(25, 118, 210, 0.16) !important;
+}
+
+/* Enhanced outlined variant styling */
 .v-text-field--outlined .v-input__control,
 .v-select--outlined .v-input__control {
   background: white !important;
+  border-radius: 8px !important;
 }
 
 .v-text-field--outlined fieldset,
 .v-select--outlined fieldset {
-  border-color: rgba(0,0,0,0.38) !important;
+  border-color: rgba(0,0,0,0.23) !important;
+  border-radius: 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .v-text-field--outlined:hover fieldset,
 .v-select--outlined:hover fieldset {
-  border-color: rgba(0,0,0,0.87) !important;
+  border-color: rgba(25, 118, 210, 0.5) !important;
+  box-shadow: 0 0 0 1px rgba(25, 118, 210, 0.1) !important;
 }
 
 .v-text-field--outlined.v-input--is-focused fieldset,
 .v-select--outlined.v-input--is-focused fieldset {
-  border-color: #1976d2 !important;
-  border-width: 2px !important;
+  border-color: rgba(0,0,0,0.23) !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}
+
+/* Enhanced select dropdown arrow */
+.v-select .v-input__icon--append .v-icon {
+  color: rgba(0,0,0,0.54) !important;
+  transition: transform 0.2s ease !important;
+}
+
+.v-select.v-input--is-focused .v-input__icon--append .v-icon {
+  transform: rotate(180deg) !important;
+  color: rgba(0,0,0,0.54) !important;
+}
+
+/* Simple targeted fix for blue border - only when focused */
+.v-text-field.v-input--is-focused fieldset,
+.v-select.v-input--is-focused fieldset {
+  border-color: rgba(0,0,0,0.23) !important;
 }
 
 /* Fix for dense variant */
@@ -67,23 +122,124 @@
   min-height: 40px !important;
 }
 
-/* Ensure proper z-index for dropdowns */
+/* Enhanced animations and transitions */
 .v-menu__content {
   z-index: 9999 !important;
+  animation: dropdownFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Fix for select dropdown arrow */
-.v-select .v-input__icon--append .v-icon {
-  color: rgba(0,0,0,0.54) !important;
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
-/* Fix for placeholder and label positioning */
+/* Enhanced placeholder and label positioning */
 .v-text-field--outlined .v-label,
 .v-select--outlined .v-label {
   top: 18px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .v-text-field--outlined .v-label--active,
 .v-select--outlined .v-label--active {
-  transform: translateY(-18px) scale(0.75) !important;
+  color: #1976d2 !important;
+  font-weight: 500 !important;
+}
+
+/* Enhanced focus states - only for dropdowns */
+.v-select.v-input--is-focused .v-label {
+  color: rgba(0,0,0,0.6) !important;
+}
+
+/* Remove blue focus border only from dropdowns */
+.v-select--outlined.v-input--is-focused .v-input__control {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.v-select--outlined.v-input--is-focused fieldset {
+  border-color: rgba(0,0,0,0.23) !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}
+
+/* Better scrollbar styling for dropdowns */
+.v-menu__content::-webkit-scrollbar {
+  width: 6px !important;
+}
+
+.v-menu__content::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.05) !important;
+  border-radius: 3px !important;
+}
+
+.v-menu__content::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.2) !important;
+  border-radius: 3px !important;
+}
+
+.v-menu__content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,0,0,0.3) !important;
+}
+
+/* Enhanced disabled states */
+.v-input--disabled .v-input__control {
+  opacity: 0.6 !important;
+  background: #f5f5f5 !important;
+}
+
+.v-input--disabled fieldset {
+  border-color: rgba(0,0,0,0.12) !important;
+}
+
+/* Better error states */
+.v-input--error fieldset {
+  border-color: #f44336 !important;
+  border-width: 2px !important;
+}
+
+.v-input--error .v-label {
+  color: #f44336 !important;
+}
+
+/* Enhanced loading states */
+.v-progress-linear {
+  height: 2px !important;
+  border-radius: 1px !important;
+}
+
+/* Enhanced select component styling */
+.enhanced-select {
+  border-radius: 8px !important;
+}
+
+.enhanced-select .v-input__control {
+  border-radius: 8px !important;
+}
+
+.enhanced-select .v-input__slot {
+  border-radius: 8px !important;
+}
+
+.enhanced-select fieldset {
+  border-radius: 8px !important;
+}
+
+/* Better mobile responsiveness */
+@media (max-width: 600px) {
+  .v-menu__content {
+    max-width: calc(100vw - 32px) !important;
+    margin: 0 16px !important;
+  }
+  
+  .v-list-item {
+    min-height: 44px !important;
+    padding: 0 12px !important;
+  }
 }

@@ -62,9 +62,8 @@
                   dense
                   clearable
                   @change="applyFilters"
-                  style="border-radius: 8px;"
                   color="primary"
-                  :menu-props="{ offsetY: true, maxHeight: 300 }"
+                  class="enhanced-select"
                 ></v-select>
               </v-col>
               
@@ -85,9 +84,8 @@
                   clearable
                   :disabled="!filters.state_id"
                   @change="applyFilters"
-                  style="border-radius: 8px;"
                   color="primary"
-                  :menu-props="{ offsetY: true, maxHeight: 300 }"
+                  class="enhanced-select"
                 ></v-select>
               </v-col>
             </v-row>

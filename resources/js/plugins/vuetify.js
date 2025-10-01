@@ -53,6 +53,35 @@ const vuetify = createVuetify({
     VBtn: {
       elevation: 2,
     },
+    VSelect: {
+      variant: 'outlined',
+      density: 'comfortable',
+      hideDetails: 'auto',
+      menuProps: {
+        offsetY: true,
+        maxHeight: 300,
+        transition: 'scale-transition',
+        contentClass: 'custom-dropdown-menu'
+      }
+    },
+    VAutocomplete: {
+      variant: 'outlined',
+      density: 'comfortable',
+      hideDetails: 'auto',
+      menuProps: {
+        offsetY: true,
+        maxHeight: 300,
+        transition: 'scale-transition',
+        contentClass: 'custom-dropdown-menu'
+      }
+    },
+    VMenu: {
+      transition: 'scale-transition',
+      contentClass: 'custom-dropdown-menu'
+    },
+    VList: {
+      density: 'comfortable'
+    }
   },
 })
 

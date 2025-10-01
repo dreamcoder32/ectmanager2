@@ -15,19 +15,15 @@
     </template>
     
     <v-list 
-      style="border-radius: 12px; 
-             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-             border: 1px solid rgba(0,0,0,0.05);
-             min-width: 160px;"
+      class="custom-dropdown-menu"
+      style="min-width: 180px;"
     >
       <v-list-item
         v-for="language in languages"
         :key="language.code"
         @click="changeLanguage(language.code)"
         :class="{ 'v-list-item--active': currentLocale === language.code }"
-        style="border-radius: 8px; 
-               margin: 4px;
-               transition: all 0.2s ease;"
+        class="language-item"
       >
         <template v-slot:prepend>
           <v-icon :color="currentLocale === language.code ? 'primary' : 'grey'" size="20">
@@ -127,20 +123,29 @@ export default {
 
 <style scoped>
 .language-switcher-btn:hover {
-  background: rgba(102, 126, 234, 0.15) !important;
+  background: rgba(25, 118, 210, 0.15) !important;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
 }
 
-.v-list-item:hover {
-  background: rgba(102, 126, 234, 0.05) !important;
+.language-item {
+  border-radius: 8px !important;
+  margin: 2px 8px !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-.v-list-item--active {
-  background: rgba(102, 126, 234, 0.1) !important;
+.language-item:hover {
+  background: rgba(25, 118, 210, 0.08) !important;
+  transform: translateX(2px) !important;
 }
 
-.v-list-item--active:hover {
-  background: rgba(102, 126, 234, 0.15) !important;
+.language-item--active {
+  background: rgba(25, 118, 210, 0.12) !important;
+  color: #1976d2 !important;
+  font-weight: 500 !important;
+}
+
+.language-item--active:hover {
+  background: rgba(25, 118, 210, 0.16) !important;
 }
 </style>
