@@ -70,6 +70,21 @@
                         <v-list-item-subtitle>{{ formatDate(recolte.created_at) }}</v-list-item-subtitle>
                       </v-list-item-content>
                     </v-list-item>
+                    <v-list-item v-if="recolte.created_by">
+                      <v-list-item-content>
+                        <v-list-item-title>Created By</v-list-item-title>
+                        <v-list-item-subtitle>
+                          <div>{{ recolte.created_by.name || 'Unknown User' }}</div>
+                          <div class="text-caption text--secondary">UUID: {{ recolte.created_by.uuid || 'N/A' }}</div>
+                        </v-list-item-subtitle>
+                      </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item v-else>
+                      <v-list-item-content>
+                        <v-list-item-title>Created By</v-list-item-title>
+                        <v-list-item-subtitle>System</v-list-item-subtitle>
+                      </v-list-item-content>
+                    </v-list-item>
                     <v-list-item>
                       <v-list-item-content>
                         <v-list-item-title>Total Collections</v-list-item-title>
@@ -80,6 +95,12 @@
                       <v-list-item-content>
                         <v-list-item-title>Total Amount</v-list-item-title>
                         <v-list-item-subtitle>{{ totalAmount }} Da</v-list-item-subtitle>
+                      </v-list-item-content>
+                    </v-list-item>
+                    <v-list-item>
+                      <v-list-item-content>
+                        <v-list-item-title>Total COD Amount</v-list-item-title>
+                        <v-list-item-subtitle>{{ formatCurrency(totalCodAmount) }} Da</v-list-item-subtitle>
                       </v-list-item-content>
                     </v-list-item>
                   </v-list>
@@ -111,6 +132,9 @@
                           </v-list-item-subtitle>
                           <v-list-item-subtitle>
                             Amount: {{ collection.amount || '0.00' }} Da
+                          </v-list-item-subtitle>
+                          <v-list-item-subtitle>
+                            COD Amount: {{ formatCurrency(collection.parcel?.cod_amount || 0) }} Da
                           </v-list-item-subtitle>
                           <v-list-item-subtitle>
                             Collected: {{ formatDate(collection.collected_at) }}
@@ -159,6 +183,10 @@ export default {
       type: Object,
       required: true
     },
+    totalCodAmount: {
+      type: Number,
+      default: 0
+    },
     errors: {
       type: Object,
       default: () => ({})
@@ -185,6 +213,9 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    },
+    formatCurrency(amount) {
+      return parseFloat(amount || 0).toFixed(2)
     },
     logout() {
       this.$inertia.post('/logout')

@@ -12,6 +12,7 @@ class Recolte extends Model
     protected $fillable = [
         'code',
         'note',
+        'created_by',
     ];
 
     protected static function boot()
@@ -41,5 +42,13 @@ class Recolte extends Model
     public function collections()
     {
         return $this->belongsToMany(Collection::class, 'recolte_collections');
+    }
+
+    /**
+     * Get the user who created this recolte
+     */
+    public function createdBy()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

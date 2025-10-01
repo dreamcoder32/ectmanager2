@@ -57,7 +57,7 @@
                      small
                      style="font-weight: 600;"
                    >
-                     {{ item.code }}
+                     #RCT-{{ item.code }}
                    </v-chip>
                  </template>
 
@@ -76,6 +76,25 @@
                    >
                      {{ item.collections.length || 0 }} Collections
                    </v-chip>
+                 </template>
+
+                 <!-- COD Amount Column -->
+                 <template v-slot:[`item.total_cod_amount`]="{ item }">
+                   <v-chip
+                     color="orange"
+                     text-color="white"
+                     small
+                   >
+                     {{ formatCurrency(item.total_cod_amount || 0) }} Da
+                   </v-chip>
+                 </template>
+
+                 <!-- Created By Column -->
+                 <template v-slot:[`item.created_by`]="{ item }">
+                   <div v-if="item.created_by">
+                     <div class="text-body-2 font-weight-medium">{{ item.created_by.uid || 'Unknown User' }}</div>
+                   </div>
+                   <span v-else class="text-body-2 text--secondary">System</span>
                  </template>
 
                  <!-- Created At Column -->
@@ -207,6 +226,18 @@ export default {
           width: '150px'
         },
         {
+          title: 'COD Amount',
+          key: 'total_cod_amount',
+          sortable: true,
+          width: '150px'
+        },
+        {
+          title: 'Created By',
+          key: 'created_by',
+          sortable: false,
+          width: '200px'
+        },
+        {
           title: 'Created At',
           key: 'created_at',
           sortable: true,
@@ -239,6 +270,9 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    },
+    formatCurrency(amount) {
+      return parseFloat(amount || 0).toFixed(2)
     },
     viewRecolte(id) {
       this.$inertia.visit(`/recoltes/${id}`)

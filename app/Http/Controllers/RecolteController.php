@@ -28,9 +28,17 @@ class RecolteController extends BaseController
      */
     public function index()
     {
-        $recoltes = Recolte::with(['collections.parcel'])
+        $recoltes = Recolte::with(['collections.parcel', 'createdBy'])
             ->orderBy('created_at', 'desc')
             ->paginate(20);
+
+        // Calculate cod_amount sum for each recolte
+        $recoltes->getCollection()->transform(function ($recolte) {
+            $recolte->total_cod_amount = $recolte->collections->sum(function ($collection) {
+                return $collection->parcel ? $collection->parcel->cod_amount : 0;
+            });
+            return $recolte;
+        });
 
         return Inertia::render('Recolte/Index', [
             'recoltes' => $recoltes
@@ -89,7 +97,8 @@ class RecolteController extends BaseController
         try {
             // Create the recolte
             $recolte = Recolte::create([
-                'note' => $request->note
+                'note' => $request->note,
+                'created_by' => Auth::id()
             ]);
 
             // Attach the selected collections and update their case_id if provided
@@ -134,15 +143,19 @@ class RecolteController extends BaseController
      */
     public function show(Recolte $recolte)
     {
-        $recolte->load(['collections.parcel']);
+        $recolte->load(['collections.parcel', 'createdBy']);
         
         $totalAmount = $recolte->collections->sum('amount');
         $totalCollections = $recolte->collections->count();
+        $totalCodAmount = $recolte->collections->sum(function ($collection) {
+            return $collection->parcel ? $collection->parcel->cod_amount : 0;
+        });
 
         return Inertia::render('Recolte/Show', [
             'recolte' => $recolte,
             'totalAmount' => $totalAmount,
-            'totalCollections' => $totalCollections
+            'totalCollections' => $totalCollections,
+            'totalCodAmount' => $totalCodAmount
         ]);
     }
 
