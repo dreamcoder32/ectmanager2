@@ -75,7 +75,7 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['auth'])->group(function () {
     Route::post('money-cases/activate', [MoneyCaseController::class, 'activateForUser'])->name('money-cases.activate');
     Route::post('parcels/confirm-payment', [ParcelController::class, 'confirmPayment']);
-    Route::post('parcels/create-manual-and-collect', [ParcelController::class, 'createManualAndCollect']);
+    Route::post('parcels/create-manual-and-collect', [ParcelController::class, 'createManualParcelAndCollect']);
 
     Route::get('/stopdesk-payment', [ParcelController::class, 'stopDeskPayment'])->name('stopdesk-payment.index');
     Route::post('/stopdesk-payment/search', [ParcelController::class, 'searchForStopDesk'])->name('stopdesk-payment.search');

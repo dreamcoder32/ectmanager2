@@ -288,7 +288,8 @@
                             <v-btn
                               color="success"
                               @click="confirmPayment(parcel, index)"
-                              :disabled="!parcel.amountGiven || parcel.amountGiven < parcel.cod_amount"
+                              :disabled="!parcel.amountGiven || parcel.amountGiven < parcel.cod_amount || processingPayment"
+                              :loading="processingPayment"
                               size="small"
                             >
                               <v-icon left size="small">mdi-check</v-icon>
@@ -341,7 +342,7 @@
                       </v-list-item-title>
                       <v-list-item-subtitle class="text-caption ">
                         <span class="font-weight-bold ">
-                          {{ parseInt(collection.cod_amount) }} {{ $t('common.currency') }}
+                          {{ parseInt(collection.amount_collected || collection.cod_amount) }} {{ $t('common.currency') }}
                         </span>
                         - {{ formatTimeAgo(collection.collected_at) }}
                       </v-list-item-subtitle>
@@ -486,6 +487,7 @@ export default {
       selectedCaseId: null, // Global case selection
       isShaking: false, // For shake animation
       localRecentCollections: this.recentCollections,
+      processingPayment: false, // Loading state for payment processing
       manualParcel: {
         tracking_number: '',
         recipient_name: '',
@@ -515,13 +517,15 @@ export default {
     async searchParcel() {
       if (!this.barcodeInput.trim()) return;
       this.searching = true;
+      
       try {
         const response = await axios.post('/parcels/search-by-tracking', {
           tracking_number: this.barcodeInput,
         });
         this.handleSearchResponse(response.data.searchResult);
       } catch (error) {
-        this.handleSearchError(error.response?.data?.errors || 'An unexpected error occurred.');
+        console.error('Search error:', error);
+        this.handleSearchError(error.response?.data?.errors || error.response?.data?.message || 'An unexpected error occurred.');
       } finally {
         this.resetSearchState();
         this.searching = false;
@@ -582,16 +586,37 @@ export default {
         // Validation error
         console.log('Validation error')
         this.showManualEntry = false
+        this.showError('Invalid tracking number format')
       } else if (typeof errors === 'string') {
         // Generic error message
         console.log('Generic error')
         this.showManualEntry = false
+        this.showError(errors)
       } else {
         // Network or server error - allow manual entry as fallback
         console.log('Network/server error - allowing manual entry')
         this.showManualEntry = true
         this.manualParcel.tracking_number = this.barcodeInput
+        this.showWarning('Parcel not found in system. You can add it manually.')
       }
+    },
+
+    showError(message) {
+      // You can implement a toast notification system here
+      console.error('Error:', message)
+      // For now, we'll use console.error, but you should implement proper user feedback
+    },
+
+    showWarning(message) {
+      // You can implement a toast notification system here
+      console.warn('Warning:', message)
+      // For now, we'll use console.warn, but you should implement proper user feedback
+    },
+
+    showSuccess(message) {
+      // You can implement a toast notification system here
+      console.log('Success:', message)
+      // For now, we'll use console.log, but you should implement proper user feedback
     },
 
     resetSearchState() {
@@ -616,16 +641,21 @@ export default {
     
     async confirmPayment(parcel, index) {
       if (!parcel.amountGiven || parcel.amountGiven < parcel.cod_amount) {
+        this.showError('Amount given must be greater than or equal to COD amount');
         return;
       }
       if (!this.canCollectWithoutCase && !this.selectedCaseId) {
         this.triggerShakeAnimation();
+        this.showError('Please select a money case before confirming payment');
         return;
       }
       if (parcel.isManual) {
         this.confirmManualParcelPayment(parcel, index);
         return;
       }
+      
+      this.processingPayment = true;
+      
       try {
         const response = await axios.post('/parcels/confirm-payment', {
           parcel_id: parcel.id,
@@ -633,22 +663,36 @@ export default {
           case_id: this.selectedCaseId,
           parcel_type: parcel.parcel_type || 'stopdesk',
         });
+        
         if (response.data.success) {
           this.activeParcels.splice(index, 1);
           if (response.data.recentCollections) {
             this.localRecentCollections = response.data.recentCollections;
           }
+          this.showSuccess(`Payment confirmed for ${parcel.tracking_number}`);
+        } else {
+          this.showError(response.data.message || 'Payment confirmation failed');
         }
       } catch (error) {
-        console.error('Payment confirmation error:', error.response?.data?.errors || error);
+        console.error('Payment confirmation error:', error);
+        const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.errors?.parcel_id?.[0] ||
+                           'Payment confirmation failed';
+        this.showError(errorMessage);
+      } finally {
+        this.processingPayment = false;
       }
     },
     
     async confirmManualParcelPayment(parcel, index) {
       if (!this.canCollectWithoutCase && !this.selectedCaseId) {
         this.triggerShakeAnimation();
+        this.showError('Please select a money case before confirming payment');
         return;
       }
+      
+      this.processingPayment = true;
+      
       try {
         const response = await axios.post('/parcels/create-manual-and-collect', {
           tracking_number: parcel.tracking_number,
@@ -663,6 +707,7 @@ export default {
           case_id: this.selectedCaseId,
           parcel_type: parcel.parcel_type || 'stopdesk',
         });
+        
         if (response.data.success) {
           this.activeParcels.splice(index, 1);
           if (response.data.collection) {
@@ -671,9 +716,18 @@ export default {
               this.localRecentCollections = this.localRecentCollections.slice(0, 20);
             }
           }
+          this.showSuccess(`Manual parcel created and payment confirmed for ${parcel.tracking_number}`);
+        } else {
+          this.showError(response.data.message || 'Manual parcel creation failed');
         }
       } catch (error) {
-        console.error('Manual parcel creation error:', error.response?.data?.errors || error);
+        console.error('Manual parcel creation error:', error);
+        const errorMessage = error.response?.data?.message || 
+                           error.response?.data?.errors?.tracking_number?.[0] ||
+                           'Manual parcel creation failed';
+        this.showError(errorMessage);
+      } finally {
+        this.processingPayment = false;
       }
     },
     
@@ -778,13 +832,13 @@ export default {
         onSuccess: (page) => {
           console.log('Case activation success:', page.props.flash)
           if (page.props.flash?.success) {
-            console.log('Money case activated successfully:', page.props.flash.message)
+            this.showSuccess('Money case activated successfully');
           }
         },
         onError: (errors) => {
           console.error('Case activation error:', errors)
           if (errors.case_activation) {
-            console.error('Case activation failed:', errors.case_activation)
+            this.showError('Failed to activate money case');
           }
           this.selectedCaseId = null
         }
@@ -792,19 +846,28 @@ export default {
     },
     
     addManualParcel() {
-      if (!this.isManualParcelValid) return
+      if (!this.isManualParcelValid) {
+        this.showError('Please fill in all required fields');
+        return;
+      }
+      
+      // Validate COD amount
+      if (this.manualParcel.cod_amount <= 0) {
+        this.showError('COD amount must be greater than 0');
+        return;
+      }
       
       // Create a temporary parcel object for the queue
       const manualParcel = {
         id: 'manual_' + Date.now(), // Temporary ID
-        tracking_number: this.manualParcel.tracking_number,
-        recipient_name: this.manualParcel.recipient_name,
-        recipient_phone: this.manualParcel.recipient_phone,
-        recipient_address: this.manualParcel.recipient_address,
+        tracking_number: this.manualParcel.tracking_number.trim(),
+        recipient_name: this.manualParcel.recipient_name.trim(),
+        recipient_phone: this.manualParcel.recipient_phone.trim(),
+        recipient_address: this.manualParcel.recipient_address.trim(),
         cod_amount: parseFloat(this.manualParcel.cod_amount),
-        company: this.manualParcel.company || null,
-        state: this.manualParcel.state || null,
-        city: this.manualParcel.city || null,
+        company: this.manualParcel.company?.trim() || null,
+        state: this.manualParcel.state?.trim() || null,
+        city: this.manualParcel.city?.trim() || null,
         amountGiven: null,
         changeAmount: 0,
         parcel_type: 'stopdesk', // Default to stopdesk for manual parcels
@@ -815,6 +878,7 @@ export default {
       this.showManualEntry = false
       this.resetManualParcel()
       this.barcodeInput = ''
+      this.showSuccess('Manual parcel added to queue');
       
       // Refocus on barcode input
       this.$nextTick(() => {
@@ -841,7 +905,7 @@ export default {
     
     totalRecentCollections() {
       return this.localRecentCollections.reduce((total, collection) => {
-        return total + (parseFloat(collection.cod_amount) || 0)
+        return total + (parseFloat(collection.amount_collected || collection.cod_amount) || 0)
       }, 0)
     }
   }
