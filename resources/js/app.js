@@ -11,52 +11,6 @@ import { Toast, options } from './plugins/toast';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-// Configure Inertia.js to include CSRF token in all requests
-router.defaults = router.defaults || {};
-router.defaults.headers = {
-  'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-  'X-Requested-With': 'XMLHttpRequest',
-};
-
-// Function to get CSRF token from meta tag
-function getCSRFToken() {
-  const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-  return token
-}
-
-// Function to refresh CSRF token
-function refreshCSRFToken() {
-  const token = getCSRFToken()
-  if (token) {
-    // Update Inertia router default headers
-    if (router.defaults && router.defaults.headers) {
-      router.defaults.headers['X-CSRF-TOKEN'] = token
-    }
-    // Update Axios default headers if available
-    if (window.axios) {
-      window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token
-    }
-    // Update any existing CSRF token inputs in forms
-    document.querySelectorAll('input[name="_token"]').forEach(input => {
-      input.value = token
-    })
-  }
-}
-
-// Add Inertia router event listeners for CSRF handling
-router.on('before', (event) => {
-  // Refresh CSRF token before each request
-  refreshCSRFToken()
-})
-
-router.on('error', (errors) => {
-  // Handle 419 CSRF token mismatch errors
-  if (errors && (errors[419] || errors['419'] || (typeof errors === 'object' && Object.keys(errors).some(key => key.includes('419'))))) {
-    console.warn('CSRF token expired, refreshing page...')
-    // Reload the page to get a fresh CSRF token
-    window.location.reload()
-  }
-})
 
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -66,8 +20,75 @@ createInertiaApp({
             import.meta.glob('./Pages/**/*.vue'),
         ),
     setup({ el, App, props, plugin }) {
-        return createApp({ render: () => h(App, props) })
-            .use(plugin)
+        const app = createApp({ render: () => h(App, props) });
+
+        // Set up CSRF token for axios requests
+        const token = props.initialPage.props.csrf_token;
+        if (token) {
+            window.axios.defaults.headers.common['X-CSRF-TOKEN'] = token;
+        } else {
+            console.error('CSRF token not found. Make sure it is shared from HandleInertiaRequests middleware.');
+        }
+
+        // Function to update CSRF token
+        const updateCsrfToken = (newToken) => {
+            if (newToken) {
+                window.axios.defaults.headers.common['X-CSRF-TOKEN'] = newToken;
+            }
+        };
+
+        // Listen for Inertia page visits to update CSRF token
+        router.on('navigate', (event) => {
+            if (event.detail.page.props.csrf_token) {
+                updateCsrfToken(event.detail.page.props.csrf_token);
+            }
+        });
+
+        // Add request interceptor to ensure CSRF token is always included
+        window.axios.interceptors.request.use(
+            (config) => {
+                // Ensure CSRF token is included for all non-GET requests
+                if (config.method !== 'get' && !config.headers['X-CSRF-TOKEN']) {
+                    const token = document.head.querySelector('meta[name="csrf-token"]');
+                    if (token) {
+                        config.headers['X-CSRF-TOKEN'] = token.content;
+                    }
+                }
+                return config;
+            },
+            (error) => Promise.reject(error)
+        );
+
+        // Add response interceptor to handle CSRF token refresh
+        window.axios.interceptors.response.use(
+            (response) => response,
+            async (error) => {
+                if (error.response && error.response.status === 419) {
+                    try {
+                        // Try to get a fresh CSRF token
+                        const response = await window.axios.get('/csrf-token');
+                        if (response.data && response.data.csrf_token) {
+                            updateCsrfToken(response.data.csrf_token);
+                            // Retry the original request
+                            return window.axios.request(error.config);
+                        }
+                    } catch (refreshError) {
+                        console.error('Failed to refresh CSRF token:', refreshError);
+                        // If we can't get a new token, the session might be expired
+                        if (refreshError.response && refreshError.response.status === 401) {
+                            // Redirect to login if unauthorized
+                            window.location.href = '/login';
+                            return;
+                        }
+                    }
+                    // If all else fails, reload the page
+                    window.location.reload();
+                }
+                return Promise.reject(error);
+            }
+        );
+
+        app.use(plugin)
             .use(ZiggyVue)
             .use(vuetify)
             .use(i18n)

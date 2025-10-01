@@ -313,17 +313,17 @@
             >
               <v-card-title class="pa-4 bg-success text-white">
                 <v-icon left>mdi-check-circle</v-icon>
-                {{ $t('stopdesk_payment.recent_collections') }} <b> ({{recentCollections.length}}) </b>
+                {{ $t('stopdesk_payment.recent_collections') }} <b> ({{localRecentCollections.length}}) </b>
               </v-card-title>
               <v-card-text class="pa-0" style="max-height: 600px; overflow-y: auto;">
-                <div v-if="recentCollections.length === 0" class="text-center pa-4">
+                <div v-if="localRecentCollections.length === 0" class="text-center pa-4">
                   <v-icon size="48" color="grey-lighten-1">mdi-history</v-icon>
                   <p class="text-body-2 text-grey mt-2">{{ $t('stopdesk_payment.no_recent_collections') }}</p>
                 </div>
                 
                 <v-list v-else density="compact">
                   <v-list-item
-                    v-for="(collection, index) in recentCollections"
+                    v-for="(collection, index) in localRecentCollections"
                     :key="`collection-${collection.id}-${index}`"
                     class="pa-3 border-b"
                   >
@@ -485,6 +485,7 @@ export default {
       showManualEntry: false,
       selectedCaseId: null, // Global case selection
       isShaking: false, // For shake animation
+      localRecentCollections: this.recentCollections,
       manualParcel: {
         tracking_number: '',
         recipient_name: '',
@@ -512,48 +513,18 @@ export default {
   },
   methods: {
     async searchParcel() {
-      if (!this.barcodeInput.trim()) return
-      
-      this.searching = true
-      
+      if (!this.barcodeInput.trim()) return;
+      this.searching = true;
       try {
-        router.post('/parcels/search-by-tracking', {
-          tracking_number: this.barcodeInput
-        }, {
-          preserveState: true,
-          preserveScroll: true,
-          onSuccess: (page) => {
-            console.log('=== SEARCH SUCCESS DEBUG ===')
-            console.log('Page props flash:', page.props.flash)
-            
-            // With back()->with(), the data will be in flash
-            const searchData = page.props.searchResult
-            
-            if (searchData) {
-              console.log('Search data found:', searchData)
-              this.handleSearchResponse(searchData)
-            } else {
-              console.warn('No searchResult in flash data')
-              console.log('Available flash keys:', Object.keys(page.props.flash || {}))
-              this.handleSearchError('No response data received')
-            }
-            
-            this.resetSearchState()
-          },
-          onError: (errors) => {
-            console.error('=== SEARCH ERROR DEBUG ===')
-            console.error('Validation errors:', errors)
-            this.handleSearchError(errors)
-            this.resetSearchState()
-          },
-          onFinish: () => {
-            this.searching = false
-          }
-        })
+        const response = await axios.post('/parcels/search-by-tracking', {
+          tracking_number: this.barcodeInput,
+        });
+        this.handleSearchResponse(response.data.searchResult);
       } catch (error) {
-        console.error('Search exception:', error)
-        this.handleSearchError(error)
-        this.resetSearchState()
+        this.handleSearchError(error.response?.data?.errors || 'An unexpected error occurred.');
+      } finally {
+        this.resetSearchState();
+        this.searching = false;
       }
     },
 
@@ -643,92 +614,67 @@ export default {
       }
     },
     
-    confirmPayment(parcel, index) {
+    async confirmPayment(parcel, index) {
       if (!parcel.amountGiven || parcel.amountGiven < parcel.cod_amount) {
-        return
+        return;
       }
-
-      // Check if user needs to select a case and hasn't selected one
       if (!this.canCollectWithoutCase && !this.selectedCaseId) {
-        this.triggerShakeAnimation()
-        return
+        this.triggerShakeAnimation();
+        return;
       }
-
-      // Handle manual parcels differently
       if (parcel.isManual) {
-        this.confirmManualParcelPayment(parcel, index)
-        return
+        this.confirmManualParcelPayment(parcel, index);
+        return;
       }
-
-      router.post('/parcels/confirm-payment', {
-        parcel_id: parcel.id,
-        amount_given: parcel.amountGiven,
-        case_id: this.selectedCaseId,
-        parcel_type: parcel.parcel_type || 'stopdesk'
-      }, {
-        preserveState: true,
-        preserveScroll: true,
-        onSuccess: (page) => {
-          console.log('Payment confirmed successfully');
-          
-          // Remove parcel from active parcels (pending payments)
+      try {
+        const response = await axios.post('/parcels/confirm-payment', {
+          parcel_id: parcel.id,
+          amount_given: parcel.amountGiven,
+          case_id: this.selectedCaseId,
+          parcel_type: parcel.parcel_type || 'stopdesk',
+        });
+        if (response.data.success) {
           this.activeParcels.splice(index, 1);
-          
-          // Update recent collections if provided in response
-          if (page.props.recentCollections && page.props.recentCollections.recentCollections) {
-            this.recentCollections = page.props.recentCollections.recentCollections;
+          if (response.data.recentCollections) {
+            this.localRecentCollections = response.data.recentCollections;
           }
-        },
-        onError: (errors) => {
-          console.error('Payment confirmation error:', errors)
         }
-      })
+      } catch (error) {
+        console.error('Payment confirmation error:', error.response?.data?.errors || error);
+      }
     },
     
-    confirmManualParcelPayment(parcel, index) {
-      // Check if user needs to select a case and hasn't selected one
+    async confirmManualParcelPayment(parcel, index) {
       if (!this.canCollectWithoutCase && !this.selectedCaseId) {
-        this.triggerShakeAnimation()
-        return
+        this.triggerShakeAnimation();
+        return;
       }
-
-      router.post('/parcels/create-manual-and-collect', {
-        tracking_number: parcel.tracking_number,
-        recipient_name: parcel.recipient_name,
-        recipient_phone: parcel.recipient_phone,
-        recipient_address: parcel.recipient_address,
-        cod_amount: parcel.cod_amount,
-        amount_given: parcel.amountGiven,
-        company: parcel.company,
-        state: parcel.state,
-        city: parcel.city,
-        case_id: this.selectedCaseId,
-        parcel_type: parcel.parcel_type || 'stopdesk'
-      }, {
-        preserveState: true,
-        preserveScroll: true,
-        onSuccess: (page) => {
-          console.log('successsss')
-          const result = page.props.paymentResult || page.props.paymentResult
-          if (result && result.success) {
-            // Remove parcel from active list
-            this.activeParcels.splice(index, 1)
-            
-            // Add to recent collections at the top
-            if (result.collection) {
-              this.recentCollections.unshift(result.collection)
-              
-              // Keep only last 20 collections
-              if (this.recentCollections.length > 20) {
-                this.recentCollections = this.recentCollections.slice(0, 20)
-              }
+      try {
+        const response = await axios.post('/parcels/create-manual-and-collect', {
+          tracking_number: parcel.tracking_number,
+          recipient_name: parcel.recipient_name,
+          recipient_phone: parcel.recipient_phone,
+          recipient_address: parcel.recipient_address,
+          cod_amount: parcel.cod_amount,
+          amount_given: parcel.amountGiven,
+          company: parcel.company,
+          state: parcel.state,
+          city: parcel.city,
+          case_id: this.selectedCaseId,
+          parcel_type: parcel.parcel_type || 'stopdesk',
+        });
+        if (response.data.success) {
+          this.activeParcels.splice(index, 1);
+          if (response.data.collection) {
+            this.localRecentCollections.unshift(response.data.collection);
+            if (this.localRecentCollections.length > 20) {
+              this.localRecentCollections = this.localRecentCollections.slice(0, 20);
             }
           }
-        },
-        onError: (errors) => {
-          console.error('Manual parcel creation error:', errors)
         }
-      })
+      } catch (error) {
+        console.error('Manual parcel creation error:', error.response?.data?.errors || error);
+      }
     },
     
     removeParcel(index) {
@@ -894,7 +840,7 @@ export default {
     },
     
     totalRecentCollections() {
-      return this.recentCollections.reduce((total, collection) => {
+      return this.localRecentCollections.reduce((total, collection) => {
         return total + (parseFloat(collection.cod_amount) || 0)
       }, 0)
     }

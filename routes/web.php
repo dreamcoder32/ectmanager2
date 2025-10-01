@@ -7,6 +7,15 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+// Import additional controllers
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\RecolteController;
+use App\Http\Controllers\SalaryPaymentController;
+use App\Http\Controllers\CommissionPaymentController;
+use App\Http\Controllers\MoneyCaseController;
+use App\Http\Controllers\FinancialDashboardController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -31,6 +40,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/user', [AuthController::class, 'user'])->name('user');
+    Route::get('/csrf-token', function () {
+        return response()->json(['csrf_token' => csrf_token()]);
+    })->name('csrf-token');
 });
 
 Route::middleware('auth')->group(function () {
@@ -39,15 +51,7 @@ Route::middleware('auth')->group(function () {
     // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-// Import additional controllers
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\ExpenseController;
-use App\Http\Controllers\ExpenseCategoryController;
-use App\Http\Controllers\RecolteController;
-use App\Http\Controllers\SalaryPaymentController;
-use App\Http\Controllers\CommissionPaymentController;
-use App\Http\Controllers\MoneyCaseController;
-use App\Http\Controllers\FinancialDashboardController;
+
 
 // Parcel routes
 Route::middleware(['auth'])->group(function () {
@@ -64,13 +68,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/parcels/import', [ParcelController::class, 'import'])->name('parcels.import');
     
     // Search by tracking number
-    Route::post('/parcels/search-by-tracking', [ParcelController::class, 'searchByTracking'])->name('parcels.search-by-tracking');
+    Route::post('/parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber'])->name('parcels.search-by-tracking');
 });
 
 // Stopdesk Payment routes
 Route::middleware(['auth'])->group(function () {
-
-        Route::post('parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber']);
     Route::post('money-cases/activate', [MoneyCaseController::class, 'activateForUser'])->name('money-cases.activate');
     Route::post('parcels/confirm-payment', [ParcelController::class, 'confirmPayment']);
 
@@ -168,4 +170,4 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/financial-dashboard/reports', [FinancialDashboardController::class, 'reports'])->name('financial-dashboard.reports');
 });
 
-// require __DIR__.'/auth.php';
+require __DIR__.'/auth.php';

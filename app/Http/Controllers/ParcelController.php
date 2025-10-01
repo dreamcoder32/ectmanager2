@@ -406,16 +406,7 @@ class ParcelController extends Controller
             ->orderBy('last_activated_at', 'desc')
             ->first();
 
-        // Get flash data if available
-        $flashData = [];
-        if (session()->has('searchResult')) {
-            $flashData['searchResult'] = session('searchResult');
-        }
-        if (session()->has('paymentResult')) {
-            $flashData['paymentResult'] = session('paymentResult');
-        }
-
-        return Inertia::render('StopDeskPayment/Index', array_merge([
+        return Inertia::render('StopDeskPayment/Index', [
             'recentCollections' => $recentCollections,
             'activeCases' => $activeCases,
             'userLastActiveCaseId' => $userLastActiveCase ? $userLastActiveCase->id : null,
@@ -425,7 +416,7 @@ class ParcelController extends Controller
                     'can_collect_stopdesk' => auth()->user()->can_collect_stopdesk ?? false
                 ]
             ]
-        ], $flashData));
+        ]);
     }
     /**
      * Search for a parcel by tracking number for stopdesk payment
@@ -465,22 +456,23 @@ class ParcelController extends Controller
         }
 
         // Parcel exists and not delivered - can be processed
- // CORRECT - this creates flash.searchResult directly
-return back()->with('searchResult', [
-    'success' => true,
-    'parcel' => [
-        'id' => $parcel->id,
-        'tracking_number' => $parcel->tracking_number,
-        'recipient_name' => $parcel->recipient_name,
-        'recipient_phone' => $parcel->recipient_phone,
-        'recipient_address' => $parcel->recipient_address,
-        'cod_amount' => $parcel->cod_amount,
-        'status' => $parcel->status,
-        'company' => $parcel->company ? $parcel->company->name : null,
-        'state' => $parcel->state ? $parcel->state->name : null,
-        'city' => $parcel->city ? $parcel->city->name : null,
-    ]
-]);
+        return response()->json([
+            'searchResult' => [
+                'success' => true,
+                'parcel' => [
+                    'id' => $parcel->id,
+                    'tracking_number' => $parcel->tracking_number,
+                    'recipient_name' => $parcel->recipient_name,
+                    'recipient_phone' => $parcel->recipient_phone,
+                    'recipient_address' => $parcel->recipient_address,
+                    'cod_amount' => $parcel->cod_amount,
+                    'status' => $parcel->status,
+                    'company' => $parcel->company ? $parcel->company->name : null,
+                    'state' => $parcel->state ? $parcel->state->name : null,
+                    'city' => $parcel->city ? $parcel->city->name : null,
+                ]
+            ]
+        ]);
     }
 
     /**
@@ -589,11 +581,12 @@ return back()->with('searchResult', [
                     ];
                 });
 
-return back()->with('recentCollections', ['success' => true,
-                    'message' => 'Payment confirmed successfully',
-                    'parcel_id' => $parcel->id,
-                    'change_amount' => $changeAmount,
-                                    'recentCollections' => $recentCollections
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment confirmed successfully',
+                'parcel_id' => $parcel->id,
+                'change_amount' => $changeAmount,
+                'recentCollections' => $recentCollections
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -725,24 +718,22 @@ return back()->with('recentCollections', ['success' => true,
                     ];
                 });
 
-            return back()->with([
-                'paymentResult' => [
-                    'success' => true,
-                    'message' => 'Manual parcel created and payment confirmed successfully',
-                    'parcel_id' => $parcel->id,
-                    'change_amount' => $changeAmount,
-                    'collection' => [
-                        'id' => $collection->id,
-                        'collected_at' => $collection->collected_at->format('Y-m-d H:i:s'),
-                        'amount' => $collection->amount,
-                        'tracking_number' => $parcel->tracking_number, // Add tracking number directly
-                        'cod_amount' => $parcel->cod_amount, // Add cod_amount directly
-                        'parcel' => [
-                            'id' => $parcel->id,
-                            'tracking_number' => $parcel->tracking_number,
-                            'recipient_name' => $parcel->recipient_name,
-                            'cod_amount' => $parcel->cod_amount,
-                        ]
+            return response()->json([
+                'success' => true,
+                'message' => 'Manual parcel created and payment confirmed successfully',
+                'parcel_id' => $parcel->id,
+                'change_amount' => $changeAmount,
+                'collection' => [
+                    'id' => $collection->id,
+                    'collected_at' => $collection->collected_at->format('Y-m-d H:i:s'),
+                    'amount' => $collection->amount,
+                    'tracking_number' => $parcel->tracking_number,
+                    'cod_amount' => $parcel->cod_amount,
+                    'parcel' => [
+                        'id' => $parcel->id,
+                        'tracking_number' => $parcel->tracking_number,
+                        'recipient_name' => $parcel->recipient_name,
+                        'cod_amount' => $parcel->cod_amount,
                     ]
                 ],
                 'recentCollections' => $recentCollections
