@@ -100,7 +100,7 @@ class DashboardController extends Controller
         
         // Calculate totals
         $totalBalance = $activeCases->sum('calculated_balance');
-        $totalCollections = Collection::sum('amount');
+        $totalCollections = Collection::whereDoesntHave('recoltes')->sum('amount');
         $totalExpenses = Expense::where('status', 'approved')->sum('amount');
         $pendingExpenses = Expense::where('status', 'pending')->sum('amount');
         

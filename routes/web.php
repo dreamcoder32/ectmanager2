@@ -66,6 +66,7 @@ Route::middleware(['auth'])->group(function () {
     // Bulk import
     Route::get('/parcels/import/form', [ParcelController::class, 'importForm'])->name('parcels.import.form');
     Route::post('/parcels/import', [ParcelController::class, 'import'])->name('parcels.import');
+    Route::post('/parcels/import-excel', [ParcelController::class, 'importExcel'])->name('parcels.import-excel');
     
     // Search by tracking number
     Route::post('/parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber'])->name('parcels.search-by-tracking');
