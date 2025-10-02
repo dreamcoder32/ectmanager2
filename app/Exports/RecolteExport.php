@@ -57,7 +57,7 @@ class RecolteExport implements FromCollection, WithHeadings, WithMapping, Should
         $tracking = $collection->parcel->tracking_number ?? 'N/A';
         $amount = (int) round($collection->parcel->cod_amount ?? 0) .' Da';
         $phone = $collection->parcel->recipient_phone ?? 'N/A';
-        $by = $this->recolte->createdBy ? ($this->recolte->createdBy->display_name ?? ($this->recolte->createdBy->name ?? 'N/A')) : 'N/A';
+        $by = $collection->createdBy ? ($collection->createdBy->display_name ?? ($collection->createdBy->name ?? 'N/A')) : 'N/A';
         $date = $collection->collected_at ? $collection->collected_at->format('Y-m-d H:i') : '';
         
         // Determine parcel type (stopdesk or home)
@@ -88,7 +88,7 @@ class RecolteExport implements FromCollection, WithHeadings, WithMapping, Should
     {
         // Header info above the table
         $sheet->setCellValue('A1', 'Recolte Code:');
-        $sheet->setCellValue('B1', 'RCT-'.$this->recolte->code);
+        $sheet->setCellValue('B1', 'RCT-'.$this->recolte->code . ' Crée par : ' . $this->recolte->createdBy->name);
 
         $totalCod = $this->recolte->collections->sum(function ($c) {
             return $c->parcel ? ($c->parcel->cod_amount ?? 0) : 0;
