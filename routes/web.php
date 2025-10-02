@@ -61,7 +61,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/parcels/{parcel}', [ParcelController::class, 'show'])->name('parcels.show');
     Route::get('/parcels/{parcel}/edit', [ParcelController::class, 'edit'])->name('parcels.edit');
     Route::put('/parcels/{parcel}', [ParcelController::class, 'update'])->name('parcels.update');
-    Route::delete('/parcels/{parcel}', [ParcelController::class, 'destroy'])->name('parcels.destroy');
+    // Route::delete('/parcels/{parcel}', [ParcelController::class, 'destroy'])->name('parcels.destroy');
     
     // Bulk import
     Route::get('/parcels/import/form', [ParcelController::class, 'importForm'])->name('parcels.import.form');
