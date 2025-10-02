@@ -36,8 +36,16 @@ class UserController extends Controller
      */
     public function create()
     {
-        // Supervisors can manage all agents - no need for manager assignment
-        return Inertia::render('Users/Create');
+        // Get potential supervisors (users who can manage others)
+        $supervisors = User::where('role', 'supervisor')
+            ->orWhere('role', 'admin')
+            ->select('id', 'display_name', 'first_name', 'last_name')
+            ->orderBy('display_name')
+            ->get();
+
+        return Inertia::render('Users/Create', [
+            'supervisors' => $supervisors
+        ]);
     }
 
     /**
@@ -46,6 +54,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'display_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|in:admin,supervisor,agent',
@@ -57,8 +66,8 @@ class UserController extends Controller
             'started_working_at' => 'nullable|date',
             'payment_day_of_month' => 'nullable|integer|min:1|max:31',
             'monthly_salary' => 'nullable|numeric|min:0',
-            'is_active' => 'boolean',
-            'can_collect_stopdesk' => 'boolean'
+            'manager_id' => 'nullable|exists:users,id',
+            'is_active' => 'boolean'
         ]);
 
         if ($validator->fails()) {
@@ -79,9 +88,8 @@ class UserController extends Controller
             'started_working_at' => $request->started_working_at,
             'payment_day_of_month' => $request->payment_day_of_month ?? 1,
             'monthly_salary' => $request->monthly_salary ?? 0,
-            'manager_id' => null, // No manager assignment - supervisors manage all agents
-            'is_active' => $request->is_active ?? true,
-            'can_collect_stopdesk' => $request->can_collect_stopdesk ?? false
+            'manager_id' => $request->manager_id,
+            'is_active' => $request->is_active ?? true
         ]);
 
         return redirect()->route('users.index')->with('success', 'User created successfully.');
@@ -104,9 +112,17 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        // Supervisors can manage all agents - no need for manager assignment
+        // Get potential supervisors (excluding the user being edited to prevent circular reference)
+        $supervisors = User::where('role', 'supervisor')
+            ->orWhere('role', 'admin')
+            ->where('id', '!=', $user->id)
+            ->select('id', 'display_name', 'first_name', 'last_name')
+            ->orderBy('display_name')
+            ->get();
+
         return Inertia::render('Users/Edit', [
-            'user' => $user
+            'user' => $user,
+            'supervisors' => $supervisors
         ]);
     }
 
@@ -128,8 +144,8 @@ class UserController extends Controller
             'started_working_at' => 'nullable|date',
             'payment_day_of_month' => 'nullable|integer|min:1|max:31',
             'monthly_salary' => 'nullable|numeric|min:0',
-            'is_active' => 'boolean',
-            'can_collect_stopdesk' => 'boolean'
+            'manager_id' => 'nullable|exists:users,id',
+            'is_active' => 'boolean'
         ]);
 
         if ($validator->fails()) {
@@ -148,9 +164,8 @@ class UserController extends Controller
             'started_working_at' => $request->started_working_at,
             'payment_day_of_month' => $request->payment_day_of_month,
             'monthly_salary' => $request->monthly_salary,
-            'manager_id' => null, // No manager assignment - supervisors manage all agents
-            'is_active' => $request->is_active ?? true,
-            'can_collect_stopdesk' => $request->can_collect_stopdesk ?? false
+            'manager_id' => $request->manager_id,
+            'is_active' => $request->is_active ?? true
         ];
 
         // Only update password if provided

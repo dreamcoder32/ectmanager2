@@ -78,7 +78,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('parcels/confirm-payment', [ParcelController::class, 'confirmPayment']);
     Route::post('parcels/create-manual-and-collect', [ParcelController::class, 'createManualParcelAndCollect']);
 
-    Route::get('/stopdesk-payment', [ParcelController::class, 'stopDeskPayment'])->name('stopdesk-payment.index');
+    Route::match(['get', 'post'], '/stopdesk-payment', [ParcelController::class, 'stopDeskPayment'])->name('stopdesk-payment.index');
     Route::post('/stopdesk-payment/search', [ParcelController::class, 'searchForStopDesk'])->name('stopdesk-payment.search');
     Route::post('/stopdesk-payment/collect', [ParcelController::class, 'collectStopDesk'])->name('stopdesk-payment.collect');
 });
@@ -89,6 +89,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/recoltes/create', [RecolteController::class, 'create'])->name('recoltes.create');
     Route::post('/recoltes', [RecolteController::class, 'store'])->name('recoltes.store');
     Route::get('/recoltes/{recolte}', [RecolteController::class, 'show'])->name('recoltes.show');
+    Route::get('/recoltes/{recolte}/export', [RecolteController::class, 'export'])->name('recoltes.export');
     // Route::get('/recoltes/{recolte}/edit', [RecolteController::class, 'edit'])->name('recoltes.edit');
     // Route::put('/recoltes/{recolte}', [RecolteController::class, 'update'])->name('recoltes.update');
     // Route::delete('/recoltes/{recolte}', [RecolteController::class, 'destroy'])->name('recoltes.destroy');

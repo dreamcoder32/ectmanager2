@@ -109,45 +109,7 @@ const messages = {
       money_case: 'Money Case',
       select_money_case: 'Select Money Case for All Collections',
       case_active: 'Case Active',
-      no_case_selected: 'No Case Selected',
-      can_collect_without_case: 'Can Collect Without Case'
-    },
-    expenses: {
-      title: 'Expense Management',
-      create_new: 'Create New Expense',
-      status: {
-        pending: 'Pending',
-        approved: 'Approved',
-        paid: 'Paid',
-        rejected: 'Rejected'
-      },
-      filter_by_status: 'Filter by Status',
-      filter_by_category: 'Filter by Category',
-      search_placeholder: 'Search expenses...',
-      clear_filters: 'Clear Filters',
-      table: {
-        title: 'Title',
-        amount: 'Amount',
-        category: 'Category',
-        status: 'Status',
-        money_case: 'Money Case',
-        created_by: 'Created By',
-        date: 'Date'
-      },
-      no_category: 'No category',
-      no_case_assigned: 'No case assigned',
-      approve: 'Approve',
-      mark_as_paid: 'Mark as Paid',
-      reject: 'Reject',
-      payment_method: 'Payment Method',
-      payment_date: 'Payment Date',
-      delete_confirmation: 'Are you sure you want to delete this expense? This action cannot be undone.',
-      payment_methods: {
-        cash: 'Cash',
-        bank_transfer: 'Bank Transfer',
-        check: 'Check',
-        card: 'Card'
-      }
+      no_case_selected: 'No Case Selected'
     }
   },
   fr: {
@@ -261,45 +223,7 @@ const messages = {
       money_case: 'Caisse',
       select_money_case: 'Sélectionner une Caisse pour Toutes les Collections',
       case_active: 'Caisse Active',
-      no_case_selected: 'Aucune Caisse Sélectionnée',
-      can_collect_without_case: 'Peut Collecter Sans Caisse'
-    },
-    expenses: {
-      title: 'Gestion des Dépenses',
-      create_new: 'Créer une Nouvelle Dépense',
-      status: {
-        pending: 'En Attente',
-        approved: 'Approuvé',
-        paid: 'Payé',
-        rejected: 'Rejeté'
-      },
-      filter_by_status: 'Filtrer par Statut',
-      filter_by_category: 'Filtrer par Catégorie',
-      search_placeholder: 'Rechercher des dépenses...',
-      clear_filters: 'Effacer les Filtres',
-      table: {
-        title: 'Titre',
-        amount: 'Montant',
-        category: 'Catégorie',
-        status: 'Statut',
-        money_case: 'Caisse',
-        created_by: 'Créé par',
-        date: 'Date'
-      },
-      no_category: 'Aucune catégorie',
-      no_case_assigned: 'Aucune caisse assignée',
-      approve: 'Approuver',
-      mark_as_paid: 'Marquer comme Payé',
-      reject: 'Rejeter',
-      payment_method: 'Méthode de Paiement',
-      payment_date: 'Date de Paiement',
-      delete_confirmation: 'Êtes-vous sûr de vouloir supprimer cette dépense? Cette action ne peut pas être annulée.',
-      payment_methods: {
-        cash: 'Espèces',
-        bank_transfer: 'Virement Bancaire',
-        check: 'Chèque',
-        card: 'Carte'
-      }
+      no_case_selected: 'Aucune Caisse Sélectionnée'
     }
   },
   ar: {
@@ -411,45 +335,7 @@ const messages = {
       money_case: 'صندوق المال',
       select_money_case: 'اختر صندوق المال لجميع التحصيلات',
       case_active: 'الصندوق نشط',
-      no_case_selected: 'لم يتم اختيار صندوق',
-      can_collect_without_case: 'يمكن التحصيل بدون صندوق'
-    },
-    expenses: {
-      title: 'إدارة المصروفات',
-      create_new: 'إنشاء مصروف جديد',
-      status: {
-        pending: 'معلق',
-        approved: 'موافق عليه',
-        paid: 'مدفوع',
-        rejected: 'مرفوض'
-      },
-      filter_by_status: 'تصفية حسب الحالة',
-      filter_by_category: 'تصفية حسب الفئة',
-      search_placeholder: 'البحث في المصروفات...',
-      clear_filters: 'مسح المرشحات',
-      table: {
-        title: 'العنوان',
-        amount: 'المبلغ',
-        category: 'الفئة',
-        status: 'الحالة',
-        money_case: 'صندوق المال',
-        created_by: 'أنشأ بواسطة',
-        date: 'التاريخ'
-      },
-      no_category: 'لا توجد فئة',
-      no_case_assigned: 'لم يتم تعيين صندوق',
-      approve: 'موافقة',
-      mark_as_paid: 'تحديد كمدفوع',
-      reject: 'رفض',
-      payment_method: 'طريقة الدفع',
-      payment_date: 'تاريخ الدفع',
-      delete_confirmation: 'هل أنت متأكد من أنك تريد حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء.',
-      payment_methods: {
-        cash: 'نقداً',
-        bank_transfer: 'تحويل بنكي',
-        check: 'شيك',
-        card: 'بطاقة'
-      }
+      no_case_selected: 'لم يتم اختيار صندوق'
     }
   }
 }

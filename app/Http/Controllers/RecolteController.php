@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Recolte;
 use App\Models\Collection;
+use App\Exports\RecolteExport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Illuminate\Routing\Controller as BaseController;
+use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Excel as ExcelWriter;
 
 class RecolteController extends BaseController
 {
@@ -118,7 +121,7 @@ class RecolteController extends BaseController
                 $collections->each(function($collection) use ($request) {
                     $collection->update(['case_id' => $request->case_id]);
                 });
-                
+
                 // Update the money case balance
                 $totalAmount = $collections->sum('amount');
                 $moneyCase = \App\Models\MoneyCase::find($request->case_id);
@@ -157,6 +160,21 @@ class RecolteController extends BaseController
             'totalCollections' => $totalCollections,
             'totalCodAmount' => $totalCodAmount
         ]);
+    }
+
+    /**
+     * Export recolte details to Excel.
+     */
+    public function export(Recolte $recolte)
+    {
+        $type = request()->query('type');
+        if ($type === 'pdf') {
+            $fileName = 'recolte_' . $recolte->code . '_' . date('Y-m-d') . '.pdf';
+            return Excel::download(new RecolteExport($recolte), $fileName, ExcelWriter::DOMPDF);
+        }
+
+        $fileName = 'recolte_' . $recolte->code . '_' . date('Y-m-d') . '.xlsx';
+        return Excel::download(new RecolteExport($recolte), $fileName);
     }
 
     /**

@@ -45,7 +45,7 @@ class Recolte extends Model
     }
 
     /**
-     * Get the user who created this recolte
+     * The user who created the recolte
      */
     public function createdBy()
     {

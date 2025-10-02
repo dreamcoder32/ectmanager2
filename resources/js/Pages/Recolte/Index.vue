@@ -128,6 +128,12 @@
                          </template>
                          <v-list-item-title>Edit</v-list-item-title>
                        </v-list-item>
+                       <v-list-item @click="exportPdf(item.id)">
+                         <template v-slot:prepend>
+                           <v-icon color="error">mdi-file-pdf-box</v-icon>
+                         </template>
+                         <v-list-item-title>Export PDF</v-list-item-title>
+                       </v-list-item>
                        <v-divider></v-divider>
                        <v-list-item @click="deleteRecolte(item)" class="text-error">
                          <template v-slot:prepend>
@@ -279,6 +285,9 @@ export default {
     },
     editRecolte(id) {
       this.$inertia.visit(`/recoltes/${id}/edit`)
+    },
+    exportPdf(id) {
+      window.location.href = `/recoltes/${id}/export?type=pdf`
     },
     deleteRecolte(recolte) {
       this.selectedRecolte = recolte
