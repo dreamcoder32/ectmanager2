@@ -55,7 +55,7 @@ class RecolteExport implements FromCollection, WithHeadings, WithMapping, Should
     public function map($collection): array
     {
         $tracking = $collection->parcel->tracking_number ?? 'N/A';
-        $amount = (int) round($collection->parcel->cod_amount ?? 0) .' Da';
+        $amount = (int) round($collection->parcel->cod_amount ?? 0);
         $phone = $collection->parcel->recipient_phone ?? 'N/A';
         $by = $collection->createdBy ? ($collection->createdBy->display_name ?? ($collection->createdBy->name ?? 'N/A')) : 'N/A';
         $date = $collection->collected_at ? $collection->collected_at->format('Y-m-d H:i') : '';
@@ -145,7 +145,7 @@ class RecolteExport implements FromCollection, WithHeadings, WithMapping, Should
 
                 // Column widths
                 $sheet->getDelegate()->getColumnDimension('A')->setWidth(24);
-                $sheet->getDelegate()->getColumnDimension('B')->setWidth(10); // Montant
+                $sheet->getDelegate()->getColumnDimension('B')->setWidth(8); // Montant
                 $sheet->getDelegate()->getColumnDimension('C')->setWidth(12); // Phone
                 $sheet->getDelegate()->getColumnDimension('D')->setWidth(18);
                 $sheet->getDelegate()->getColumnDimension('E')->setWidth(20);
@@ -167,12 +167,11 @@ class RecolteExport implements FromCollection, WithHeadings, WithMapping, Should
                     'font' => ['size' => 11],
                 ]);
                 // Increase left indent on Phone column header and data
-                $sheet->getDelegate()->getStyle('C' . $this->headerRow)->getAlignment()->setIndent(3);
+                $sheet->getDelegate()->getStyle('C' . $this->headerRow)->getAlignment()->setIndent(0);
                 $sheet->getDelegate()->getStyle('C' . $this->dataStartRow . ':C' . $dataEndRow)->applyFromArray([
                     'alignment' => [
                         'horizontal' => Alignment::HORIZONTAL_LEFT,
                         'vertical' => Alignment::VERTICAL_CENTER,
-                        'indent' => 3,
                     ],
                     'font' => ['size' => 11],
                 ]);
@@ -201,7 +200,7 @@ class RecolteExport implements FromCollection, WithHeadings, WithMapping, Should
                 // Number formatting for amounts: integers with trailing spaces for right padding
                 if ($dataEndRow >= $this->dataStartRow) {
                     $sheet->getDelegate()->getStyle('B' . $this->dataStartRow . ':B' . $dataEndRow)
-                        ->getNumberFormat()->setFormatCode('0"   "');
+                        ->getNumberFormat()->setFormatCode('#,##0" Da"');
                 }
 
                 // Zebra striping for readability (even rows only)

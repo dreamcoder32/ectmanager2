@@ -12,6 +12,7 @@ use Inertia\Inertia;
 use Illuminate\Routing\Controller as BaseController;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Excel as ExcelWriter;
+use Spatie\Browsershot\Browsershot;
 
 class RecolteController extends BaseController
 {
@@ -169,10 +170,23 @@ class RecolteController extends BaseController
     {
         $type = request()->query('type');
         if ($type === 'pdf') {
+            $recolte->load(['collections.parcel', 'collections.createdBy', 'createdBy']);
             $fileName = 'recolte_' . $recolte->code . '_' . date('Y-m-d') . '.pdf';
-            return Excel::download(new RecolteExport($recolte), $fileName, ExcelWriter::DOMPDF);
+            $html = view('exports.recolte', [
+                'recolte' => $recolte,
+            ])->render();
+    
+            $pdf = Browsershot::html($html)
+                ->format('A4')
+                ->margins(10, 10, 10, 10)
+                ->showBackground()
+                ->pdf();
+    
+            return response()->streamDownload(fn () => print($pdf), $fileName, [
+                'Content-Type' => 'application/pdf',
+            ]);
         }
-
+    
         $fileName = 'recolte_' . $recolte->code . '_' . date('Y-m-d') . '.xlsx';
         return Excel::download(new RecolteExport($recolte), $fileName);
     }
