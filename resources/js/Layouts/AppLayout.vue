@@ -104,6 +104,25 @@
           <span class="text-white font-weight-medium text-body-1">
             Collection Transfer
           </span>
+        </v-list-item
+        >
+
+        <!-- Driver Settlement -->
+        <v-list-item 
+          @click="$inertia.visit('/driver-settlement')" 
+          link
+          :class="{ 'sidebar-item-active': $page.component.startsWith('DriverSettlement/') }"
+          class="sidebar-item mb-2 d-flex align-center"
+          style="border-radius: 12px; 
+                 transition: all 0.3s ease;
+                 backdrop-filter: blur(10px);
+                 min-height: 48px;
+                 padding: 12px 16px;"
+        >
+          <v-icon color="white" size="24" class="mr-4">mdi-hand-coin</v-icon>
+          <span class="text-white font-weight-medium text-body-1">
+            Driver Settlement
+          </span>
         </v-list-item>
 
         <v-list-item 

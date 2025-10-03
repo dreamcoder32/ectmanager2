@@ -92,7 +92,12 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/recoltes/{recolte}/export', [RecolteController::class, 'export'])->name('recoltes.export');
     // Route::get('/recoltes/{recolte}/edit', [RecolteController::class, 'edit'])->name('recoltes.edit');
     // Route::put('/recoltes/{recolte}', [RecolteController::class, 'update'])->name('recoltes.update');
-    // Route::delete('/recoltes/{recolte}', [RecolteController::class, 'destroy'])->name('recoltes.destroy');
+    // Route::delete('/recoltes/{recolte}', [RecolteController::class, 'destroy'])->name('recoltes.destroy']);
+
+    // Driver Settlement (PDF -> Collections -> Recolte)
+    Route::get('/driver-settlement', [\App\Http\Controllers\DriverSettlementController::class, 'index'])->name('driver-settlement.index');
+    Route::post('/driver-settlement/parse', [\App\Http\Controllers\DriverSettlementController::class, 'parse'])->name('driver-settlement.parse');
+    Route::post('/driver-settlement/process', [\App\Http\Controllers\DriverSettlementController::class, 'process'])->name('driver-settlement.process');
 });
 
 // Expense routes
