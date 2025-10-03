@@ -12,7 +12,8 @@ use Inertia\Inertia;
 use Illuminate\Routing\Controller as BaseController;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Excel as ExcelWriter;
-use Spatie\Browsershot\Browsershot;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class RecolteController extends BaseController
 {
@@ -175,18 +176,21 @@ class RecolteController extends BaseController
             $html = view('exports.recolte', [
                 'recolte' => $recolte,
             ])->render();
-    
-            $pdf = Browsershot::html($html)
-                ->format('A4')
-                ->margins(10, 10, 10, 10)
-                ->showBackground()
-                ->pdf();
-    
-            return response()->streamDownload(fn () => print($pdf), $fileName, [
+
+            // Generate PDF using Dompdf to avoid Node/Puppeteer dependency
+            $options = new Options();
+            $options->set('isRemoteEnabled', true);
+            $dompdf = new Dompdf($options);
+            $dompdf->setPaper('A4');
+            $dompdf->loadHtml('<style>@page { margin: 5mm }</style>' . $html);
+            $dompdf->render();
+            $pdfOutput = $dompdf->output();
+
+            return response()->streamDownload(fn () => print($pdfOutput), $fileName, [
                 'Content-Type' => 'application/pdf',
             ]);
         }
-    
+
         $fileName = 'recolte_' . $recolte->code . '_' . date('Y-m-d') . '.xlsx';
         return Excel::download(new RecolteExport($recolte), $fileName);
     }

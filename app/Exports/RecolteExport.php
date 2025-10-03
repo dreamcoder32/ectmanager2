@@ -144,7 +144,7 @@ class RecolteExport implements FromCollection, WithHeadings, WithMapping, Should
                 }
 
                 // Column widths
-                $sheet->getDelegate()->getColumnDimension('A')->setWidth(24);
+                $sheet->getDelegate()->getColumnDimension('A')->setWidth(42); // Extra spacing for long tracking codes
                 $sheet->getDelegate()->getColumnDimension('B')->setWidth(8); // Montant
                 $sheet->getDelegate()->getColumnDimension('C')->setWidth(12); // Phone
                 $sheet->getDelegate()->getColumnDimension('D')->setWidth(18);
@@ -156,9 +156,14 @@ class RecolteExport implements FromCollection, WithHeadings, WithMapping, Should
                     'alignment' => [
                         'horizontal' => Alignment::HORIZONTAL_LEFT,
                         'vertical' => Alignment::VERTICAL_CENTER,
+                        'wrapText' => false,
+                        'shrinkToFit' => false,
                     ],
                     'font' => ['size' => 11],
                 ]);
+                // Add a small left indent on Tracking header and data
+                $sheet->getDelegate()->getStyle('A' . $this->headerRow)->getAlignment()->setIndent(1);
+                $sheet->getDelegate()->getStyle('A' . $this->dataStartRow . ':A' . $dataEndRow)->getAlignment()->setIndent(1);
                 $sheet->getDelegate()->getStyle('B' . $this->dataStartRow . ':B' . $dataEndRow)->applyFromArray([
                     'alignment' => [
                         'horizontal' => Alignment::HORIZONTAL_RIGHT,
