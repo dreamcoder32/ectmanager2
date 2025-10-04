@@ -64,7 +64,7 @@ class RecolteController extends BaseController
                     ->whereDoesntHave('recoltes')
                     ->orderBy('collected_at', 'desc');
             }])
-            ->select('id', 'display_name', 'email', 'role')
+            ->select('id', 'display_name', 'email', 'role','uid')
             ->orderBy('display_name')
             ->get();
 

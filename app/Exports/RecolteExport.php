@@ -57,7 +57,7 @@ class RecolteExport implements FromCollection, WithHeadings, WithMapping, Should
         $tracking = $collection->parcel->tracking_number ?? 'N/A';
         $amount = (int) round($collection->parcel->cod_amount ?? 0);
         $phone = $collection->parcel->recipient_phone ?? 'N/A';
-        $by = $collection->createdBy ? ($collection->createdBy->display_name ?? ($collection->createdBy->name ?? 'N/A')) : 'N/A';
+        $by = $collection->createdBy ? ($collection->createdBy->uid ?? ($collection->createdBy->name ?? 'N/A')) : 'N/A';
         $date = $collection->collected_at ? $collection->collected_at->format('Y-m-d H:i') : '';
         
         // Determine parcel type (stopdesk or home)
