@@ -63,19 +63,30 @@ const props = defineProps({
   autoLoad: {
     type: Boolean,
     default: true
+  },
+  // New: allow passing states directly via props (from Inertia page)
+  initialStates: {
+    type: Array,
+    default: () => []
   }
 })
 
 const emit = defineEmits(['update:modelValue', 'change', 'loaded'])
 
-const states = ref([])
+const states = ref(props.initialStates || [])
 const loading = ref(false)
 
 const loadStates = async () => {
+  // If states were passed via props, don't call API
+  if (states.value && states.value.length > 0) {
+    emit('loaded', states.value)
+    return
+  }
+  if (!props.autoLoad) return
   loading.value = true
   try {
     const response = await axios.get('/api/states')
-    states.value = response.data
+    states.value = Array.isArray(response.data) ? response.data : (response.data.states || [])
     emit('loaded', states.value)
   } catch (error) {
     console.error('Error loading states:', error)
@@ -95,9 +106,7 @@ watch(() => props.modelValue, (newValue, oldValue) => {
 
 // Auto-load states on mount if enabled
 onMounted(() => {
-  if (props.autoLoad) {
-    loadStates()
-  }
+  loadStates()
 })
 
 // Expose methods for parent components

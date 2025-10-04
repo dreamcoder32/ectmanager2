@@ -1,34 +1,34 @@
 <template>
   <div>
-    <Head title="Driver Settlement Import" />
+    <Head :title="$t('driverSettlement.title')" />
     <AppLayout>
       <template #title>
         <span style="background: linear-gradient(135deg, #1976d2, #1565c0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-weight: 600;">
-          Driver Settlement Import
+          {{ $t('driverSettlement.title') }}
         </span>
       </template>
       <template #content>
         <v-container fluid>
           <v-row>
             <v-col cols="12">
-              <v-btn color="primary" text @click="$inertia.visit('/recoltes')" class="mb-4">
+              <v-btn color="primary" text @click="goBack" class="mb-4">
                 <v-icon left>mdi-arrow-left</v-icon>
-                Back to Collection Transfers
+                {{ $t('driverSettlement.back_to_transfers') }}
               </v-btn>
 
               <v-card elevation="2" style="border-radius: 12px;">
                 <v-card-title class="pa-6" style="background: #f8f9fa; border-bottom: 1px solid #e0e0e0;">
                   <v-icon left color="primary" size="28">mdi-file-pdf-box</v-icon>
-                  <span class="text-h5 font-weight-medium">Import Driver Settlement PDF</span>
+                  <span class="text-h5 font-weight-medium">{{ $t('driverSettlement.import_pdf_title') }}</span>
                 </v-card-title>
 
-                <v-card-text class="pa-6">
+                <v-card-text class="">
                   <v-form @submit.prevent="submitProcess">
                     <v-row>
-                      <v-col cols="12" md="6">
+                      <v-col cols="12" md="12">
                         <v-file-input
                           v-model="pdfFile"
-                          label="Upload PDF"
+                          :label="$t('driverSettlement.upload_pdf')"
                           accept=".pdf"
                           prepend-icon="mdi-file-pdf"
                           outlined
@@ -41,7 +41,7 @@
                           :items="drivers"
                           item-value="id"
                           item-title="name"
-                          label="Select Driver"
+                          :label="$t('driverSettlement.select_driver')"
                           outlined
                           :error-messages="errors.driver_id"
                         />
@@ -50,18 +50,18 @@
                         <v-text-field
                           v-model.number="driverCommission"
                           type="number"
-                          label="Driver Commission (DA)"
+                          :label="$t('driverSettlement.driver_commission_da')"
                           outlined
                           :error-messages="errors.driver_commission"
                         />
                       </v-col>
-                      <v-col cols="12" md="8">
+                      <!-- <v-col cols="12" md="8">
                         <v-select
                           v-model="caseId"
                           :items="activeCases"
                           item-value="id"
                           item-title="name"
-                          label="Money Case (optional)"
+                          :label="$t('driverSettlement.money_case_optional')"
                           outlined
                           clearable
                         >
@@ -69,19 +69,19 @@
                             <v-list-item>
                               <v-list-item-title>{{ item.raw.name }}</v-list-item-title>
                               <v-list-item-subtitle>
-                                Balance: {{ formatCurrency(item.raw.balance) }} - {{ item.raw.description }}
+                                {{ $t('stopdesk_payment.money_case') }}: {{ formatCurrency(item.raw.balance) }} - {{ item.raw.description }}
                               </v-list-item-subtitle>
                             </v-list-item>
                           </template>
                         </v-select>
-                      </v-col>
+                      </v-col> -->
 
-                      <v-col cols="12">
-                        <v-alert v-if="parseSummary" type="info" outlined>
-                          Candidates: {{ parseSummary.total_candidates }} | Found: {{ parseSummary.total_found }} | Missing: {{ parseSummary.total_missing }}
+                      <v-col cols="12" v-if="parseSummary">
+                        <v-alert type="info" outlined>
+                          {{ $t('parcels.tracking_number') }}: {{ parseSummary.total_candidates }} | {{ $t('common.import') }}: {{ parseSummary.total_found }} | {{ $t('common.clear') }}: {{ parseSummary.total_missing }}
                           <template #append v-if="parseSummary.guess_driver_name">
                             <v-chip color="primary" class="ml-2" text-color="white">
-                              Guess Driver: {{ parseSummary.guess_driver_name }}
+                              {{ $t('driverSettlement.select_driver') }}: {{ parseSummary.guess_driver_name }}
                             </v-chip>
                           </template>
                         </v-alert>
@@ -91,10 +91,10 @@
                         <v-card outlined>
                           <v-card-title>
                             <v-icon left color="success">mdi-package-variant</v-icon>
-                            <span class="text-h6">Parsed Parcels</span>
+                            <span class="text-h6">{{ $t('parcels.title') }}</span>
                             <v-spacer></v-spacer>
                             <v-chip color="primary" text-color="white" small>
-                              Total COD: {{ formatCurrency(totalCod) }}
+                              {{ $t('financial_dashboard.total_revenue') }}: {{ formatCurrency(totalCod) }}
                             </v-chip>
                           </v-card-title>
                           <v-card-text class="pa-0">
@@ -119,6 +119,17 @@
                               <template v-slot:[`item.status`]="{ item }">
                                 <v-chip small :color="item.status === 'delivered' ? 'green' : 'grey'" text-color="white">{{ item.status }}</v-chip>
                               </template>
+                              <!-- Per-parcel commission editable field -->
+                              <template v-slot:[`item.commission`]="{ item }">
+                                <v-text-field
+                                  v-model.number="parcelCommissionMap[item.tracking_number]"
+                                  type="number"
+                                  density="compact"
+                                  hide-details
+                                  class="ma-0 pa-0"
+                                  style="max-width: 120px;"
+                                />
+                              </template>
                             </v-data-table>
                           </v-card-text>
                         </v-card>
@@ -126,7 +137,7 @@
 
                       <v-col cols="12" v-if="missingTrackingNumbers.length">
                         <v-alert type="warning" outlined>
-                          Missing tracking numbers (not found in system):
+                          {{ $t('common.clear') }}: 
                           <div class="mt-2">
                             <v-chip v-for="tn in missingTrackingNumbers" :key="tn" class="mr-2 mb-2" color="warning" text-color="white">{{ tn }}</v-chip>
                           </div>
@@ -137,10 +148,10 @@
 
                     <v-row class="mt-4">
                       <v-col cols="12" class="text-right">
-                        <v-btn color="grey" text @click="$inertia.visit('/recoltes')" class="mr-3">Cancel</v-btn>
+                        <v-btn color="grey" text @click="goBack" class="mr-3">{{ $t('common.cancel') }}</v-btn>
                         <v-btn type="submit" color="primary" :loading="processing" :disabled="!canSubmit" elevation="2">
                           <v-icon left>mdi-check</v-icon>
-                          Create Collections and Recolte
+                          {{ $t('common.import') }}
                         </v-btn>
                       </v-col>
                     </v-row>
@@ -156,12 +167,25 @@
 </template>
 
 <script>
-import { Head } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
+import { useI18n } from 'vue-i18n';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 export default {
   name: 'DriverSettlementImport',
   components: { Head, AppLayout },
+  setup() {
+    const { t } = useI18n();
+    const headers = [
+      { text: t('parcels.tracking_number'), value: 'tracking_number', sortable: false },
+      { text: t('parcels.cod_amount') || 'COD Amount', value: 'cod_amount', sortable: true },
+      { text: t('parcels.company') || 'Company', value: 'company_name', sortable: false },
+      { text: t('drivers.headers.commission'), value: 'commission', sortable: false },
+      { text: t('parcels.status'), value: 'status', sortable: false }
+    ];
+    const goBack = () => router.visit('/recoltes')
+    return { t, headers, goBack };
+  },
   props: {
     drivers: { type: Array, default: () => [] },
     activeCases: { type: Array, default: () => [] }
@@ -178,12 +202,29 @@ export default {
       parseSummary: null,
       processing: false,
       errors: {},
-      headers: [
-        { text: 'Tracking Number', value: 'tracking_number', sortable: false },
-        { text: 'COD Amount', value: 'cod_amount', sortable: true },
-        { text: 'Company', value: 'company_name', sortable: false },
-        { text: 'Status', value: 'status', sortable: false }
-      ]
+      parcelCommissionMap: {}
+    }
+  },
+  watch: {
+    // When driver changes, auto-fill the commission from driver config
+    selectedDriverId(newId) {
+      const driver = this.drivers.find(d => d.id === newId);
+      if (driver) {
+        // Use commission_rate if active; for now assume fixed amount per parcel used in settlement
+        if (driver.commission_is_active && driver.commission_rate != null) {
+          this.driverCommission = Number(driver.commission_rate) || 0;
+        }
+        // Propagate to per-parcel map
+        this.applyCommissionToAllParcels();
+      }
+    },
+    // If global commission changes manually, propagate defaults to unedited parcels
+    driverCommission() {
+      this.applyCommissionToAllParcels();
+    },
+    // When found parcels list updates, initialize commission map
+    foundParcels() {
+      this.applyCommissionToAllParcels(true);
     }
   },
   computed: {
@@ -198,11 +239,37 @@ export default {
     formatCurrency(amount) {
       return new Intl.NumberFormat('fr-DZ', { style: 'currency', currency: 'DZD', minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(amount || 0);
     },
+    showError(message) {
+      if (this.$toast && typeof this.$toast.error === 'function') {
+        this.$toast.error(message);
+      } else {
+        console.error(message);
+        try { alert(message); } catch (_) {}
+      }
+    },
+    showSuccess(message) {
+      if (this.$toast && typeof this.$toast.success === 'function') {
+        this.$toast.success(message);
+      } else {
+        console.log(message);
+      }
+    },
+    applyCommissionToAllParcels(force = false) {
+      if (!Array.isArray(this.foundParcels)) return;
+      const defaultCommission = Number(this.driverCommission) || 0;
+      this.foundParcels.forEach(p => {
+        const tn = p.tracking_number;
+        if (force || this.parcelCommissionMap[tn] == null || this.parcelCommissionMap[tn] === '') {
+          this.parcelCommissionMap[tn] = defaultCommission;
+        }
+      });
+    },
     async onPdfChange() {
       this.foundParcels = [];
       this.missingTrackingNumbers = [];
       this.selectedTrackingNumbers = [];
       this.parseSummary = null;
+      this.parcelCommissionMap = {};
 
       if (!this.pdfFile) return;
       const formData = new FormData();
@@ -220,14 +287,16 @@ export default {
             total_missing: data.total_missing,
             guess_driver_name: data.guess_driver_name
           };
-          // Preselect found tracking numbers
-          this.selectedTrackingNumbers = this.foundParcels.map(p => p.tracking_number);
+          // Preselect found rows (v-data-table selection expects item objects)
+          this.selectedTrackingNumbers = [...this.foundParcels];
+          // Initialize commission map defaults
+          this.applyCommissionToAllParcels(true);
         } else {
-          this.$toast.error('Failed to parse PDF');
+          this.showError('Failed to parse PDF');
         }
       } catch (e) {
         console.error('Parse error', e);
-        this.$toast.error('Failed to parse PDF');
+        this.showError('Failed to parse PDF');
       }
     },
     async submitProcess() {
@@ -235,35 +304,52 @@ export default {
       this.processing = true;
       this.errors = {};
       try {
+        // Ensure driver commission is a valid non-negative number
+        const safeDriverCommission = Number(this.driverCommission);
+        const payload = {
+          driver_id: this.selectedDriverId,
+          driver_commission: isFinite(safeDriverCommission) && safeDriverCommission >= 0 ? safeDriverCommission : 0,
+          case_id: this.caseId ?? null,
+          tracking_numbers: (this.selectedTrackingNumbers || [])
+            .map(p => String((p && p.tracking_number) ? p.tracking_number : '').trim())
+            .filter(tn => tn.length > 0),
+          parcel_commissions: Object.fromEntries(
+            Object.entries(this.parcelCommissionMap || {}).map(([tn, val]) => {
+              const key = String(tn).trim();
+              const num = Number(val);
+              return [key, isFinite(num) && num >= 0 ? num : 0];
+            })
+          )
+        };
         const resp = await fetch('/driver-settlement/process', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
           },
-          body: JSON.stringify({
-            tracking_numbers: this.selectedTrackingNumbers,
-            driver_id: this.selectedDriverId,
-            driver_commission: Number(this.driverCommission),
-            case_id: this.caseId,
-            note: `Imported from driver settlement on ${new Date().toLocaleString('fr-FR')}`
-          })
+          body: JSON.stringify(payload)
         });
-        if (resp.redirected) {
-          // Inertia: follow redirect
-          window.location.href = resp.url;
+        const data = await resp.json();
+        if (resp.status === 422) {
+          // Laravel validation error structure
+          this.errors = data.errors || {};
+          const firstError = Object.values(this.errors)[0]?.[0] || 'Validation error';
+          this.showError(firstError);
           return;
         }
-        const data = await resp.json();
-        if (data.errors) {
-          this.errors = data.errors;
-        }
         if (data.success) {
-          this.$toast.success('Processed successfully');
+          this.showSuccess('Processing completed');
+          const redirectUrl = data.redirect || '/recoltes';
+          router.visit(redirectUrl);
+        } else {
+          this.errors = data.errors || {};
+          this.showError(data.error || 'Failed to process');
         }
       } catch (e) {
         console.error('Process error', e);
-        this.$toast.error('Processing failed');
+        this.showError('Failed to process');
       } finally {
         this.processing = false;
       }

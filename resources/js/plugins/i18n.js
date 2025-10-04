@@ -8,7 +8,10 @@ const messages = {
       reports: 'Reports',
       settings: 'Settings',
       profile: 'Profile',
-      logout: 'Log Out'
+      logout: 'Log Out',
+      drivers: 'Drivers',
+      driverSettlement: 'Driver Settlement',
+      expenses: 'Expenses'
     },
     dashboard: {
       title: 'Dashboard',
@@ -16,7 +19,12 @@ const messages = {
       total_parcels: 'Total Parcels',
       pending_parcels: 'Pending Parcels',
       delivered_parcels: 'Delivered Parcels',
-      revenue: 'Revenue'
+      revenue: 'Revenue',
+      recoltes:'Recoltes',
+      total_revenue: 'Revenue',
+      stopdesk_collections_count: 'Stopdesk Collections',
+      home_delivery_collections_count: 'Home Delivery Collections'
+
     },
     parcels: {
       title: 'Parcels',
@@ -38,7 +46,9 @@ const messages = {
       status_out_for_delivery: 'Out for Delivery',
       status_delivered: 'Delivered',
       status_returned: 'Returned',
-      status_cancelled: 'Cancelled'
+      status_cancelled: 'Cancelled',
+      cod_amount: 'COD Amount',
+      company: 'Company'
     },
     common: {
       save: 'Save',
@@ -110,18 +120,53 @@ const messages = {
       select_money_case: 'Select Money Case for All Collections',
       case_active: 'Case Active',
       no_case_selected: 'No Case Selected'
+    },
+    // Added drivers translations
+    drivers: {
+      title: 'Drivers',
+      list: 'Drivers List',
+      create: 'Create Driver',
+      new: 'New Driver',
+      headers: {
+        name: 'Name',
+        phone: 'Phone',
+        license: 'License',
+        vehicle: 'Vehicle',
+        cities: 'Cities',
+        state: 'State',
+        commission: 'Commission',
+        status: 'Status',
+        actions: 'Actions'
+      },
+      status_active: 'Active',
+      status_inactive: 'Inactive',
+      edit: 'Edit',
+      commission_disabled: 'Disabled'
+    },
+    // Added driver settlement translations
+    driverSettlement: {
+      title: 'Driver Settlement Import',
+      back_to_transfers: 'Back to Collection Transfers',
+      upload_pdf: 'Upload PDF',
+      select_driver: 'Select Driver',
+      driver_commission_da: 'Driver Commission (DA)',
+      money_case_optional: 'Money Case (optional)',
+      import_pdf_title: 'Import Driver Settlement PDF'
     }
   },
   fr: {
     navigation: {
       dashboard: 'Tableau de bord',
       parcels: 'Colis',
-            expenses: 'Depenses',
-
+      recoltes:'Recoltes',
       reports: 'Rapports',
       settings: 'Paramètres',
       profile: 'Profil',
-      logout: 'Se déconnecter'
+      logout: 'Se déconnecter',
+      drivers: 'Livreurs',
+      driverSettlement: 'Règlement des livreurs',
+      expenses: 'Dépenses',
+      users:'Utilisateurs'
     },
     dashboard: {
       title: 'Tableau de bord',
@@ -129,7 +174,9 @@ const messages = {
       total_parcels: 'Total des colis',
       pending_parcels: 'Colis en attente',
       delivered_parcels: 'Colis livrés',
-      revenue: 'Revenus'
+      revenue: 'Revenus',
+      stopdesk_collections_count: 'Collectes Stopdesk',
+      home_delivery_collections_count: 'Collectes à domicile'
     },
     parcels: {
       title: 'Colis',
@@ -195,7 +242,7 @@ const messages = {
       completed_payments: 'Paiements terminés'
     },
     stopdesk_payment: {
-      title: 'Paiement au Bureau d\'Arrêt',
+      title: "Paiement au Stopdesk",
       barcode_scanner: 'Scanner de Code-barres',
       scan_or_type: 'Scanner ou taper le numéro de suivi',
       search: 'RECHERCHER',
@@ -224,6 +271,38 @@ const messages = {
       select_money_case: 'Sélectionner une Caisse pour Toutes les Collections',
       case_active: 'Caisse Active',
       no_case_selected: 'Aucune Caisse Sélectionnée'
+    },
+    // Ajout des traductions pour les Livreurs
+    drivers: {
+      title: 'Livreurs',
+      list: 'Liste des Livreurs',
+      create: 'Créer un Livreur',
+      new: 'Nouveau Livreur',
+      headers: {
+        name: 'Nom',
+        phone: 'Téléphone',
+        license: 'Permis',
+        vehicle: 'Véhicule',
+        cities: 'Villes',
+        state: 'État',
+        commission: 'Commission',
+        status: 'Statut',
+        actions: 'Actions'
+      },
+      status_active: 'Actif',
+      status_inactive: 'Inactif',
+      edit: 'Modifier',
+      commission_disabled: 'Désactivé'
+    },
+    // Ajout des traductions pour le règlement du Livreur
+    driverSettlement: {
+      title: 'Importation du règlement du Livreur',
+      back_to_transfers: 'Retour aux transferts de collecte',
+      upload_pdf: 'Télécharger le PDF',
+      select_driver: 'Sélectionner un Livreur',
+      driver_commission_da: 'Commission du Livreur (DA)',
+      money_case_optional: 'Caisse (optionnel)',
+      import_pdf_title: 'Importer le PDF de règlement du Livreur'
     }
   },
   ar: {
@@ -233,7 +312,10 @@ const messages = {
       reports: 'التقارير',
       settings: 'الإعدادات',
       profile: 'الملف الشخصي',
-      logout: 'تسجيل الخروج'
+      logout: 'تسجيل الخروج',
+      drivers: 'السائقون',
+      driverSettlement: 'تسوية السائق',
+      expenses: 'المصاريف'
     },
     dashboard: {
       title: 'لوحة التحكم',
@@ -241,7 +323,9 @@ const messages = {
       total_parcels: 'إجمالي الطرود',
       pending_parcels: 'الطرود المعلقة',
       delivered_parcels: 'الطرود المسلمة',
-      revenue: 'الإيرادات'
+      total_revenue: 'الارباح',
+      stopdesk_collections_count: 'عدد تحصيلات مكتب التوقف',
+      home_delivery_collections_count: 'عدد تحصيلات التوصيل المنزلي'
     },
     parcels: {
       title: 'الطرود',
@@ -263,7 +347,9 @@ const messages = {
       status_out_for_delivery: 'خارج للتسليم',
       status_delivered: 'تم التسليم',
       status_returned: 'مُرجع',
-      status_cancelled: 'ملغي'
+      status_cancelled: 'ملغي',
+      cod_amount: 'مبلغ الدفع عند الاستلام',
+      company: 'الشركة'
     },
     common: {
       save: 'حفظ',
@@ -336,6 +422,38 @@ const messages = {
       select_money_case: 'اختر صندوق المال لجميع التحصيلات',
       case_active: 'الصندوق نشط',
       no_case_selected: 'لم يتم اختيار صندوق'
+    },
+    // إضافة ترجمات السائقين
+    drivers: {
+      title: 'السائقون',
+      list: 'قائمة السائقين',
+      create: 'إنشاء سائق',
+      new: 'سائق جديد',
+      headers: {
+        name: 'الاسم',
+        phone: 'الهاتف',
+        license: 'رخصة القيادة',
+        vehicle: 'المركبة',
+        cities: 'المدن',
+        state: 'الولاية',
+        commission: 'العمولة',
+        status: 'الحالة',
+        actions: 'الإجراءات'
+      },
+      status_active: 'نشط',
+      status_inactive: 'غير نشط',
+      edit: 'تعديل',
+      commission_disabled: 'معطّل'
+    },
+    // إضافة ترجمات تسوية السائق
+    driverSettlement: {
+      title: 'استيراد تسوية السائق',
+      back_to_transfers: 'الرجوع إلى تحويلات التحصيل',
+      upload_pdf: 'رفع ملف PDF',
+      select_driver: 'اختيار السائق',
+      driver_commission_da: 'عمولة السائق (دج)',
+      money_case_optional: 'صندوق المال (اختياري)',
+      import_pdf_title: 'استيراد ملف تسوية السائق PDF'
     }
   }
 }

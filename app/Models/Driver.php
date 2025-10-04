@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Driver extends Model
 {
@@ -13,10 +15,17 @@ class Driver extends Model
         'license_number',
         'vehicle_info',
         'is_active',
+        // Commission fields
+        'commission_rate',
+        'commission_type',
+        'commission_is_active',
+        'state_id',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'commission_rate' => 'decimal:2',
+        'commission_is_active' => 'boolean',
     ];
 
     /**
@@ -49,6 +58,14 @@ class Driver extends Model
     public function expenses(): HasMany
     {
         return $this->hasMany(Expense::class);
+    }
+
+    /**
+     * Driver's state.
+     */
+    public function state(): BelongsTo
+    {
+        return $this->belongsTo(State::class);
     }
 
     /**

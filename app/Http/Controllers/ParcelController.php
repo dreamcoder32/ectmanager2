@@ -413,12 +413,12 @@ class ParcelController extends Controller
             'recentCollections' => $recentCollections,
             'activeCases' => $activeCases,
             'userLastActiveCaseId' => $userLastActiveCase ? $userLastActiveCase->id : null,
-            'auth' => [
-                'user' => [
-                    'id' => auth()->user()->id,
-                    'can_collect_stopdesk' => auth()->user()->can_collect_stopdesk ?? false
-                ]
-            ]
+            // 'auth' => [
+            //     'user' => [
+            //         'id' => auth()->user()->id,
+            //         'can_collect_stopdesk' => auth()->user()->can_collect_stopdesk ?? false
+            //     ]
+            // ]
         ]);
     }
     /**

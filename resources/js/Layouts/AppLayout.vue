@@ -85,7 +85,7 @@
         >
           <v-icon color="white" size="24" class="mr-4">mdi-cash-register</v-icon>
           <span class="text-white font-weight-medium text-body-1">
-            Stopdesk Payment
+            {{ $t('stopdesk_payment.title') }}
           </span>
         </v-list-item>
 
@@ -102,7 +102,7 @@
         >
           <v-icon color="white" size="24" class="mr-4">mdi-cash-multiple</v-icon>
           <span class="text-white font-weight-medium text-body-1">
-            Collection Transfer
+            {{ $t('navigation.recoltes') || 'Collection Transfer' }}
           </span>
         </v-list-item
         >
@@ -121,7 +121,7 @@
         >
           <v-icon color="white" size="24" class="mr-4">mdi-hand-coin</v-icon>
           <span class="text-white font-weight-medium text-body-1">
-            Driver Settlement
+            {{ $t('navigation.driverSettlement') }}
           </span>
         </v-list-item>
 
@@ -157,7 +157,7 @@
         >
           <v-icon color="white" size="24" class="mr-4">mdi-tag-multiple</v-icon>
           <span class="text-white font-weight-medium text-body-1">
-            Expense Categories
+            {{  'Depenses Categories' }}
           </span>
         </v-list-item>
 
@@ -176,7 +176,26 @@
         >
           <v-icon color="white" size="24" class="mr-4">mdi-account-group</v-icon>
           <span class="text-white font-weight-medium text-body-1">
-            User Management
+            {{ $t('navigation.users') || 'User Management' }}
+          </span>
+        </v-list-item>
+
+        <!-- Drivers Management -->
+        <v-list-item 
+          v-if="$page.props.auth.user.role === 'admin' || $page.props.auth.user.role === 'supervisor'"
+          @click="$inertia.visit('/drivers')" 
+          link
+          :class="{ 'sidebar-item-active': $page.component.startsWith('Drivers/') }"
+          class="sidebar-item mb-2 d-flex align-center"
+          style="border-radius: 12px; 
+                 transition: all 0.3s ease;
+                 backdrop-filter: blur(10px);
+                 min-height: 48px;
+                 padding: 12px 16px;"
+        >
+          <v-icon color="white" size="24" class="mr-4">mdi-motorbike</v-icon>
+          <span class="text-white font-weight-medium text-body-1">
+            {{ $t('navigation.drivers') }}
           </span>
         </v-list-item>
 
@@ -264,13 +283,16 @@
       <!-- User Menu -->
       <v-menu>
         <template v-slot:activator="{ props }">
-          <v-btn icon v-bind="props" class="ml-2">
-            <v-avatar size="40" 
-                      style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-                             border: 2px solid rgba(102, 126, 234, 0.2);">
-              <v-icon color="white">mdi-account-circle</v-icon>
+          <v-chip v-bind="props" class=" user-chip m-4 p-8" variant="outlined" color="primary" density="comfortable" style="border-radius: 10px; background: transparent;">
+            <v-avatar size="22" class="mr-2" color="primary">
+              <v-icon color="white" size="20">mdi-account</v-icon>
             </v-avatar>
-          </v-btn>
+            <span v-if="$page?.props?.auth?.user" 
+                  class="text-body-2 font-weight-medium d-none d-sm-inline"
+                  style="max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              {{ $page.props.auth.user.display_name || $page.props.auth.user.first_name || $page.props.auth.user.email }}
+            </span>
+          </v-chip>
         </template>
         <v-list style="border-radius: 12px; 
                        box-shadow: 0 8px 32px rgba(0,0,0,0.1);

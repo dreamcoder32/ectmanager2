@@ -1,5 +1,40 @@
 <template>
   <AppLayout :title="$t('dashboard.title')">
+    <!-- Date Filter -->
+    <v-row class="mb-4">
+      <v-col cols="12">
+        <v-card elevation="2" class="pa-4" style="border-radius: 12px;">
+          <div class="d-flex flex-wrap align-center gap-4">
+            <v-text-field
+              v-model="filterStart"
+              label="Start date"
+              type="date"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="max-width: 220px;"
+            />
+            <v-text-field
+              v-model="filterEnd"
+              label="End date"
+              type="date"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="max-width: 220px;"
+            />
+            <v-btn color="primary" prepend-icon="mdi-filter" @click="applyFilters">
+              Apply
+            </v-btn>
+            <v-spacer></v-spacer>
+            <v-btn color="secondary" variant="text" prepend-icon="mdi-calendar-today" @click="quickToday">
+              Today
+            </v-btn>
+          </div>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Dashboard Stats Cards -->
     <v-row class="mb-6">
       <v-col
@@ -34,11 +69,16 @@
                 {{ stat.icon }}
               </v-icon>
             </div>
-            <div class="text-h4 font-weight-bold mb-2 text-white">
+            <div class="text-h4 font-weight-bold mb-2 text-white" :class="{'revenue-blur': stat.title === 'dashboard.total_revenue'}">
               {{ stat.value }}
             </div>
             <div class="text-subtitle-1 text-white opacity-90">
               {{ $t(stat.title) }}
+            </div>
+            <!-- Details under Delivered card: show stopdesk and home delivery counts -->
+            <div v-if="stat.title === 'dashboard.delivered_parcels'" class="text-caption text-white opacity-80 mt-1">
+              {{ $t('dashboard.stopdesk_collections_count') }}: {{ $props.stats.stopdesk_collections_count || 0 }} · 
+              {{ $t('dashboard.home_delivery_collections_count') }}: {{ $props.stats.home_delivery_collections_count || 0 }}
             </div>
           </v-card-text>
         </v-card>
@@ -167,6 +207,7 @@
 
 <script>
 import AppLayout from '@/Layouts/AppLayout.vue'
+import { router } from '@inertiajs/vue3'
 
 export default {
   name: 'Dashboard',
@@ -184,57 +225,23 @@ export default {
     },
     caseStats: {
       type: Object,
-      default: () => ({
-        totalBalance: 0,
-        totalCollections: 0,
-        totalExpenses: 0,
-        pendingExpenses: 0,
-        activeCases: 0,
-        cases: []
-      })
+      default: () => ({})
+    },
+    filters: {
+      type: Object,
+      default: () => ({ start: new Date().toISOString().slice(0, 10), end: new Date().toISOString().slice(0, 10) })
     }
   },
   data() {
     return {
-      parcelHeaders: [
-        { text: this.$t('parcels.tracking_number'), value: 'tracking_number' },
-        { text: this.$t('parcels.receiver_name'), value: 'recipient_name' },
-        { text: this.$t('parcels.receiver_phone'), value: 'recipient_phone' },
-        { text: this.$t('parcels.state'), value: 'state.name' },
-        { text: this.$t('parcels.city'), value: 'city.name' },
-        { text: this.$t('parcels.status'), value: 'status' },
-        { text: 'COD Amount', value: 'cod_amount' },
-        { text: 'Actions', value: 'actions', sortable: false }
-      ],
-      quickActions: [
-        {
-          title: 'dashboard.create_parcel',
-          subtitle: 'dashboard.create_parcel_desc',
-          icon: 'mdi-plus-circle',
-          color: 'primary',
-          route: '/parcels/create'
-        },
-        {
-          title: 'dashboard.track_parcel',
-          subtitle: 'dashboard.track_parcel_desc',
-          icon: 'mdi-magnify',
-          color: 'info',
-          route: '/parcels'
-        },
-        {
-          title: 'dashboard.reports',
-          subtitle: 'dashboard.reports_desc',
-          icon: 'mdi-chart-line',
-          color: 'success',
-          route: '/reports'
-        }
-      ]
+      filterStart: this.$props.filters?.start || new Date().toISOString().slice(0, 10),
+      filterEnd: this.$props.filters?.end || new Date().toISOString().slice(0, 10)
     }
   },
   computed: {
     stats() {
       const statsData = this.$props.stats || {}
-      return [
+      const items = [
         {
           title: 'dashboard.total_parcels',
           value: statsData.total_parcels || 0,
@@ -253,13 +260,17 @@ export default {
           icon: 'mdi-check-circle',
           color: 'success'
         },
+        // Revenue card visible only to admins
         {
           title: 'dashboard.total_revenue',
           value: statsData.total_revenue  || 0,
           icon: 'mdi-cash',
-          color: 'info'
+          color: 'info',
+          adminOnly: true
         }
       ]
+      const isAdmin = this.$page?.props?.auth?.user?.role === 'admin'
+      return items.filter(item => !item.adminOnly || isAdmin)
     }
   },
   methods: {
@@ -280,6 +291,22 @@ export default {
         style: 'currency',
         currency: 'DZD'
       }).format(amount)
+    },
+    applyFilters() {
+      const params = {
+        start: this.filterStart,
+        end: this.filterEnd
+      }
+      router.get('/dashboard', params, {
+        preserveState: true,
+        preserveScroll: true
+      })
+    },
+    quickToday() {
+      const today = new Date().toISOString().slice(0, 10)
+      this.filterStart = today
+      this.filterEnd = today
+      this.applyFilters()
     }
   }
 }
@@ -288,6 +315,16 @@ export default {
 <style scoped>
 .dashboard-stat-card:hover {
   box-shadow: 0 12px 40px rgba(0,0,0,0.15) !important;
+}
+
+/* Add blur to revenue value, remove blur when the card is hovered */
+.revenue-blur {
+  filter: blur(6px);
+  transition: filter 0.2s ease;
+}
+
+.dashboard-stat-card:hover .revenue-blur {
+  filter: blur(0);
 }
 
 .stat-avatar {

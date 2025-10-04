@@ -31,7 +31,11 @@ class DriverSettlementController extends Controller
      */
     public function index()
     {
-        $drivers = Driver::active()->select('id', 'name')->orderBy('name')->get();
+        // Include commission fields so UI can auto-fill commission when driver is selected
+        $drivers = Driver::active()
+            ->select('id', 'name', 'commission_rate', 'commission_type', 'commission_is_active')
+            ->orderBy('name')
+            ->get();
 
         // Get active money cases
         $activeCases = MoneyCase::where('status', 'active')
@@ -116,11 +120,14 @@ class DriverSettlementController extends Controller
             'tracking_numbers.*' => 'string',
             'driver_id' => 'required|exists:drivers,id',
             'driver_commission' => 'required|numeric|min:0',
+            'parcel_commissions' => 'sometimes|array', // optional per-parcel overrides keyed by tracking number
+            'parcel_commissions.*' => 'numeric|min:0',
             'case_id' => 'nullable|exists:money_cases,id',
             'note' => 'nullable|string|max:1000',
         ]);
 
         $driver = Driver::findOrFail($request->driver_id);
+        $wantsJson = $request->expectsJson();
 
         DB::beginTransaction();
         try {
@@ -149,9 +156,17 @@ class DriverSettlementController extends Controller
                     'delivered_at' => now(),
                 ]);
 
+                // Determine commission for this parcel: per-parcel override or global driver commission
+                $commissionForParcel = null;
+                if (is_array($request->parcel_commissions) && array_key_exists($tn, $request->parcel_commissions)) {
+                    $commissionForParcel = floatval($request->parcel_commissions[$tn]);
+                } else {
+                    $commissionForParcel = floatval($request->driver_commission);
+                }
+
                 // Calculate margin: company home delivery commission minus driver commission
                 $companyCommission = $parcel->company ? ($parcel->company->home_delivery_commission ?? 0) : 0;
-                $margin = max(0, $companyCommission - floatval($request->driver_commission));
+                $margin = max(0, $companyCommission - $commissionForParcel);
 
                 // Create the collection record for home delivery
                 $collection = Collection::create([
@@ -163,12 +178,25 @@ class DriverSettlementController extends Controller
                     'amount_given' => $parcel->cod_amount,
                     'driver_id' => $driver->id,
                     'margin' => $margin,
-                    'driver_commission' => $request->driver_commission,
+                    'driver_commission' => $commissionForParcel,
                     'case_id' => $request->case_id,
                     'parcel_type' => 'home_delivery',
                 ]);
 
                 $collectionIds[] = $collection->id;
+            }
+
+            // If no collections created, avoid creating an empty recolte
+            if (empty($collectionIds)) {
+                DB::rollBack();
+                if ($wantsJson) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'No collections were created. Parcels may already be collected or not found.',
+                        'skipped' => $skipped,
+                    ], 422);
+                }
+                return back()->withErrors(['error' => 'No collections were created. Parcels may already be collected or not found.']);
             }
 
             // Create recolte and attach collections
@@ -177,31 +205,44 @@ class DriverSettlementController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
-            if (!empty($collectionIds)) {
-                // Update money case if provided and assign to collections
-                if ($request->case_id) {
-                    $collections = Collection::whereIn('id', $collectionIds)->get();
-                    $collections->each(function ($c) use ($request) { $c->update(['case_id' => $request->case_id]); });
-                }
+            // Update money case if provided and assign to collections
+            if ($request->case_id) {
+                $collections = Collection::whereIn('id', $collectionIds)->get();
+                $collections->each(function ($c) use ($request) { $c->update(['case_id' => $request->case_id]); });
+            }
 
-                // Attach collections to recolte first
-                $recolte->collections()->attach($collectionIds);
+            // Attach collections to recolte first
+            $recolte->collections()->attach($collectionIds);
 
-                // Then update money case balance to reflect recolted collections
-                if ($request->case_id) {
-                    $moneyCase = MoneyCase::find($request->case_id);
-                    if ($moneyCase) {
-                        $moneyCase->updateBalance();
-                    }
+            // Then update money case balance to reflect recolted collections
+            if ($request->case_id) {
+                $moneyCase = MoneyCase::find($request->case_id);
+                if ($moneyCase) {
+                    $moneyCase->updateBalance();
                 }
             }
 
             DB::commit();
 
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "Recolte #{$recolte->code} created successfully with ".count($collectionIds)." collections.",
+                    'recolte_id' => $recolte->id,
+                    'redirect' => route('recoltes.show', ['recolte' => $recolte->id])
+                ]);
+            }
+
             return redirect()->route('recoltes.show', ['recolte' => $recolte->id])
                 ->with('success', "Recolte #{$recolte->code} created successfully with ".count($collectionIds)." collections.");
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($wantsJson) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Failed to process driver settlement: ' . $e->getMessage()
+                ], 500);
+            }
             return back()->withErrors(['error' => 'Failed to process driver settlement: ' . $e->getMessage()]);
         }
     }

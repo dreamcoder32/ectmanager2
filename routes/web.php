@@ -16,6 +16,7 @@ use App\Http\Controllers\SalaryPaymentController;
 use App\Http\Controllers\CommissionPaymentController;
 use App\Http\Controllers\MoneyCaseController;
 use App\Http\Controllers\FinancialDashboardController;
+use App\Http\Controllers\DriverController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -70,6 +71,21 @@ Route::middleware(['auth'])->group(function () {
     
     // Search by tracking number
     Route::post('/parcels/search-by-tracking', [ParcelController::class, 'searchByTrackingNumber'])->name('parcels.search-by-tracking');
+});
+
+// Add API endpoints for states and cities used by selectors
+Route::middleware(['auth'])->group(function () {
+    Route::get('/api/states', [ParcelController::class, 'getStates'])->name('api.states');
+    Route::get('/api/states/{state}/cities', [ParcelController::class, 'getCitiesByState'])->name('api.states.cities');
+});
+
+// Driver routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/drivers', [DriverController::class, 'index'])->name('drivers.index');
+    Route::get('/drivers/create', [DriverController::class, 'create'])->name('drivers.create');
+    Route::post('/drivers', [DriverController::class, 'store'])->name('drivers.store');
+    Route::get('/drivers/{driver}/edit', [DriverController::class, 'edit'])->name('drivers.edit');
+    Route::put('/drivers/{driver}', [DriverController::class, 'update'])->name('drivers.update');
 });
 
 // Stopdesk Payment routes
