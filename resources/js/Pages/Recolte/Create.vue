@@ -125,7 +125,7 @@
                               show-select
                               item-key="id"
                               class="elevation-0"
-                              :items-per-page="10"
+                              :items-per-page="60"
                             >
                               <template #[`item.parcel.tracking_number`]="{ item }">
                                 <v-chip
