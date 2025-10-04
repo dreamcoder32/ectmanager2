@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('drivers', function (Blueprint $table) {
             // Commission Configuration
             $table->decimal('commission_rate', 5, 2)->default(0); // Percentage (0-100)
-            $table->enum('commission_type', [ 'fixed_per_parcel'])->default('percentage');
+            $table->enum('commission_type', [ 'fixed_per_parcel','other'])->default('percentage');
             $table->boolean('commission_is_active')->default(false);
         });
     }
