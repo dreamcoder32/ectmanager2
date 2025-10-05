@@ -72,15 +72,19 @@ class DriverSettlementController extends Controller
 
         // Attempt to detect a header row and tracking column within the first 10 rows
         $headerHints = ['tracking', 'suivi', 'awb', 'barcode', 'code barre', 'codebarre', 'code-barre'];
-        for ($i = 0; $i < min(10, count($rows)); $i++) {
-            $row = $rows[$i];
+        $maxHeaderScan = 10;
+        $scanned = 0;
+        foreach ($rows as $rIndex => $row) {
+            if ($scanned >= $maxHeaderScan) {
+                break;
+            }
             foreach ($row as $col => $val) {
                 $text = strtolower(trim((string) $val));
                 if ($text === '') continue;
                 foreach ($headerHints as $hint) {
                     if (strpos($text, $hint) !== false) {
                         $trackingColumn = $col;
-                        $headerRowIndex = $i;
+                        $headerRowIndex = $rIndex;
                         break 2;
                     }
                 }
@@ -91,12 +95,21 @@ class DriverSettlementController extends Controller
                     }
                 }
             }
+            $scanned++;
         }
 
         if ($trackingColumn !== null) {
             // Read tracking values from the detected column, below the header
-            for ($i = $headerRowIndex + 1; $i < count($rows); $i++) {
-                $val = isset($rows[$i][$trackingColumn]) ? (string) $rows[$i][$trackingColumn] : '';
+            $afterHeader = false;
+            foreach ($rows as $rIndex => $row) {
+                if (!$afterHeader) {
+                    if ($rIndex === $headerRowIndex) {
+                        $afterHeader = true;
+                        continue; // skip the header row itself
+                    }
+                    continue; // skip rows before header
+                }
+                $val = isset($row[$trackingColumn]) ? (string) $row[$trackingColumn] : '';
                 $raw = strtoupper(trim($val));
                 // Normalize by removing non-alphanumerics
                 $normalized = preg_replace('/[^A-Z0-9]/', '', $raw);
