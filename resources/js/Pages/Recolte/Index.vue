@@ -37,6 +37,16 @@
               <span class="text-h6 font-weight-medium" style="color: #333;">Collection Transfers</span>
             </v-card-title>
             <v-card-text class="pa-0">
+              <!-- Selection summary -->
+              <div class="d-flex align-center px-4 py-3" style="border-bottom: 1px solid #e0e0e0;">
+                <v-chip color="primary" class="mr-2" style="font-weight:600;">
+                  Selected: {{ selectedCount }}
+                </v-chip>
+                <v-chip color="orange" class="mr-2" style="font-weight:600;" v-if="selectedCount > 0">
+                  Total COD: {{ formatCurrency(selectedTotalCodAmount) }} Da
+                </v-chip>
+                <span class="text-caption text-secondary">Use the checkboxes to select recoltes</span>
+              </div>
               <v-data-table
                 :headers="headers"
                 :items="recoltes.data"
@@ -48,6 +58,9 @@
                 }"
                 class="simple-table"
                 item-key="id"
+                show-select
+                return-object
+                v-model="selectedRecoltes"
               >
                 <!-- Code Column -->
                  <template v-slot:[`item.code`]="{ item }">
@@ -207,6 +220,7 @@ export default {
       deleting: false,
       deleteDialog: false,
       selectedRecolte: null,
+      selectedRecoltes: [],
       options: {
         page: 1,
         itemsPerPage: 25,
@@ -257,6 +271,28 @@ export default {
           align: 'center'
         }
       ]
+    }
+  },
+  computed: {
+    selectedCount() {
+      return Array.isArray(this.selectedRecoltes) ? this.selectedRecoltes.length : 0
+    },
+    selectedTotalCodAmount() {
+      const selected = Array.isArray(this.selectedRecoltes) ? this.selectedRecoltes : []
+      const list = Array.isArray(this.recoltes?.data) ? this.recoltes.data : []
+      const byId = new Map(list.map(it => [it.id, it]))
+
+      return selected.reduce((sum, r) => {
+        let amt = 0
+        if (r && typeof r === 'object') {
+          const raw = r.raw || r
+          amt = parseFloat(raw?.total_cod_amount ?? 0)
+        } else {
+          const found = byId.get(r)
+          amt = parseFloat(found?.total_cod_amount ?? 0)
+        }
+        return sum + (isNaN(amt) ? 0 : amt)
+      }, 0)
     }
   },
   watch: {
