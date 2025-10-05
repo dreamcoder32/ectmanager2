@@ -36,7 +36,7 @@
     <div class="header">
         <div><span class="label">Recolte Code:</span> RCT-{{ $recolte->code }} Créé par : {{ optional($recolte->createdBy)->name }}</div>
         @php
-            $totalCod = $recolte->collections->sum(function ($c) { return $c->parcel ? (intval($c->parcel->cod_amount) ?? 0) : 0; });
+            $totalCod = $recolte->collections->sum(function ($c) { return $c->parcel ? (intval($c->amount) ?? 0) : 0; });
         @endphp
         <div><span class="label">Total COD:</span> {{ number_format((int) round($totalCod)) }} Da</div>
             <div>
