@@ -40,7 +40,7 @@ class RecolteController extends BaseController
         // Calculate cod_amount sum for each recolte
         $recoltes->getCollection()->transform(function ($recolte) {
             $recolte->total_cod_amount = $recolte->collections->sum(function ($collection) {
-                return $collection->parcel ? $collection->parcel->cod_amount : 0;
+                return $collection->amount ?? 0;
             });
             return $recolte;
         });

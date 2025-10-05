@@ -39,6 +39,9 @@
             $totalCod = $recolte->collections->sum(function ($c) { return $c->parcel ? (intval($c->parcel->cod_amount) ?? 0) : 0; });
         @endphp
         <div><span class="label">Total COD:</span> {{ number_format((int) round($totalCod)) }} Da</div>
+            <div>
+                <span class="label">Note:</span> {{ $recolte->note }}
+            </div>
     </div>
 
     <table class="zebra">
@@ -85,5 +88,22 @@
         @endforeach
         </tbody>
     </table>
+<script type="text/php">
+if (isset($pdf)) {
+    // Render page number at the bottom-right: "Page {current}/{total}"
+    $font = $fontMetrics->get_font("Helvetica", "normal");
+    $size = 10;
+    $canvas = $pdf->get_canvas();
+    $w = $canvas->get_width();
+    $h = $canvas->get_height();
+    $text = "page {PAGE_NUM}/{PAGE_COUNT}";
+
+    // Place ~120pt from the right edge and ~24pt from the bottom edge
+    $x = $w - 120;
+    $y = $h - 24;
+
+    $canvas->page_text($x, $y, $text, $font, $size, [0, 0, 0]);
+}
+</script>
 </body>
 </html>

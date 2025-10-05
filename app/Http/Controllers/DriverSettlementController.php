@@ -169,12 +169,13 @@ class DriverSettlementController extends Controller
                 $margin = max(0, $companyCommission - $commissionForParcel);
 
                 // Create the collection record for home delivery
+                $netAmount = max(0, (float) ($parcel->cod_amount ?? 0) - (float) $commissionForParcel);
                 $collection = Collection::create([
                     'collected_at' => now(),
                     'parcel_id' => $parcel->id,
                     'created_by' => Auth::id(),
                     'note' => $request->note ? $request->note : 'Driver settlement import',
-                    'amount' => $parcel->cod_amount,
+                    'amount' => $netAmount,
                     'amount_given' => $parcel->cod_amount,
                     'driver_id' => $driver->id,
                     'margin' => $margin,

@@ -96,6 +96,9 @@
                             <v-chip color="primary" text-color="white" small>
                               {{ $t('financial_dashboard.total_revenue') }}: {{ formatCurrency(totalCod) }}
                             </v-chip>
+                            <v-chip color="deep-purple" text-color="white" small class="ml-2">
+                              {{ $t('driverSettlement.total_net') }}: {{ formatCurrency(totalNet) }}
+                            </v-chip>
                           </v-card-title>
                           <v-card-text class="pa-0">
                             <v-data-table
@@ -112,6 +115,9 @@
                               </template>
                               <template v-slot:[`item.cod_amount`]="{ item }">
                                 <v-chip small color="success" text-color="white">{{ formatCurrency(item.cod_amount) }}</v-chip>
+                              </template>
+                              <template v-slot:[`item.net_amount`]="{ item }">
+                                <v-chip small color="deep-purple" text-color="white">{{ formatCurrency(netAmountForParcel(item)) }}</v-chip>
                               </template>
                               <template v-slot:[`item.company_name`]="{ item }">
                                 <div>{{ item.company_name || 'N/A' }}</div>
@@ -179,6 +185,7 @@ export default {
     const headers = [
       { text: t('parcels.tracking_number'), value: 'tracking_number', sortable: false },
       { text: t('parcels.cod_amount') || 'COD Amount', value: 'cod_amount', sortable: true },
+      { text: t('driverSettlement.net_amount') || 'Net Amount', value: 'net_amount', sortable: false },
       { text: t('parcels.company') || 'Company', value: 'company_name', sortable: false },
       { text: t('drivers.headers.commission'), value: 'commission', sortable: false },
       { text: t('parcels.status'), value: 'status', sortable: false }
@@ -233,6 +240,9 @@ export default {
     },
     totalCod() {
       return this.foundParcels.reduce((sum, p) => sum + (Number(p.cod_amount) || 0), 0);
+    },
+    totalNet() {
+      return this.foundParcels.reduce((sum, p) => sum + this.netAmountForParcel(p), 0);
     }
   },
   methods: {
@@ -263,6 +273,12 @@ export default {
           this.parcelCommissionMap[tn] = defaultCommission;
         }
       });
+    },
+    netAmountForParcel(p) {
+      const commission = Number(this.parcelCommissionMap[p.tracking_number] ?? this.driverCommission ?? 0) || 0;
+      const cod = Number(p.cod_amount) || 0;
+      const net = cod - commission;
+      return net > 0 ? net : 0;
     },
     async onPdfChange() {
       this.foundParcels = [];

@@ -151,7 +151,9 @@ const messages = {
       select_driver: 'Select Driver',
       driver_commission_da: 'Driver Commission (DA)',
       money_case_optional: 'Money Case (optional)',
-      import_pdf_title: 'Import Driver Settlement PDF'
+      import_pdf_title: 'Import Driver Settlement PDF',
+      net_amount: 'Net Amount',
+      total_net: 'Total Net'
     }
   },
   fr: {
@@ -272,7 +274,7 @@ const messages = {
       case_active: 'Caisse Active',
       no_case_selected: 'Aucune Caisse Sélectionnée'
     },
-    // Ajout des traductions pour les Livreurs
+    // Added drivers translations
     drivers: {
       title: 'Livreurs',
       list: 'Liste des Livreurs',
@@ -294,7 +296,7 @@ const messages = {
       edit: 'Modifier',
       commission_disabled: 'Désactivé'
     },
-    // Ajout des traductions pour le règlement du Livreur
+    // Added driver settlement translations
     driverSettlement: {
       title: 'Importation du règlement du Livreur',
       back_to_transfers: 'Retour aux transferts de collecte',
@@ -302,7 +304,9 @@ const messages = {
       select_driver: 'Sélectionner un Livreur',
       driver_commission_da: 'Commission du Livreur (DA)',
       money_case_optional: 'Caisse (optionnel)',
-      import_pdf_title: 'Importer le PDF de règlement du Livreur'
+      import_pdf_title: 'Importer le PDF de règlement du Livreur',
+      net_amount: 'Montant net',
+      total_net: 'Net total'
     }
   },
   ar: {
