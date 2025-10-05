@@ -148,10 +148,12 @@ const messages = {
       title: 'Driver Settlement Import',
       back_to_transfers: 'Back to Collection Transfers',
       upload_pdf: 'Upload PDF',
+      upload_xlsx: 'Upload XLSX',
       select_driver: 'Select Driver',
       driver_commission_da: 'Driver Commission (DA)',
       money_case_optional: 'Money Case (optional)',
       import_pdf_title: 'Import Driver Settlement PDF',
+      import_xlsx_title: 'Import Driver Settlement XLSX',
       net_amount: 'Net Amount',
       total_net: 'Total Net'
     }
@@ -301,10 +303,12 @@ const messages = {
       title: 'Importation du règlement du Livreur',
       back_to_transfers: 'Retour aux transferts de collecte',
       upload_pdf: 'Télécharger le PDF',
+      upload_xlsx: 'Télécharger le XLSX',
       select_driver: 'Sélectionner un Livreur',
       driver_commission_da: 'Commission du Livreur (DA)',
       money_case_optional: 'Caisse (optionnel)',
       import_pdf_title: 'Importer le PDF de règlement du Livreur',
+      import_xlsx_title: 'Importer le fichier XLSX du règlement du Livreur',
       net_amount: 'Montant net',
       total_net: 'Net total'
     }
@@ -454,10 +458,12 @@ const messages = {
       title: 'استيراد تسوية السائق',
       back_to_transfers: 'الرجوع إلى تحويلات التحصيل',
       upload_pdf: 'رفع ملف PDF',
+      upload_xlsx: 'رفع ملف XLSX',
       select_driver: 'اختيار السائق',
       driver_commission_da: 'عمولة السائق (دج)',
       money_case_optional: 'صندوق المال (اختياري)',
-      import_pdf_title: 'استيراد ملف تسوية السائق PDF'
+      import_pdf_title: 'استيراد ملف تسوية السائق PDF',
+      import_xlsx_title: 'استيراد ملف تسوية السائق XLSX'
     }
   }
 }

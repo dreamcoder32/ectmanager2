@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use Smalot\PdfParser\Parser as PdfParser;
+use PhpOffice\PhpSpreadsheet\IOFactory; // Added for XLSX parsing
 
 class DriverSettlementController extends Controller
 {
@@ -50,35 +50,84 @@ class DriverSettlementController extends Controller
     }
 
     /**
-     * Parse the uploaded PDF to extract tracking numbers and an optional guessed driver name
+     * Parse the uploaded XLSX to extract tracking numbers and an optional guessed driver name
      */
     public function parse(Request $request)
     {
         $request->validate([
-            'pdf_file' => 'required|file|mimes:pdf|max:20480', // up to 20MB
+            'xlsx_file' => 'required|file|mimes:xlsx,xls|max:20480', // up to 20MB
         ]);
 
-        $file = $request->file('pdf_file');
-        $parser = new PdfParser();
-        $pdf = $parser->parseFile($file->getPathname());
-        $text = $pdf->getText();
+        $file = $request->file('xlsx_file');
 
-        // Extract tracking numbers: long alphanumeric sequences (12-30 chars)
-        preg_match_all('/[A-Z0-9]{12,30}/', $text, $matches);
-        $candidates = array_values(array_unique($matches[0] ?? []));
+        // Load spreadsheet and read rows as array
+        $spreadsheet = IOFactory::load($file->getPathname());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray(null, true, true, true); // rows as arrays keyed by column letters
 
-        // Try to guess driver name from occurrences after the word "Livreur"
+        $candidates = [];
         $guessDriverName = null;
-        if (preg_match_all('/Livreur\s*([A-Za-zÀ-ÿ0-9\s\-]+)/u', $text, $dmatches)) {
-            $names = array_map(function ($n) { return trim($n); }, $dmatches[1]);
-            $names = array_filter($names, fn($n) => strlen($n) > 0);
-            if (!empty($names)) {
-                // Choose the most frequent name candidate
-                $counts = array_count_values($names);
-                arsort($counts);
-                $guessDriverName = array_key_first($counts);
+        $trackingColumn = null;
+        $headerRowIndex = null;
+
+        // Attempt to detect a header row and tracking column within the first 10 rows
+        $headerHints = ['tracking', 'suivi', 'awb', 'barcode', 'code barre', 'codebarre', 'code-barre'];
+        for ($i = 0; $i < min(10, count($rows)); $i++) {
+            $row = $rows[$i];
+            foreach ($row as $col => $val) {
+                $text = strtolower(trim((string) $val));
+                if ($text === '') continue;
+                foreach ($headerHints as $hint) {
+                    if (strpos($text, $hint) !== false) {
+                        $trackingColumn = $col;
+                        $headerRowIndex = $i;
+                        break 2;
+                    }
+                }
+                // Guess driver name from cells containing keywords
+                if ($guessDriverName === null) {
+                    if (preg_match('/(livreur|driver)\s*:?\s*(.+)/i', (string) $val, $m)) {
+                        $guessDriverName = trim($m[2]);
+                    }
+                }
             }
         }
+
+        if ($trackingColumn !== null) {
+            // Read tracking values from the detected column, below the header
+            for ($i = $headerRowIndex + 1; $i < count($rows); $i++) {
+                $val = isset($rows[$i][$trackingColumn]) ? (string) $rows[$i][$trackingColumn] : '';
+                $raw = strtoupper(trim($val));
+                // Normalize by removing non-alphanumerics
+                $normalized = preg_replace('/[^A-Z0-9]/', '', $raw);
+                if ($normalized && preg_match('/^[A-Z0-9]{8,30}$/', $normalized)) {
+                    $candidates[] = $normalized;
+                }
+            }
+        }
+
+        // Fallback: scan all cells for tracking-like values if no column was found or very few candidates
+        if ($trackingColumn === null || count($candidates) === 0) {
+            foreach ($rows as $row) {
+                foreach ($row as $val) {
+                    $text = strtoupper((string) $val);
+                    if ($text === '') continue;
+                    // Extract long alphanumeric sequences (8-30 chars)
+                    if (preg_match_all('/[A-Z0-9]{8,30}/', $text, $matches)) {
+                        foreach ($matches[0] as $m) {
+                            $candidates[] = $m;
+                        }
+                    }
+                    // Guess driver name
+                    if ($guessDriverName === null && preg_match('/(LIVREUR|DRIVER)\s*:?\s*([A-ZÀ-ÿ0-9\s\-]+)/u', $text, $dm)) {
+                        $guessDriverName = trim($dm[2]);
+                    }
+                }
+            }
+        }
+
+        // Unique the candidates
+        $candidates = array_values(array_unique($candidates));
 
         // Fetch parcels matching extracted tracking numbers
         $parcels = Parcel::with('company')

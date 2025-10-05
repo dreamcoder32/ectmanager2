@@ -18,8 +18,8 @@
 
               <v-card elevation="2" style="border-radius: 12px;">
                 <v-card-title class="pa-6" style="background: #f8f9fa; border-bottom: 1px solid #e0e0e0;">
-                  <v-icon left color="primary" size="28">mdi-file-pdf-box</v-icon>
-                  <span class="text-h5 font-weight-medium">{{ $t('driverSettlement.import_pdf_title') }}</span>
+                  <v-icon left color="primary" size="28">mdi-file-excel-box</v-icon>
+                  <span class="text-h5 font-weight-medium">{{ $t('driverSettlement.import_xlsx_title') }}</span>
                 </v-card-title>
 
                 <v-card-text class="">
@@ -27,12 +27,12 @@
                     <v-row>
                       <v-col cols="12" md="12">
                         <v-file-input
-                          v-model="pdfFile"
-                          :label="$t('driverSettlement.upload_pdf')"
-                          accept=".pdf"
-                          prepend-icon="mdi-file-pdf"
+                          v-model="xlsxFile"
+                          :label="$t('driverSettlement.upload_xlsx')"
+                          accept=".xlsx,.xls"
+                          prepend-icon="mdi-file-excel"
                           outlined
-                          @change="onPdfChange"
+                          @change="onXlsxChange"
                         />
                       </v-col>
                       <v-col cols="12" md="6">
@@ -199,7 +199,7 @@ export default {
   },
   data() {
     return {
-      pdfFile: null,
+      xlsxFile: null,
       selectedDriverId: null,
       driverCommission: 0,
       caseId: null,
@@ -280,16 +280,16 @@ export default {
       const net = cod - commission;
       return net > 0 ? net : 0;
     },
-    async onPdfChange() {
+    async onXlsxChange() {
       this.foundParcels = [];
       this.missingTrackingNumbers = [];
       this.selectedTrackingNumbers = [];
       this.parseSummary = null;
       this.parcelCommissionMap = {};
 
-      if (!this.pdfFile) return;
+      if (!this.xlsxFile) return;
       const formData = new FormData();
-      formData.append('pdf_file', this.pdfFile);
+      formData.append('xlsx_file', this.xlsxFile);
 
       try {
         const resp = await fetch('/driver-settlement/parse', { method: 'POST', body: formData, headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content') } });
@@ -308,11 +308,11 @@ export default {
           // Initialize commission map defaults
           this.applyCommissionToAllParcels(true);
         } else {
-          this.showError('Failed to parse PDF');
+          this.showError('Failed to parse XLSX');
         }
       } catch (e) {
         console.error('Parse error', e);
-        this.showError('Failed to parse PDF');
+        this.showError('Failed to parse XLSX');
       }
     },
     async submitProcess() {
