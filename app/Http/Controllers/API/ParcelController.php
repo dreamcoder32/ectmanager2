@@ -21,7 +21,9 @@ class ParcelController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('tracking_number', 'like', "%{$search}%")
                   ->orWhere('recipient_name', 'like', "%{$search}%")
-                  ->orWhere('recipient_phone', 'like', "%{$search}%");
+                  ->orWhere('recipient_phone', 'like', "%{$search}%")
+                  // Include reference in API search to support barcode scans by reference
+                  ->orWhere('reference', 'like', "%{$search}%");
             });
         }
 

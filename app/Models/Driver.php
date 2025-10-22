@@ -20,12 +20,20 @@ class Driver extends Model
         'commission_type',
         'commission_is_active',
         'state_id',
+        // Contract-related fields
+        'birth_date',
+        'birth_place',
+        'address',
+        'contract_date',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'commission_rate' => 'decimal:2',
         'commission_is_active' => 'boolean',
+        // Contract-related casts
+        'birth_date' => 'date',
+        'contract_date' => 'date',
     ];
 
     /**

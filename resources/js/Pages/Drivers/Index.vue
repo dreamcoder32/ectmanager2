@@ -65,15 +65,27 @@
                 </template> -->
 
                 <template v-slot:[`item.actions`]="{ item }">
-                  <v-btn
-                    @click="goEdit(item.id)"
-                    color="primary"
-                    size="small"
-                    prepend-icon="mdi-pencil"
-                    variant="tonal"
-                  >
-                    {{ $t('drivers.edit') }}
-                  </v-btn>
+                  <div class="d-flex gap-2">
+                    <v-btn
+                      @click="goEdit(item.id)"
+                      color="primary"
+                      size="small"
+                      prepend-icon="mdi-pencil"
+                      variant="tonal"
+                    >
+                      {{ $t('drivers.edit') }}
+                    </v-btn>
+                    <v-btn
+                      :href="route('drivers.contract.preview', item.id)"
+                      target="_blank"
+                      color="secondary"
+                      size="small"
+                      prepend-icon="mdi-file-pdf"
+                      variant="outlined"
+                    >
+                      {{ $t('drivers.contract') }}
+                    </v-btn>
+                  </div>
                 </template>
               </v-data-table>
             </v-card-text>

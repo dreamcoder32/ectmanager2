@@ -80,6 +80,54 @@
                     ></v-text-field>
                   </v-col>
 
+                  <!-- Contract-related Information -->
+                  <v-col cols="12">
+                    <v-divider class="my-4"></v-divider>
+                    <h3 class="text-h6 mb-4 text-primary">{{ $t('drivers.headers.contract_info') }}</h3>
+                  </v-col>
+
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      v-model="form.birth_date"
+                      :label="$t('drivers.headers.birth_date')"
+                      type="date"
+                      variant="outlined"
+                      :error-messages="errors?.birth_date"
+                      prepend-inner-icon="mdi-calendar"
+                    ></v-text-field>
+                  </v-col>
+
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      v-model="form.birth_place"
+                      :label="$t('drivers.headers.birth_place')"
+                      variant="outlined"
+                      :error-messages="errors?.birth_place"
+                      prepend-inner-icon="mdi-map-marker"
+                    ></v-text-field>
+                  </v-col>
+
+                  <v-col cols="12" md="8">
+                    <v-text-field
+                      v-model="form.address"
+                      :label="$t('drivers.headers.address')"
+                      variant="outlined"
+                      :error-messages="errors?.address"
+                      prepend-inner-icon="mdi-home"
+                    ></v-text-field>
+                  </v-col>
+
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      v-model="form.contract_date"
+                      :label="$t('drivers.headers.contract_date')"
+                      type="date"
+                      variant="outlined"
+                      :error-messages="errors?.contract_date"
+                      prepend-inner-icon="mdi-calendar-check"
+                    ></v-text-field>
+                  </v-col>
+
                   <!-- Status -->
                   <v-col cols="12" md="6">
                     <v-switch
@@ -198,6 +246,11 @@ const form = useForm({
   phone: props.driver.phone || '',
   license_number: props.driver.license_number || '',
   vehicle_info: props.driver.vehicle_info || '',
+  // Contract-related
+  birth_date: props.driver.birth_date ? props.driver.birth_date.substring(0, 10) : '',
+  birth_place: props.driver.birth_place || '',
+  address: props.driver.address || '',
+  contract_date: props.driver.contract_date ? props.driver.contract_date.substring(0, 10) : '',
   is_active: props.driver.is_active ?? true,
   commission_rate: props.driver.commission_rate ?? '',
   commission_type: props.driver.commission_type || 'fixed_per_parcel',

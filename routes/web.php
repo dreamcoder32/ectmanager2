@@ -86,6 +86,10 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/drivers', [DriverController::class, 'store'])->name('drivers.store');
     Route::get('/drivers/{driver}/edit', [DriverController::class, 'edit'])->name('drivers.edit');
     Route::put('/drivers/{driver}', [DriverController::class, 'update'])->name('drivers.update');
+    // Contract PDF route
+    Route::get('/drivers/{driver}/contract', [DriverController::class, 'contract'])->name('drivers.contract');
+    // Contract HTML preview route
+    Route::get('/drivers/{driver}/contract/preview', [DriverController::class, 'contractPreview'])->name('drivers.contract.preview');
 });
 
 // Stopdesk Payment routes
