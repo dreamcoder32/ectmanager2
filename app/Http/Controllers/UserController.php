@@ -17,15 +17,28 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with(['manager', 'subordinates', 'companies'])
+        $user = auth()->user();
+        
+        // Build users query based on user role
+        $usersQuery = User::with(['manager', 'subordinates', 'companies'])
             ->select([
                 'id', 'uid', 'first_name', 'email', 'role', 'is_active',
                 'first_name', 'last_name', 'date_of_birth', 'identity_card_number',
                 'national_identification_number', 'started_working_at', 
                 'payment_day_of_month', 'monthly_salary', 'manager_id'
-            ])
-            ->orderBy('first_name')
-            ->get();
+            ]);
+
+        // Filter users based on role
+        if ($user->role === 'supervisor') {
+            // Supervisors can only see users from their companies
+            $userCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            $usersQuery->whereHas('companies', function ($query) use ($userCompanyIds) {
+                $query->whereIn('companies.id', $userCompanyIds);
+            });
+        }
+        // Admins can see all users (no additional filtering needed)
+
+        $users = $usersQuery->orderBy('first_name')->get();
 
         // Calculate statistics
         $stats = [
@@ -47,18 +60,34 @@ class UserController extends Controller
      */
     public function create()
     {
+        $user = auth()->user();
+        
         // Get potential supervisors (users who can manage others)
-        $supervisors = User::where('role', 'supervisor')
+        $supervisorsQuery = User::where('role', 'supervisor')
             ->orWhere('role', 'admin')
-            ->select('id', 'first_name', 'first_name', 'last_name')
-            ->orderBy('first_name')
-            ->get();
+            ->select('id', 'first_name', 'first_name', 'last_name');
 
-        // Get all active companies
-        $companies = Company::active()
-            ->select('id', 'name', 'code')
-            ->orderBy('name')
-            ->get();
+        // Filter supervisors based on role
+        if ($user->role === 'supervisor') {
+            // Supervisors can only see other supervisors from their companies
+            $userCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            $supervisorsQuery->whereHas('companies', function ($query) use ($userCompanyIds) {
+                $query->whereIn('companies.id', $userCompanyIds);
+            });
+        }
+
+        $supervisors = $supervisorsQuery->orderBy('first_name')->get();
+
+        // Get companies based on user role
+        $companiesQuery = Company::active()->select('id', 'name', 'code');
+        
+        if ($user->role === 'supervisor') {
+            // Supervisors can only create users in their companies
+            $userCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            $companiesQuery->whereIn('id', $userCompanyIds);
+        }
+
+        $companies = $companiesQuery->orderBy('name')->get();
 
         return Inertia::render('Users/Create', [
             'supervisors' => $supervisors,
@@ -71,6 +100,8 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $user = auth()->user();
+        
         $validator = Validator::make($request->all(), [
             'first_name' => 'nullable|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -92,6 +123,17 @@ class UserController extends Controller
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
+        }
+
+        // Validate company access for supervisors
+        if ($user->role === 'supervisor' && $request->filled('company_ids')) {
+            $userCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            $requestCompanyIds = $request->company_ids;
+            
+            // Check if all requested companies are within supervisor's companies
+            if (array_diff($requestCompanyIds, $userCompanyIds)) {
+                return back()->withErrors(['company_ids' => 'You can only assign users to companies you belong to.'])->withInput();
+            }
         }
 
         $user = User::create([
@@ -125,6 +167,19 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
+        $currentUser = auth()->user();
+        
+        // Check if supervisor can view this user
+        if ($currentUser->role === 'supervisor') {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $targetUserCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            
+            // Check if the target user belongs to any of the supervisor's companies
+            if (!array_intersect($userCompanyIds, $targetUserCompanyIds)) {
+                abort(403, 'You can only view users from your companies.');
+            }
+        }
+
         $user->load('manager', 'subordinates', 'companies');
         
         return Inertia::render('Users/Show', [
@@ -137,19 +192,44 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
+        $currentUser = auth()->user();
+        
+        // Check if supervisor can edit this user
+        if ($currentUser->role === 'supervisor') {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $targetUserCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            
+            // Check if the target user belongs to any of the supervisor's companies
+            if (!array_intersect($userCompanyIds, $targetUserCompanyIds)) {
+                abort(403, 'You can only edit users from your companies.');
+            }
+        }
+
         // Get potential supervisors (excluding the user being edited to prevent circular reference)
-        $supervisors = User::where('role', 'supervisor')
+        $supervisorsQuery = User::where('role', 'supervisor')
             ->orWhere('role', 'admin')
             ->where('id', '!=', $user->id)
-            ->select('id', 'first_name', 'first_name', 'last_name')
-            ->orderBy('first_name')
-            ->get();
+            ->select('id', 'first_name', 'first_name', 'last_name');
 
-        // Get all active companies
-        $companies = Company::active()
-            ->select('id', 'name', 'code')
-            ->orderBy('name')
-            ->get();
+        // Filter supervisors based on role
+        if ($currentUser->role === 'supervisor') {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $supervisorsQuery->whereHas('companies', function ($query) use ($userCompanyIds) {
+                $query->whereIn('companies.id', $userCompanyIds);
+            });
+        }
+
+        $supervisors = $supervisorsQuery->orderBy('first_name')->get();
+
+        // Get companies based on user role
+        $companiesQuery = Company::active()->select('id', 'name', 'code');
+        
+        if ($currentUser->role === 'supervisor') {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $companiesQuery->whereIn('id', $userCompanyIds);
+        }
+
+        $companies = $companiesQuery->orderBy('name')->get();
 
         // Load user's companies
         $user->load('companies');
@@ -166,6 +246,19 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $currentUser = auth()->user();
+        
+        // Check if supervisor can update this user
+        if ($currentUser->role === 'supervisor') {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $targetUserCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            
+            // Check if the target user belongs to any of the supervisor's companies
+            if (!array_intersect($userCompanyIds, $targetUserCompanyIds)) {
+                abort(403, 'You can only update users from your companies.');
+            }
+        }
+
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
@@ -187,6 +280,17 @@ class UserController extends Controller
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
+        }
+
+        // Validate company access for supervisors
+        if ($currentUser->role === 'supervisor' && $request->filled('company_ids')) {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $requestCompanyIds = $request->company_ids;
+            
+            // Check if all requested companies are within supervisor's companies
+            if (array_diff($requestCompanyIds, $userCompanyIds)) {
+                return back()->withErrors(['company_ids' => 'You can only assign users to companies you belong to.'])->withInput();
+            }
         }
 
         $updateData = [
@@ -225,6 +329,19 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        $currentUser = auth()->user();
+        
+        // Check if supervisor can delete this user
+        if ($currentUser->role === 'supervisor') {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $targetUserCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            
+            // Check if the target user belongs to any of the supervisor's companies
+            if (!array_intersect($userCompanyIds, $targetUserCompanyIds)) {
+                abort(403, 'You can only delete users from your companies.');
+            }
+        }
+
         // Check if user has subordinates
         if ($user->subordinates()->exists()) {
             return back()->withErrors(['error' => 'Cannot delete user who manages other users. Please reassign their subordinates first.']);
@@ -240,10 +357,34 @@ class UserController extends Controller
      */
     public function addCompanies(Request $request, User $user)
     {
+        $currentUser = auth()->user();
+        
+        // Check if supervisor can modify this user
+        if ($currentUser->role === 'supervisor') {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $targetUserCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            
+            // Check if the target user belongs to any of the supervisor's companies
+            if (!array_intersect($userCompanyIds, $targetUserCompanyIds)) {
+                abort(403, 'You can only modify users from your companies.');
+            }
+        }
+
         $request->validate([
             'company_ids' => 'required|array',
             'company_ids.*' => 'exists:companies,id'
         ]);
+
+        // Validate company access for supervisors
+        if ($currentUser->role === 'supervisor') {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $requestCompanyIds = $request->company_ids;
+            
+            // Check if all requested companies are within supervisor's companies
+            if (array_diff($requestCompanyIds, $userCompanyIds)) {
+                return back()->withErrors(['company_ids' => 'You can only assign users to companies you belong to.']);
+            }
+        }
 
         $user->companies()->syncWithoutDetaching($request->company_ids);
 
@@ -255,6 +396,19 @@ class UserController extends Controller
      */
     public function removeCompanies(Request $request, User $user)
     {
+        $currentUser = auth()->user();
+        
+        // Check if supervisor can modify this user
+        if ($currentUser->role === 'supervisor') {
+            $userCompanyIds = $currentUser->companies()->pluck('companies.id')->toArray();
+            $targetUserCompanyIds = $user->companies()->pluck('companies.id')->toArray();
+            
+            // Check if the target user belongs to any of the supervisor's companies
+            if (!array_intersect($userCompanyIds, $targetUserCompanyIds)) {
+                abort(403, 'You can only modify users from your companies.');
+            }
+        }
+
         $request->validate([
             'company_ids' => 'required|array',
             'company_ids.*' => 'exists:companies,id'
