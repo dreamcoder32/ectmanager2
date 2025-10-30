@@ -25,6 +25,17 @@
               style="max-width: 220px;"
               color="#667eea"
             />
+            <v-select
+              v-model="filterCompany"
+              :items="companyOptions"
+              label="Company"
+              variant="outlined"
+              density="compact"
+              hide-details
+              style="max-width: 220px;"
+              color="#667eea"
+              clearable
+            />
             <v-btn 
               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-transform: none; border-radius: 10px;"
               prepend-icon="mdi-filter" 
@@ -107,7 +118,7 @@
     </v-row>
 
     <!-- Charts Section - Show when date range is more than 1 day -->
-    <v-row class="mb-6" v-if="showCharts">
+    <v-row class="mb-6" v-if="showCharts && $page.props.auth.user.role !== 'agent'">
       <v-col cols="12">
         <v-card elevation="0" style="border-radius: 16px; border: 1px solid #e5e7eb; background: #ffffff;">
           <v-card-title class="pa-5 d-flex align-center justify-space-between" style="border-bottom: 1px solid #e5e7eb;">
@@ -130,7 +141,7 @@
               style="margin-bottom: 24px;"
               color="#667eea"
             >
-              <v-tab value="revenue">
+              <!-- <v-tab value="revenue">
                 <v-icon left size="20">mdi-cash</v-icon>
                 Revenue
               </v-tab>
@@ -141,7 +152,7 @@
               <v-tab value="parcels">
                 <v-icon left size="20">mdi-package-variant</v-icon>
                 Delivered Parcels
-              </v-tab>
+              </v-tab> -->
               <v-tab value="combined">
                 <v-icon left size="20">mdi-chart-multiple</v-icon>
                 Combined View
@@ -155,15 +166,15 @@
 
             <!-- Chart Legend/Stats -->
             <v-row class="mt-4">
-              <v-col cols="12" sm="4">
+              <v-col cols="12" sm="4" v-if="$page.props.auth.user.role === 'admin'">
                 <div class="text-center pa-3" style="background: #f9fafb; border-radius: 12px;">
                   <div class="text-caption" style="color: #6b7280;">Total Revenue</div>
-                  <div class="text-h6 font-weight-bold" style="color: #667eea;">
+                  <div class="text-h6 font-weight-bold" style="color: #8b5cf6;">
                     {{ formatCurrency(totalRevenue) }}
                   </div>
                 </div>
               </v-col>
-              <v-col cols="12" sm="4">
+              <v-col cols="12" :sm="$page.props.auth.user.role === 'admin' ? '4' : '6'">
                 <div class="text-center pa-3" style="background: #f9fafb; border-radius: 12px;">
                   <div class="text-caption" style="color: #6b7280;">Total Collected</div>
                   <div class="text-h6 font-weight-bold" style="color: #10b981;">
@@ -171,7 +182,7 @@
                   </div>
                 </div>
               </v-col>
-              <v-col cols="12" sm="4">
+              <v-col cols="12" :sm="$page.props.auth.user.role === 'admin' ? '4' : '6'">
                 <div class="text-center pa-3" style="background: #f9fafb; border-radius: 12px;">
                   <div class="text-caption" style="color: #6b7280;">Total Delivered</div>
                   <div class="text-h6 font-weight-bold" style="color: #3b82f6;">
@@ -180,6 +191,140 @@
                 </div>
               </v-col>
             </v-row>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Recolted Money Statistics -->
+    <v-row class="mb-6" v-if="recoltedStats && $page.props.auth.user.role !== 'agent'">
+      <v-col cols="12">
+        <v-card elevation="0" style="border-radius: 16px; border: 1px solid #e5e7eb; background: #ffffff;">
+          <v-card-title class="pa-5" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-radius: 16px 16px 0 0;">
+            <v-icon left color="white">mdi-cash-multiple</v-icon>
+            <span class="font-weight-bold">{{ $t('dashboard.recolted_money.title') }}</span>
+          </v-card-title>
+          <v-card-text class="pa-0">
+            <v-row class="ma-0">
+              <v-col cols="12" sm="6" md="3" class="pa-4">
+                <div class="text-center">
+                  <v-avatar 
+                    size="56" 
+                    class="mb-3"
+                    style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);"
+                  >
+                    <v-icon color="white" size="28">mdi-cash-plus</v-icon>
+                  </v-avatar>
+                  <div class="text-h5 font-weight-bold" style="color: #1a1d29;">{{ formatCurrency(recoltedStats.total_recolted_amount) }}</div>
+                  <div class="text-body-2" style="color: #6b7280;">{{ $t('dashboard.recolted_money.total_recolted') }}</div>
+                </div>
+              </v-col>
+              <v-col cols="12" sm="6" md="3" class="pa-4">
+                <div class="text-center">
+                  <v-avatar 
+                    size="56" 
+                    class="mb-3"
+                    style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);"
+                  >
+                    <v-icon color="white" size="28">mdi-cash-edit</v-icon>
+                  </v-avatar>
+                  <div class="text-h5 font-weight-bold" style="color: #1a1d29;">{{ formatCurrency(recoltedStats.total_recolted_amount || 0) }}</div>
+                  <div class="text-body-2" style="color: #6b7280;">{{ $t('dashboard.recolted_money.manual_amount') }}</div>
+                </div>
+              </v-col>
+              <v-col cols="12" sm="6" md="3" class="pa-4">
+                <div class="text-center">
+                  <v-avatar 
+                    size="56" 
+                    class="mb-3"
+                    style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);"
+                  >
+                    <v-icon color="white" size="28">mdi-file-document-multiple</v-icon>
+                  </v-avatar>
+                  <div class="text-h5 font-weight-bold" style="color: #1a1d29;">{{ recoltedStats.recoltes_count }}</div>
+                  <div class="text-body-2" style="color: #6b7280;">{{ $t('dashboard.recolted_money.total_recoltes') }}</div>
+                </div>
+              </v-col>
+              <v-col cols="12" sm="6" md="3" class="pa-4">
+                <div class="text-center">
+                  <v-avatar 
+                    size="56" 
+                    class="mb-3"
+                    style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);"
+                  >
+                    <v-icon color="white" size="28">mdi-alert-circle</v-icon>
+                  </v-avatar>
+                  <div class="text-h5 font-weight-bold" style="color: #1a1d29;">{{ recoltedStats.discrepancy_count }}</div>
+                  <div class="text-body-2" style="color: #6b7280;">{{ $t('dashboard.recolted_money.discrepancies') }}</div>
+                </div>
+              </v-col>
+            </v-row>
+            
+            <!-- Recent Recoltes -->
+            <v-divider style="border-color: #e5e7eb;"></v-divider>
+            <div class="pa-5" v-if="recoltedStats.recent_recoltes && recoltedStats.recent_recoltes.length > 0">
+              <div class="d-flex align-center justify-space-between mb-4">
+                <h3 class="text-h6 font-weight-bold" style="color: #1a1d29;">{{ $t('dashboard.recolted_money.recent_recoltes') }} ({{ recoltedStats.recent_recoltes.length }})</h3>
+                <v-btn 
+                  variant="text" 
+                  size="small"
+                  :href="'/recoltes'"
+                  style="color: #10b981; text-transform: none;"
+                >
+                  {{ $t('dashboard.recolted_money.view_all') }}
+                  <v-icon right size="18">mdi-arrow-right</v-icon>
+                </v-btn>
+              </div>
+              <v-row>
+                <v-col 
+                  v-for="recolte in recoltedStats.recent_recoltes" 
+                  :key="recolte.id"
+                  cols="12" 
+                  sm="6" 
+                  md="4"
+                >
+                  <v-card 
+                    elevation="0" 
+                    style="border-radius: 12px; border: 1px solid #e5e7eb; background: #f9fafb; transition: all 0.2s ease;"
+                    class="recolte-card"
+                  >
+                    <v-card-text class="pa-4">
+                      <div class="d-flex align-center justify-space-between mb-3">
+                        <h4 class="text-subtitle-1 font-weight-bold" style="color: #1a1d29;">
+                          <v-icon size="20" style="color: #10b981;">mdi-file-document-multiple</v-icon>
+                      RCT-{{ recolte.code }}
+                        </h4>
+                        <v-chip 
+                          :style="{
+                            background: recolte.has_discrepancy ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            color: 'white'
+                          }"
+                          size="small"
+                        >
+                          {{ formatCurrency(recolte.calculated_amount) }}
+                        </v-chip>
+                      </div>
+                      <div class="text-caption mb-3" style="color: #6b7280;">
+                        {{ recolte.company_name }} • {{ recolte.collections_count }} {{ $t('dashboard.recolted_money.collections_count') }}
+                      </div>
+                      <div class="d-flex justify-space-between align-center">
+                        <div class="text-caption" style="color: #6b7280;">
+                          {{ formatDate(recolte.created_at) }}
+                        </div>
+                        <div v-if="recolte.has_discrepancy" class="d-flex align-center">
+                          <v-icon size="16" color="warning" class="mr-1">mdi-alert-circle</v-icon>
+                          <span class="text-caption" style="color: #f59e0b;">{{ $t('dashboard.recolted_money.discrepancy_indicator') }}</span>
+                        </div>
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </div>
+            <div v-else class="pa-5 text-center">
+              <v-icon size="48" color="grey-lighten-1" class="mb-3">mdi-file-document-multiple-outline</v-icon>
+              <div class="text-body-2" style="color: #6b7280;">{{ $t('dashboard.recolted_money.no_recoltes') }}</div>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -359,20 +504,41 @@ export default {
       type: Array,
       default: () => []
     },
-    filters: {
+    companies: {
+      type: Array,
+      default: () => []
+    },
+    recoltedStats: {
       type: Object,
-      default: () => ({ start: new Date().toISOString().slice(0, 10), end: new Date().toISOString().slice(0, 10) })
+      default: () => ({})
+    },
+      filters: {
+      type: Object,
+      default: () => ({ start: new Date().toISOString().slice(0, 10), end: new Date().toISOString().slice(0, 10), company_id: null })
     }
   },
   data() {
     return {
       filterStart: this.$props.filters?.start || new Date().toISOString().slice(0, 10),
       filterEnd: this.$props.filters?.end || new Date().toISOString().slice(0, 10),
+      filterCompany: this.$props.filters?.company_id || null,
       activeChart: 'combined',
       chart: null
     }
   },
   computed: {
+    companyOptions() {
+      const options = [{ title: 'All Companies', value: null }]
+      if (this.$props.companies && this.$props.companies.length > 0) {
+        this.$props.companies.forEach(company => {
+          options.push({
+            title: company.name || company.code,
+            value: company.id
+          })
+        })
+      }
+      return options
+    },
     stats() {
       const statsData = this.$props.stats || {}
       const items = [
@@ -484,17 +650,17 @@ export default {
       
       const datasets = []
       
-      if (this.activeChart === 'revenue' || this.activeChart === 'combined') {
+      if ((this.activeChart === 'revenue' || this.activeChart === 'combined') && this.$page.props.auth.user.role === 'admin') {
         datasets.push({
           label: 'Revenue (DZD)',
           data: this.dailyStats.map(d => d.revenue),
-          borderColor: '#667eea',
-          backgroundColor: 'rgba(102, 126, 234, 0.1)',
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
           tension: 0.4,
           fill: true,
           pointRadius: 5,
           pointHoverRadius: 7,
-          pointBackgroundColor: '#667eea',
+          pointBackgroundColor: '#8b5cf6',
           pointBorderColor: '#fff',
           pointBorderWidth: 2
         })
@@ -640,10 +806,20 @@ export default {
         maximumFractionDigits: 0
       }).format(amount)
     },
+    formatDate(dateString) {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      })
+    },
     applyFilters() {
       const params = {
         start: this.filterStart,
         end: this.filterEnd
+      }
+      if (this.filterCompany !== null) {
+        params.company_id = this.filterCompany
       }
       router.get('/dashboard', params, {
         preserveState: false,

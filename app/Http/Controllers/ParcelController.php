@@ -23,7 +23,20 @@ class ParcelController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Parcel::with(['company', 'assignedDriver', 'state', 'city']);
+        $user = auth()->user();
+        
+        $query = Parcel::with(['company', 'assignedDriver', 'state', 'city'])
+            ->select(['*']); // Ensure all fields including description and notes are selected
+
+        // Filter parcels by user's company access
+        if ($user->role === 'admin') {
+            // Admins can see all parcels
+            // No additional filtering needed
+        } else {
+            // Other users can only see parcels from their assigned companies
+            $userCompanyIds = $user->companies()->pluck('companies.id');
+            $query->whereIn('company_id', $userCompanyIds);
+        }
 
         // Apply filters
         if ($request->filled('status')) {
@@ -39,6 +52,13 @@ class ParcelController extends Controller
         }
 
         if ($request->filled('company_id')) {
+            // Validate company access for non-admin users
+            if ($user->role !== 'admin') {
+                if (!$user->belongsToCompany($request->company_id)) {
+                    // Reset to show all accessible companies if invalid company selected
+                    $request->merge(['company_id' => null]);
+                }
+            }
             $query->where('company_id', $request->company_id);
         }
 
@@ -52,15 +72,27 @@ class ParcelController extends Controller
         }
 
         // Get per_page from request, default to 15, max 100
-        $perPage = min($request->get('per_page', 15), 100);
+        $perPage = min($request->get('per_page', 25), 100);
         
-        $parcels = $query->orderBy('created_at', 'desc')->paginate($perPage);
+        // Sort pending parcels first, then others by creation date
+        $parcels = $query->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+                        ->orderBy('created_at', 'desc')
+                        ->paginate($perPage);
+
+        // Get companies based on user's access
+        if ($user->role === 'admin') {
+            // Admins can see all companies
+            $companies = Company::active()->get();
+        } else {
+            // Other users can only see their assigned companies
+            $companies = $user->companies()->where('is_active', true)->get();
+        }
 
         return Inertia::render('Parcels/Index', [
             'parcels' => $parcels,
             'filters' => $request->only(['status', 'state_id', 'city_id', 'company_id', 'search']),
             'states' => State::active()->get(),
-            'companies' => Company::active()->get(),
+            'companies' => $companies,
             'cities' => [], // Temporarily disable cities to test UTF-8 issue
         ]);
     }
@@ -70,8 +102,20 @@ class ParcelController extends Controller
      */
     public function create()
     {
+        $user = auth()->user();
+        
+        // Get companies based on user's access
+        if ($user->role === 'admin') {
+            // Admins can see all companies
+            $companies = Company::active()->get();
+        } else {
+            // Other users can only see their assigned companies
+            $companies = $user->companies()->where('is_active', true)->get();
+        }
+        
         return Inertia::render('Parcels/Create', [
-            'companies' => Company::active()->get(),
+            'companies' => $companies,
+            'userCompanies' => $companies, // For import selection
             'drivers' => Driver::active()->get(),
             'states' => State::active()->get(),
         ]);
@@ -107,6 +151,13 @@ class ParcelController extends Controller
      */
     public function show(Parcel $parcel)
     {
+        $user = auth()->user();
+        
+        // Check if user has access to this parcel's company
+        if ($user->role !== 'admin' && !$user->belongsToCompany($parcel->company_id)) {
+            abort(403, 'You do not have access to this parcel.');
+        }
+        
         $parcel->load(['company', 'assignedDriver', 'state', 'city', 'collections', 'callLogs', 'messages']);
 
         return Inertia::render('Parcels/Show', [
@@ -119,11 +170,27 @@ class ParcelController extends Controller
      */
     public function edit(Parcel $parcel)
     {
+        $user = auth()->user();
+        
+        // Check if user has access to this parcel's company
+        if ($user->role !== 'admin' && !$user->belongsToCompany($parcel->company_id)) {
+            abort(403, 'You do not have access to this parcel.');
+        }
+        
         $parcel->load(['company', 'assignedDriver', 'state', 'city']);
+
+        // Get companies based on user's access
+        if ($user->role === 'admin') {
+            // Admins can see all companies
+            $companies = Company::active()->get();
+        } else {
+            // Other users can only see their assigned companies
+            $companies = $user->companies()->where('is_active', true)->get();
+        }
 
         return Inertia::render('Parcels/Edit', [
             'parcel' => $parcel,
-            'companies' => Company::active()->get(),
+            'companies' => $companies,
             'drivers' => Driver::active()->get(),
             'states' => State::active()->get(),
             'cities' => City::where('state_id', $parcel->state_id)->active()->get(),
@@ -161,6 +228,13 @@ class ParcelController extends Controller
      */
     public function destroy(Parcel $parcel)
     {
+        $user = auth()->user();
+        
+        // Check if user has access to this parcel's company
+        if ($user->role !== 'admin' && !$user->belongsToCompany($parcel->company_id)) {
+            abort(403, 'You do not have access to this parcel.');
+        }
+        
         $parcel->delete();
 
         return redirect()->route('parcels.index')
@@ -203,6 +277,7 @@ class ParcelController extends Controller
         ]);
     }
 
+
     /**
      * Import parcels from Excel file.
      */
@@ -235,8 +310,38 @@ class ParcelController extends Controller
                 'user_id' => Auth::id()
             ]);
             
-            // Create import instance
-            $import = new ParcelsImport();
+            // Get user and handle company selection
+            $user = Auth::user();
+            $userCompanies = $user->companies()->where('is_active', true)->get();
+            
+            // Determine company ID for import
+            $companyId = null;
+            if ($userCompanies->count() === 1) {
+                // Auto-select if user has only one company
+                $companyId = $userCompanies->first()->id;
+            } else {
+                // Get company from request if user has multiple companies
+                $requestedCompanyId = $request->input('company_id');
+                if ($requestedCompanyId && $user->belongsToCompany($requestedCompanyId)) {
+                    $companyId = $requestedCompanyId;
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Please select a company for the import',
+                        'requires_company_selection' => true,
+                        'companies' => $userCompanies->map(function($company) {
+                            return [
+                                'id' => $company->id,
+                                'name' => $company->name,
+                                'code' => $company->code
+                            ];
+                        })
+                    ], 422);
+                }
+            }
+            
+            // Create import instance with selected company
+            $import = new ParcelsImport($companyId);
             
             DB::beginTransaction();
             
@@ -388,25 +493,43 @@ class ParcelController extends Controller
             'filtered_count' => $recentCollections->count()
         ]);
 
-        // Get active money cases for case selection - show free cases and cases used by current user
+        // Get active money cases for case selection - filter by user's companies
         $currentUserId = auth()->id();
-        $activeCases = \App\Models\MoneyCase::where('status', 'active')
-            ->where(function ($query) use ($currentUserId) {
-                $query->whereNull('last_active_by') // Free cases
-                      ->orWhere('last_active_by', $currentUserId); // Cases used by current user
-            })
-            ->orderBy('name')
-            ->get()
-            ->map(function ($case) use ($currentUserId) {
-                return [
-                    'id' => $case->id,
-                    'name' => $case->name,
-                    'description' => $case->description,
-                    'balance' => $case->calculated_balance,
-                    'currency' => $case->currency,
-                    'is_user_active' => $case->last_active_by === $currentUserId,
-                ];
-            });
+        $user = auth()->user();
+        
+        // Get money cases based on user's company access
+        if ($user->role === 'admin') {
+            // Admins can see all active money cases
+            $activeCases = \App\Models\MoneyCase::where('status', 'active')
+                ->where(function ($query) use ($currentUserId) {
+                    $query->whereNull('last_active_by') // Free cases
+                          ->orWhere('last_active_by', $currentUserId); // Cases used by current user
+                })
+                ->orderBy('name')
+                ->get();
+        } else {
+            // Other users can only see money cases from their assigned companies
+            $userCompanyIds = $user->companies()->pluck('companies.id');
+            $activeCases = \App\Models\MoneyCase::where('status', 'active')
+                ->whereIn('company_id', $userCompanyIds)
+                ->where(function ($query) use ($currentUserId) {
+                    $query->whereNull('last_active_by') // Free cases
+                          ->orWhere('last_active_by', $currentUserId); // Cases used by current user
+                })
+                ->orderBy('name')
+                ->get();
+        }
+        
+        $activeCases = $activeCases->map(function ($case) use ($currentUserId) {
+            return [
+                'id' => $case->id,
+                'name' => $case->name,
+                'description' => $case->description,
+                'balance' => $case->calculated_balance,
+                'currency' => $case->currency,
+                'is_user_active' => $case->last_active_by === $currentUserId,
+            ];
+        });
 
         // Find the user's last active case
         $userLastActiveCase = \App\Models\MoneyCase::where('status', 'active')

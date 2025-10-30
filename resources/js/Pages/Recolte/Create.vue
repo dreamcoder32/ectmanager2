@@ -40,7 +40,7 @@
                           v-model="selectedUserId"
                           :items="users"
                           item-value="id"
-                          item-title="display_name"
+                          item-title="first_name"
                           label="Select User"
                           outlined
                           :loading="loadingUsers"
@@ -52,7 +52,7 @@
                           </template>
                           <template #item="{ props, item }">
                             <v-list-item v-bind="props">
-                              <!-- <v-list-item-title>{{ item.raw.display_name }}</v-list-item-title> -->
+                              <!-- <v-list-item-title>{{ item.raw.first_name }}</v-list-item-title> -->
                               <v-list-item-subtitle>{{ item.raw.email }} - {{ item.raw.role }}</v-list-item-subtitle>
                             </v-list-item>
                           </template>
@@ -60,7 +60,7 @@
                       </v-col>
 
                       <!-- Case Selection -->
-                      <v-col cols="12" md="6">
+                      <!-- <v-col cols="12" md="6">
                         <v-select
                           v-model="form.case_id"
                           :items="activeCases"
@@ -81,7 +81,7 @@
                             </v-list-item-content>
                           </template>
                         </v-select>
-                      </v-col>
+                      </v-col> -->
 
                       <!-- Note Field -->
                       <v-col cols="12" md="6">
@@ -99,6 +99,7 @@
                           </template>
                         </v-textarea>
                       </v-col>
+
 
                       <!-- Collections Table -->
                       <v-col cols="12" v-if="selectedUserId && collections.length > 0">
@@ -161,6 +162,43 @@
                             </v-data-table>
                           </v-card-text>
                         </v-card>
+                      </v-col>
+
+
+                      <!-- Manual Amount Field -->
+                      <v-col cols="12" md="6">
+                        <v-text-field
+                          v-model="form.manual_amount"
+                          label="Manual Amount (DZD) *"
+                          type="number"
+                          step="0.01"
+                          outlined
+                          required
+                          :error-messages="errors.manual_amount"
+                          @input="clearError('manual_amount')"
+                          prepend-inner-icon="mdi-cash"
+                          :hint="`Calculated total: ${formatCurrency(totalAmount)}`"
+                          persistent-hint
+                        ></v-text-field>
+                      </v-col>
+
+                      <!-- Discrepancy Note Field (shown when amounts differ) -->
+                      <v-col cols="12" v-if="hasAmountDiscrepancy">
+                        <v-textarea
+                          v-model="form.amount_discrepancy_note"
+                          label="Amount Discrepancy Note *"
+                          placeholder="Please explain why the manual amount differs from the calculated total..."
+                          outlined
+                          rows="3"
+                          required
+                          :error-messages="errors.amount_discrepancy_note"
+                          @input="clearError('amount_discrepancy_note')"
+                          color="warning"
+                        >
+                          <template #prepend-inner>
+                            <v-icon color="warning">mdi-alert-circle</v-icon>
+                          </template>
+                        </v-textarea>
                       </v-col>
 
                       <!-- No Collections Message -->
@@ -252,10 +290,12 @@ export default {
       loadingCollections: false,
       processing: false,
       form: {
-      note: '',
-      collection_ids: [],
-      case_id: null
-    },
+        note: '',
+        collection_ids: [],
+        case_id: null,
+        manual_amount: null,
+        amount_discrepancy_note: ''
+      },
       errors: {},
       headers: [
         { text: 'Tracking Number', value: 'parcel.tracking_number', sortable: false },
@@ -266,8 +306,14 @@ export default {
     }
   },
   computed: {
+    hasAmountDiscrepancy() {
+      if (!this.form.manual_amount || !this.totalAmount) return false
+      return Math.abs(this.totalAmount - this.form.manual_amount) > 0.01
+    },
     canSubmit() {
-      return this.selectedUserId && this.form.collection_ids.length > 0 && !this.processing
+      const hasRequiredFields = this.selectedUserId && this.form.collection_ids.length > 0 && this.form.manual_amount > 0
+      const hasDiscrepancyNote = !this.hasAmountDiscrepancy || (this.hasAmountDiscrepancy && this.form.amount_discrepancy_note.trim())
+      return hasRequiredFields && hasDiscrepancyNote && !this.processing
     }
   },
   methods: {
@@ -276,17 +322,21 @@ export default {
         this.collections = []
         this.totalAmount = 0
         this.form.collection_ids = []
+        this.form.manual_amount = null
+        this.form.amount_discrepancy_note = ''
         return
       }
 
       const selectedUser = this.users.find(user => user.id === this.selectedUserId)
       if (selectedUser) {
-        this.selectedUserName = selectedUser.display_name
+        this.selectedUserName = selectedUser.first_name
         this.collections = selectedUser.collections || []
         this.totalAmount = selectedUser.total_amount || 0
         this.form.collection_ids = []
+        // this.form.manual_amount = this.totalAmount // Pre-fill with calculated total
+        this.form.amount_discrepancy_note = ''
         
-        console.log('Selected user:', selectedUser.display_name)
+        console.log('Selected user:', selectedUser.first_name)
         console.log('Collections:', this.collections)
         console.log('Total amount:', this.totalAmount)
       }

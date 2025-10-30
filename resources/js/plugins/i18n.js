@@ -26,8 +26,19 @@ const messages = {
       recoltes:'Recoltes',
       total_revenue: 'Revenue',
       stopdesk_collections_count: 'Stopdesk Collections',
-      home_delivery_collections_count: 'Home Delivery Collections'
-
+      home_delivery_collections_count: 'Home Delivery Collections',
+      recolted_money: {
+        title: 'Recolted Money Overview',
+        total_recolted: 'Total Recolted',
+        manual_amount: 'Manual Amount',
+        total_recoltes: 'Total Recoltes',
+        discrepancies: 'Discrepancies',
+        recent_recoltes: 'Recent Recoltes',
+        view_all: 'View All',
+        no_recoltes: 'No recoltes found for the selected period',
+        collections_count: 'collections',
+        discrepancy_indicator: 'Discrepancy'
+      }
     },
     parcels: {
       title: 'Parcels',
@@ -43,6 +54,7 @@ const messages = {
       status: 'Status',
       actions: 'Actions',
       search: 'Search parcels...',
+      search_global: 'Search parcels...',
       status_pending: 'Pending',
       status_picked_up: 'Picked Up',
       status_in_transit: 'In Transit',
@@ -145,6 +157,52 @@ const messages = {
       net_amount: 'Net Amount',
       total_net: 'Total Net'
     },
+    // Added recoltes translations
+    recoltes: {
+      title: 'Recoltes',
+      create: 'Create Recolte',
+      edit: 'Edit Recolte',
+      show: 'View Recolte',
+      list: 'Recoltes List',
+      new: 'New Recolte',
+      headers: {
+        code: 'Code',
+        note: 'Note',
+        total_cod_amount: 'Total COD Amount',
+        manual_amount: 'Manual Amount',
+        company: 'Company',
+        created_at: 'Created At',
+        created_by: 'Created By',
+        actions: 'Actions'
+      },
+      form: {
+        note: 'Note',
+        manual_amount: 'Manual Amount (DZD)',
+        manual_amount_hint: 'Calculated total',
+        amount_discrepancy_note: 'Amount Discrepancy Note',
+        amount_discrepancy_placeholder: 'Please explain why the manual amount differs from the calculated total...',
+        select_user: 'Select User',
+        select_collections: 'Select Collections',
+        no_collections: 'No collections available for the selected user',
+        collections_table: 'Collections Table',
+        total_amount: 'Total Amount',
+        submit: 'Create Recolte',
+        cancel: 'Cancel'
+      },
+      messages: {
+        created_successfully: 'Recolte created successfully',
+        updated_successfully: 'Recolte updated successfully',
+        deleted_successfully: 'Recolte deleted successfully',
+        no_recoltes: 'No recoltes found',
+        loading: 'Loading recoltes...',
+        error_loading: 'Error loading recoltes'
+      },
+      discrepancy: {
+        has_discrepancy: 'Has Discrepancy',
+        no_discrepancy: 'No Discrepancy',
+        discrepancy_note_required: 'A note explaining the amount discrepancy is required'
+      }
+    },
     companies: {
       title: 'Companies',
       subtitle: 'Manage company settings and WhatsApp integrations',
@@ -225,7 +283,19 @@ const messages = {
       delivered_parcels: 'Colis livrés',
       revenue: 'Revenus',
       stopdesk_collections_count: 'Collectes Stopdesk',
-      home_delivery_collections_count: 'Collectes à domicile'
+      home_delivery_collections_count: 'Collectes à domicile',
+      recolted_money: {
+        title: 'Aperçu de l\'Argent Recolté',
+        total_recolted: 'Total Recolté',
+        manual_amount: 'Montant Manuel',
+        total_recoltes: 'Total des Recoltes',
+        discrepancies: 'Écarts',
+        recent_recoltes: 'Recoltes Récentes',
+        view_all: 'Voir Tout',
+        no_recoltes: 'Aucune recolte trouvée pour la période sélectionnée',
+        collections_count: 'collectes',
+        discrepancy_indicator: 'Écart'
+      }
     },
     parcels: {
       title: 'Colis',
@@ -341,6 +411,52 @@ const messages = {
       net_amount: 'Montant net',
       total_net: 'Net total'
     },
+    // Added recoltes translations
+    recoltes: {
+      title: 'Recoltes',
+      create: 'Créer une Recolte',
+      edit: 'Modifier la Recolte',
+      show: 'Voir la Recolte',
+      list: 'Liste des Recoltes',
+      new: 'Nouvelle Recolte',
+      headers: {
+        code: 'Code',
+        note: 'Note',
+        total_cod_amount: 'Montant COD Total',
+        manual_amount: 'Montant Manuel',
+        company: 'Entreprise',
+        created_at: 'Créé le',
+        created_by: 'Créé par',
+        actions: 'Actions'
+      },
+      form: {
+        note: 'Note',
+        manual_amount: 'Montant Manuel (DZD)',
+        manual_amount_hint: 'Total calculé',
+        amount_discrepancy_note: 'Note d\'Écart de Montant',
+        amount_discrepancy_placeholder: 'Veuillez expliquer pourquoi le montant manuel diffère du total calculé...',
+        select_user: 'Sélectionner un Utilisateur',
+        select_collections: 'Sélectionner les Collectes',
+        no_collections: 'Aucune collecte disponible pour l\'utilisateur sélectionné',
+        collections_table: 'Tableau des Collectes',
+        total_amount: 'Montant Total',
+        submit: 'Créer la Recolte',
+        cancel: 'Annuler'
+      },
+      messages: {
+        created_successfully: 'Recolte créée avec succès',
+        updated_successfully: 'Recolte mise à jour avec succès',
+        deleted_successfully: 'Recolte supprimée avec succès',
+        no_recoltes: 'Aucune recolte trouvée',
+        loading: 'Chargement des recoltes...',
+        error_loading: 'Erreur lors du chargement des recoltes'
+      },
+      discrepancy: {
+        has_discrepancy: 'A un Écart',
+        no_discrepancy: 'Aucun Écart',
+        discrepancy_note_required: 'Une note expliquant l\'écart de montant est requise'
+      }
+    },
     companies: {
       title: 'Entreprises',
       subtitle: 'Gérer les paramètres des entreprises et les intégrations WhatsApp',
@@ -417,7 +533,19 @@ const messages = {
       delivered_parcels: 'الطرود المسلمة',
       total_revenue: 'الارباح',
       stopdesk_collections_count: 'عدد تحصيلات مكتب التوقف',
-      home_delivery_collections_count: 'عدد تحصيلات التوصيل المنزلي'
+      home_delivery_collections_count: 'عدد تحصيلات التوصيل المنزلي',
+      recolted_money: {
+        title: 'نظرة عامة على الأموال المجمعة',
+        total_recolted: 'إجمالي المجمع',
+        manual_amount: 'المبلغ اليدوي',
+        total_recoltes: 'إجمالي التجميعات',
+        discrepancies: 'الاختلافات',
+        recent_recoltes: 'التجميعات الأخيرة',
+        view_all: 'عرض الكل',
+        no_recoltes: 'لم يتم العثور على تجميعات للفترة المحددة',
+        collections_count: 'تحصيلات',
+        discrepancy_indicator: 'اختلاف'
+      }
     },
     parcels: {
       title: 'الطرود',
@@ -552,6 +680,52 @@ const messages = {
       money_case_optional: 'صندوق المال (اختياري)',
       import_pdf_title: 'استيراد ملف تسوية السائق PDF',
       import_xlsx_title: 'استيراد ملف تسوية السائق XLSX'
+    },
+    // إضافة ترجمات التجميعات
+    recoltes: {
+      title: 'التجميعات',
+      create: 'إنشاء تجميع',
+      edit: 'تعديل التجميع',
+      show: 'عرض التجميع',
+      list: 'قائمة التجميعات',
+      new: 'تجميع جديد',
+      headers: {
+        code: 'الكود',
+        note: 'الملاحظة',
+        total_cod_amount: 'إجمالي مبلغ الدفع عند الاستلام',
+        manual_amount: 'المبلغ اليدوي',
+        company: 'الشركة',
+        created_at: 'تاريخ الإنشاء',
+        created_by: 'أنشأ بواسطة',
+        actions: 'الإجراءات'
+      },
+      form: {
+        note: 'الملاحظة',
+        manual_amount: 'المبلغ اليدوي (دج)',
+        manual_amount_hint: 'المجموع المحسوب',
+        amount_discrepancy_note: 'ملاحظة اختلاف المبلغ',
+        amount_discrepancy_placeholder: 'يرجى توضيح سبب اختلاف المبلغ اليدوي عن المجموع المحسوب...',
+        select_user: 'اختيار المستخدم',
+        select_collections: 'اختيار التحصيلات',
+        no_collections: 'لا توجد تحصيلات متاحة للمستخدم المحدد',
+        collections_table: 'جدول التحصيلات',
+        total_amount: 'المبلغ الإجمالي',
+        submit: 'إنشاء التجميع',
+        cancel: 'إلغاء'
+      },
+      messages: {
+        created_successfully: 'تم إنشاء التجميع بنجاح',
+        updated_successfully: 'تم تحديث التجميع بنجاح',
+        deleted_successfully: 'تم حذف التجميع بنجاح',
+        no_recoltes: 'لم يتم العثور على تجميعات',
+        loading: 'جاري تحميل التجميعات...',
+        error_loading: 'خطأ في تحميل التجميعات'
+      },
+      discrepancy: {
+        has_discrepancy: 'يوجد اختلاف',
+        no_discrepancy: 'لا يوجد اختلاف',
+        discrepancy_note_required: 'ملاحظة توضيحية لاختلاف المبلغ مطلوبة'
+      }
     }
   }
 }

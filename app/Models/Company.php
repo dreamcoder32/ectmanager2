@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Company extends Model
 {
@@ -62,5 +63,21 @@ class Company extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    /**
+     * Get the users that belong to this company.
+     */
+    public function users(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'company_user');
+    }
+
+    /**
+     * Get the money cases for this company.
+     */
+    public function moneyCases(): HasMany
+    {
+        return $this->hasMany(MoneyCase::class);
     }
 }

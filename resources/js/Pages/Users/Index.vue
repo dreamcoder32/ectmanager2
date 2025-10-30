@@ -139,14 +139,14 @@
           <template v-slot:[`item.avatar`]="{ item }">
             <v-avatar color="primary" size="40">
               <span class="text-white font-weight-bold">
-                {{ getInitials(item.display_name || item.first_name + ' ' + item.last_name) }}
+                {{ getInitials(item.first_name || item.first_name + ' ' + item.last_name) }}
               </span>
             </v-avatar>
           </template>
 
           <template v-slot:[`item.name`]="{ item }">
             <div>
-              <div class="font-weight-medium">{{ item.display_name }}</div>
+              <div class="font-weight-medium">{{ item.first_name }}</div>
               <div class="text-caption text--secondary" v-if="item.first_name || item.last_name">
                 {{ item.first_name }} {{ item.last_name }}
               </div>
@@ -163,9 +163,34 @@
             </v-chip>
           </template>
 
+          <template v-slot:[`item.companies`]="{ item }">
+            <div v-if="item.companies && item.companies.length > 0">
+              <v-chip
+                v-for="company in item.companies.slice(0, 2)"
+                :key="company.id"
+                color="primary"
+                variant="outlined"
+                size="small"
+                class="mr-1 mb-1"
+              >
+                {{ company.name }}
+              </v-chip>
+              <v-chip
+                v-if="item.companies.length > 2"
+                color="grey"
+                variant="outlined"
+                size="small"
+                class="mr-1 mb-1"
+              >
+                +{{ item.companies.length - 2 }} more
+              </v-chip>
+            </div>
+            <span v-else class="text--secondary">No companies</span>
+          </template>
+
           <template v-slot:[`item.manager`]="{ item }">
             <div v-if="item.manager">
-              <div class="font-weight-medium">{{ item.manager.display_name }}</div>
+              <div class="font-weight-medium">{{ item.manager.first_name }}</div>
               <div class="text-caption text--secondary">
                 {{ item.manager.first_name }} {{ item.manager.last_name }}
               </div>
@@ -227,7 +252,7 @@
       <v-card style="border-radius: 12px;">
         <v-card-title class="text-h5">Confirm Delete</v-card-title>
         <v-card-text>
-          Are you sure you want to delete user "{{ userToDelete?.display_name }}"?
+          Are you sure you want to delete user "{{ userToDelete?.first_name }}"?
           <div v-if="userToDelete?.subordinates?.length > 0" class="mt-2 text-warning">
             <v-icon color="warning" class="mr-1">mdi-alert</v-icon>
             This user manages {{ userToDelete.subordinates.length }} subordinate(s). Please reassign them first.
@@ -274,6 +299,7 @@ const headers = [
   { title: 'Name', key: 'name', sortable: true },
   { title: 'Email', key: 'email', sortable: true },
   { title: 'Role', key: 'role', sortable: true },
+  { title: 'Companies', key: 'companies', sortable: false },
   // { title: 'Manager', key: 'manager', sortable: false },
   { title: 'Salary', key: 'monthly_salary', sortable: true },
   { title: 'Status', key: 'is_active', sortable: true },
@@ -314,7 +340,7 @@ const filteredUsers = computed(() => {
   if (filters.value.search) {
     const search = filters.value.search.toLowerCase()
     filtered = filtered.filter(user => 
-      user.display_name?.toLowerCase().includes(search) ||
+      user.first_name?.toLowerCase().includes(search) ||
       user.email?.toLowerCase().includes(search) ||
       user.first_name?.toLowerCase().includes(search) ||
       user.last_name?.toLowerCase().includes(search)

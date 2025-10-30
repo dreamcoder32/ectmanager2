@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -22,7 +23,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'uid',
-        'display_name',
+        'first_name',
         'email',
         'password',
         'role',
@@ -89,11 +90,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's name (accessor for display_name).
+     * Get the user's name (accessor for first_name).
      */
     public function getNameAttribute(): string
     {
-        return $this->display_name ?? '';
+        return $this->first_name ?? '';
     }
 
     /**
@@ -259,5 +260,29 @@ class User extends Authenticatable
     public function hasManager(): bool
     {
         return !is_null($this->manager_id);
+    }
+
+    /**
+     * Get the companies that the user belongs to.
+     */
+    public function companies(): BelongsToMany
+    {
+        return $this->belongsToMany(Company::class, 'company_user');
+    }
+
+    /**
+     * Get the primary company for the user (for agents, typically one company).
+     */
+    public function primaryCompany()
+    {
+        return $this->companies()->first();
+    }
+
+    /**
+     * Check if user belongs to a specific company.
+     */
+    public function belongsToCompany(int $companyId): bool
+    {
+        return $this->companies()->where('companies.id', $companyId)->exists();
     }
 }

@@ -85,7 +85,7 @@ class AuthController extends Controller
 
         $request->validate([
             'uid' => 'required|string|unique:users',
-            'display_name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:admin,agent',
@@ -95,7 +95,7 @@ class AuthController extends Controller
 
         $user = User::create([
             'uid' => $request->uid,
-            'display_name' => $request->display_name,
+            'first_name' => $request->first_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,

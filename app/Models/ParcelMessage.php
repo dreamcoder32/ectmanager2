@@ -126,7 +126,7 @@ class ParcelMessage extends Model
     public function getSenderNameAttribute(): string
     {
         if ($this->isOutgoing() && $this->user) {
-            return $this->user->display_name ?? $this->user->email;
+            return $this->user->first_name ?? $this->user->email;
         }
         
         if ($this->isIncoming() && $this->parcel) {

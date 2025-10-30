@@ -250,6 +250,51 @@
                   </v-col>
                 </v-row>
 
+                <!-- Company Assignment -->
+                <v-row>
+                  <v-col cols="12">
+                    <v-divider class="my-4"></v-divider>
+                    <h3 class="text-h6 mb-4 text-primary">Company Assignment</h3>
+                  </v-col>
+
+                  <!-- Company Selection -->
+                  <v-col cols="12">
+                    <v-select
+                      v-model="form.company_ids"
+                      :items="companyOptions"
+                      label="Assign to Companies"
+                      variant="outlined"
+                      multiple
+                      chips
+                      closable-chips
+                      :error-messages="errors.company_ids"
+                      prepend-inner-icon="mdi-domain"
+                      placeholder="Select companies for this user"
+                      hint="Agents typically belong to one company, supervisors can manage multiple"
+                      persistent-hint
+                    >
+                      <template #selection="{ item, index }">
+                        <v-chip
+                          v-if="index < 2"
+                          :key="item.value"
+                          color="primary"
+                          size="small"
+                          closable
+                          @click:close="form.company_ids.splice(form.company_ids.indexOf(item.value), 1)"
+                        >
+                          {{ item.title }}
+                        </v-chip>
+                        <span
+                          v-if="index === 2"
+                          class="text-grey text-caption align-self-center"
+                        >
+                          (+{{ form.company_ids.length - 2 }} others)
+                        </span>
+                      </template>
+                    </v-select>
+                  </v-col>
+                </v-row>
+
                 <!-- Action Buttons -->
                 <v-row class="mt-6">
                   <v-col cols="12" class="d-flex justify-end gap-3">
@@ -289,6 +334,7 @@ import AppLayout from '@/Layouts/AppLayout.vue'
 const props = defineProps({
   user: Object,
   supervisors: Array,
+  companies: Array,
   errors: Object
 })
 
@@ -308,7 +354,8 @@ const form = useForm({
   monthly_salary: props.user.monthly_salary || '',
   payment_day_of_month: props.user.payment_day_of_month || null,
   is_active: props.user.is_active ?? true,
-  can_collect_stopdesk: props.user.can_collect_stopdesk ?? false
+  can_collect_stopdesk: props.user.can_collect_stopdesk ?? false,
+  company_ids: props.user.companies?.map(company => company.id) || []
 })
 
 const roleOptions = [
@@ -320,6 +367,13 @@ const supervisorOptions = computed(() => {
   return props.supervisors?.map(supervisor => ({
     title: `${supervisor.first_name} ${supervisor.last_name} (${supervisor.email})`,
     value: supervisor.id
+  })) || []
+})
+
+const companyOptions = computed(() => {
+  return props.companies?.map(company => ({
+    title: `${company.name} (${company.code})`,
+    value: company.id
   })) || []
 })
 

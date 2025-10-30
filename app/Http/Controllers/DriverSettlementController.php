@@ -186,6 +186,8 @@ class DriverSettlementController extends Controller
             'parcel_commissions.*' => 'numeric|min:0',
             'case_id' => 'nullable|exists:money_cases,id',
             'note' => 'nullable|string|max:1000',
+            'manual_amount' => 'required|numeric|min:0',
+            'amount_discrepancy_note' => 'nullable|string|max:1000'
         ]);
 
         $driver = Driver::findOrFail($request->driver_id);
@@ -262,10 +264,45 @@ class DriverSettlementController extends Controller
                 return back()->withErrors(['error' => 'No collections were created. Parcels may already be collected or not found.']);
             }
 
+            // Calculate total amount from collections and validate manual amount
+            $collections = Collection::whereIn('id', $collectionIds)->get();
+            $totalAmount = $collections->sum('amount');
+            $manualAmount = $request->manual_amount;
+            
+            // Check for discrepancy and validate note requirement
+            $hasDiscrepancy = abs($totalAmount - $manualAmount) > 0.01; // Allow for small rounding differences
+            if ($hasDiscrepancy && empty($request->amount_discrepancy_note)) {
+                DB::rollBack();
+                if ($wantsJson) {
+                    return response()->json([
+                        'success' => false,
+                        'error' => 'A note explaining the amount discrepancy is required when the manual amount differs from the calculated total.'
+                    ], 422);
+                }
+                return back()->withErrors([
+                    'amount_discrepancy_note' => 'A note explaining the amount discrepancy is required when the manual amount differs from the calculated total.'
+                ])->withInput();
+            }
+
+            // Determine company from collections' parcels
+            $companyIds = $collections->pluck('parcel.company_id')->unique()->filter();
+            if ($companyIds->count() === 0) {
+                DB::rollBack();
+                throw new \Exception('No valid company found for the selected collections.');
+            }
+            if ($companyIds->count() > 1) {
+                DB::rollBack();
+                throw new \Exception('All collections must belong to the same company.');
+            }
+            $companyId = $companyIds->first();
+
             // Create recolte and attach collections
             $recolte = Recolte::create([
                 'note' => ($request->note ? $request->note.' | ' : '').'Auto-created from driver settlement for '.$driver->name,
                 'created_by' => Auth::id(),
+                'company_id' => $companyId,
+                'manual_amount' => $manualAmount,
+                'amount_discrepancy_note' => $hasDiscrepancy ? $request->amount_discrepancy_note : null
             ]);
 
             // Update money case if provided and assign to collections
@@ -287,17 +324,24 @@ class DriverSettlementController extends Controller
 
             DB::commit();
 
+            $message = "Recolte #{$recolte->code} created successfully with ".count($collectionIds)." collections.";
+            $message .= " Calculated total: " . number_format($totalAmount, 2) . " DZD, Manual amount: " . number_format($manualAmount, 2) . " DZD";
+            
+            if ($hasDiscrepancy) {
+                $message .= " (Discrepancy noted)";
+            }
+
             if ($wantsJson) {
                 return response()->json([
                     'success' => true,
-                    'message' => "Recolte #{$recolte->code} created successfully with ".count($collectionIds)." collections.",
+                    'message' => $message,
                     'recolte_id' => $recolte->id,
                     'redirect' => route('recoltes.show', ['recolte' => $recolte->id])
                 ]);
             }
 
             return redirect()->route('recoltes.show', ['recolte' => $recolte->id])
-                ->with('success', "Recolte #{$recolte->code} created successfully with ".count($collectionIds)." collections.");
+                ->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
             if ($wantsJson) {

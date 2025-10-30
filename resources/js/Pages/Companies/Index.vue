@@ -176,7 +176,6 @@
                     <v-text-field
                       v-model="form.name"
                       :label="$t('companies.name')"
-                      :rules="[rules.required]"
                       variant="outlined"
                       required
                     ></v-text-field>
@@ -196,7 +195,6 @@
                     <v-text-field
                       v-model="form.email"
                       :label="$t('companies.email')"
-                      :rules="[rules.required, rules.email]"
                       variant="outlined"
                       type="email"
                       required
@@ -224,7 +222,6 @@
                     <v-text-field
                       v-model="form.commission"
                       :label="$t('companies.commission')"
-                      :rules="[rules.required, rules.numeric]"
                       variant="outlined"
                       type="number"
                       suffix="%"
@@ -489,6 +486,7 @@ export default {
     const rules = {
       required: (value) => !!value || 'This field is required',
       email: (value) => {
+        if (!value) return true // Allow empty values (required rule will handle this)
         const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         return pattern.test(value) || 'Invalid email format'
       },
@@ -577,7 +575,18 @@ export default {
       const method = editingCompany.value ? 'put' : 'post'
       const url = editingCompany.value ? `/companies/${editingCompany.value.id}` : '/companies'
       
-      router[method](url, form.value, {
+      // Create a plain object to avoid circular references
+      const formData = {
+        name: form.value.name,
+        code: form.value.code,
+        email: form.value.email,
+        phone: form.value.phone,
+        address: form.value.address,
+        commission: form.value.commission,
+        is_active: form.value.is_active
+      }
+      
+      router[method](url, formData, {
         onSuccess: () => {
           closeDialog()
         },

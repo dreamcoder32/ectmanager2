@@ -13,6 +13,13 @@ class Recolte extends Model
         'code',
         'note',
         'created_by',
+        'company_id',
+        'manual_amount',
+        'amount_discrepancy_note',
+    ];
+
+    protected $casts = [
+        'manual_amount' => 'decimal:2',
     ];
 
     protected static function boot()
@@ -50,5 +57,13 @@ class Recolte extends Model
     public function createdBy()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * The company this recolte belongs to
+     */
+    public function company()
+    {
+        return $this->belongsTo(Company::class);
     }
 }

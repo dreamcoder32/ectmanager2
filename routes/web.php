@@ -156,6 +156,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
     Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
     // Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    
+    // Company management routes
+    Route::post('/users/{user}/companies', [UserController::class, 'addCompanies'])->name('users.companies.add');
+    Route::delete('/users/{user}/companies', [UserController::class, 'removeCompanies'])->name('users.companies.remove');
+    Route::get('/users/{user}/companies', [UserController::class, 'getCompanies'])->name('users.companies.get');
 });
 
 // Salary Payment routes

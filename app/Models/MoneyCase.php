@@ -14,7 +14,8 @@ class MoneyCase extends Model
         'balance',
         'status',
         'last_active_by',
-        'last_activated_at'
+        'last_activated_at',
+        'company_id'
     ];
 
     protected $casts = [
@@ -47,6 +48,14 @@ class MoneyCase extends Model
     public function lastActiveUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'last_active_by');
+    }
+
+    /**
+     * Get the company that owns this money case.
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
     }
 
     /**

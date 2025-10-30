@@ -36,12 +36,12 @@
             <v-card-text class="text-center pa-6">
               <v-avatar size="120" color="primary" class="mb-4">
                 <span class="text-h3 text-white font-weight-bold">
-                  {{ getInitials(user.display_name || user.first_name + ' ' + user.last_name) }}
+                  {{ getInitials(user.first_name || user.first_name + ' ' + user.last_name) }}
                 </span>
               </v-avatar>
               
               <h2 class="text-h5 font-weight-bold mb-2">
-                {{ user.display_name || user.first_name + ' ' + user.last_name }}
+                {{ user.first_name || user.first_name + ' ' + user.last_name }}
               </h2>
               
               <v-chip
@@ -197,12 +197,12 @@
                   <div class="d-flex align-center">
                     <v-avatar size="60" color="primary" class="mr-4">
                       <span class="text-h6 text-white font-weight-bold">
-                        {{ getInitials(user.manager.display_name || user.manager.first_name + ' ' + user.manager.last_name) }}
+                        {{ getInitials(user.manager.first_name || user.manager.first_name + ' ' + user.manager.last_name) }}
                       </span>
                     </v-avatar>
                     <div>
                       <div class="text-h6 font-weight-bold">
-                        {{ user.manager.display_name || user.manager.first_name + ' ' + user.manager.last_name }}
+                        {{ user.manager.first_name || user.manager.first_name + ' ' + user.manager.last_name }}
                       </div>
                       <div class="text-body-2 text--secondary">{{ user.manager.email }}</div>
                       <v-chip size="small" color="warning" variant="tonal">
@@ -229,12 +229,12 @@
                           <div class="d-flex align-center">
                             <v-avatar size="40" color="primary" class="mr-3">
                               <span class="text-white font-weight-bold">
-                                {{ getInitials(subordinate.display_name || subordinate.first_name + ' ' + subordinate.last_name) }}
+                                {{ getInitials(subordinate.first_name || subordinate.first_name + ' ' + subordinate.last_name) }}
                               </span>
                             </v-avatar>
                             <div class="flex-grow-1">
                               <div class="font-weight-medium">
-                                {{ subordinate.display_name || subordinate.first_name + ' ' + subordinate.last_name }}
+                                {{ subordinate.first_name || subordinate.first_name + ' ' + subordinate.last_name }}
                               </div>
                               <div class="text-caption text--secondary">{{ subordinate.email }}</div>
                               <div class="d-flex align-center mt-1">

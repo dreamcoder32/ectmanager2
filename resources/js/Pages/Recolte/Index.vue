@@ -9,7 +9,7 @@
         <v-container fluid>
           <!-- Recoltes Data Table -->
 
-          <div class="d-flex justify-space-between align-center">
+          <div class="d-flex justify-space-between align-center mb-4">
           <span class="text-h4 font-weight-bold" 
                 style="background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
                        -webkit-background-clip: text;
@@ -28,6 +28,38 @@
             Create New Recolte
           </v-btn>
         </div>
+
+        <!-- Company Filter -->
+        <v-card class="mb-4" elevation="1">
+          <v-card-text class="pa-4">
+            <v-row>
+              <v-col cols="12" md="4">
+                <v-select
+                  v-model="filters.company_id"
+                  :items="companyOptions"
+                  item-title="text"
+                  item-value="value"
+                  label="Filter by Company"
+                  variant="outlined"
+                  density="compact"
+                  clearable
+                  @change="applyFilters"
+                  color="primary"
+                ></v-select>
+              </v-col>
+              <v-col cols="12" md="2" class="d-flex align-center">
+                <v-btn
+                  color="grey"
+                  variant="outlined"
+                  @click="clearFilters"
+                  class="filter-clear-btn"
+                >
+                  Clear Filters
+                </v-btn>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
           <v-card 
             elevation="1"
             style="border-radius: 8px; background: white;"
@@ -91,7 +123,7 @@
                    </v-chip>
                  </template>
 
-                 <!-- COD Amount Column -->
+                 <!-- Calculated Amount Column -->
                  <template v-slot:[`item.total_cod_amount`]="{ item }">
                    <v-chip
                      color="orange"
@@ -100,6 +132,32 @@
                    >
                      {{ formatCurrency(item.total_cod_amount || 0) }} Da
                    </v-chip>
+                 </template>
+
+                 <!-- Manual Amount Column -->
+                 <template v-slot:[`item.manual_amount`]="{ item }">
+                   <div class="d-flex flex-column" v-if="item.manual_amount && item.manual_amount > 0">
+                     <v-chip
+                       :color="getAmountDiscrepancyColor(item)"
+                       text-color="white"
+                       small
+                       class="mb-1"
+                     >
+                       {{ formatCurrency(item.manual_amount) }} Da
+                     </v-chip>
+                     <v-chip
+                       v-if="hasAmountDiscrepancy(item)"
+                       color="warning"
+                       text-color="white"
+                       x-small
+                     >
+                       <v-icon left size="12">mdi-alert</v-icon>
+                       Discrepancy
+                     </v-chip>
+                   </div>
+                   <div v-else class="text-caption text-grey">
+                     N/A
+                   </div>
                  </template>
 
                  <!-- Created By Column -->
@@ -212,6 +270,10 @@ export default {
     recoltes: {
       type: Object,
       required: true
+    },
+    companies: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -221,6 +283,9 @@ export default {
       deleteDialog: false,
       selectedRecolte: null,
       selectedRecoltes: [],
+      filters: {
+        company_id: null
+      },
       options: {
         page: 1,
         itemsPerPage: 25,
@@ -246,8 +311,20 @@ export default {
           width: '150px'
         },
         {
-          title: 'COD Amount',
+          title: 'Calculated Amount',
           key: 'total_cod_amount',
+          sortable: true,
+          width: '150px'
+        },
+        {
+          title: 'Manual Amount',
+          key: 'manual_amount',
+          sortable: true,
+          width: '150px'
+        },
+        {
+          title: 'Company',
+          key: 'company.name',
           sortable: true,
           width: '150px'
         },
@@ -274,6 +351,12 @@ export default {
     }
   },
   computed: {
+    companyOptions() {
+      return this.companies?.map(company => ({
+        text: company.name,
+        value: company.id
+      })) || []
+    },
     selectedCount() {
       return Array.isArray(this.selectedRecoltes) ? this.selectedRecoltes.length : 0
     },
@@ -350,19 +433,56 @@ export default {
         page: options.page,
         per_page: options.itemsPerPage,
         sort_by: options.sortBy[0]?.key,
-        sort_desc: options.sortBy[0]?.order === 'desc'
+        sort_desc: options.sortBy[0]?.order === 'desc',
+        ...this.filters
       }, {
         preserveState: true,
         preserveScroll: true,
         onStart: () => { this.loading = true },
         onFinish: () => { this.loading = false }
       })
+    },
+    applyFilters() {
+      this.options.page = 1
+      router.get('/recoltes', {
+        ...this.filters,
+        page: 1
+      }, {
+        preserveState: true,
+        preserveScroll: true,
+        onStart: () => { this.loading = true },
+        onFinish: () => { this.loading = false }
+      })
+    },
+    clearFilters() {
+      this.filters = {
+        company_id: null
+      }
+      this.options.page = 1
+      this.applyFilters()
+    },
+    hasAmountDiscrepancy(item) {
+      if (!item.manual_amount || item.manual_amount <= 0 || !item.total_cod_amount) return false
+      return Math.abs(item.total_cod_amount - item.manual_amount) > 0.01
+    },
+    getAmountDiscrepancyColor(item) {
+      if (this.hasAmountDiscrepancy(item)) {
+        return 'warning'
+      }
+      return 'success'
     }
   }
 }
 </script>
 
 <style scoped>
+/* Filter Section */
+.filter-clear-btn {
+  border-radius: 8px;
+  text-transform: none;
+  font-weight: 500;
+}
+
 .simple-table >>> .v-data-table thead th {
   background: #fafafa !important;
   color: #333 !important;

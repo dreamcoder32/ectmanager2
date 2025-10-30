@@ -31,11 +31,43 @@ class RecolteController extends BaseController
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $recoltes = Recolte::with(['collections.parcel', 'createdBy'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+        $user = auth()->user();
+        
+        // Get company filter from request
+        $companyFilter = $request->input('company_id');
+        
+        // Validate company access if filter is provided
+        if ($companyFilter && $user->role !== 'admin' && !$user->belongsToCompany($companyFilter)) {
+            abort(403, 'You do not have access to this company.');
+        }
+        
+        // Filter recoltes based on user's company access
+        if ($user->role === 'admin') {
+            // Admins can see all recoltes
+            $query = Recolte::with(['collections.parcel', 'createdBy', 'company']);
+            
+            // Apply company filter if provided
+            if ($companyFilter) {
+                $query->where('company_id', $companyFilter);
+            }
+            
+            $recoltes = $query->orderBy('created_at', 'desc')->paginate(20);
+        } else {
+            // Other users can only see recoltes from their assigned companies
+            $userCompanyIds = $user->companies()->pluck('companies.id');
+            
+            // Apply company filter if provided (must be within user's companies)
+            if ($companyFilter) {
+                $userCompanyIds = $userCompanyIds->intersect([$companyFilter]);
+            }
+            
+            $recoltes = Recolte::with(['collections.parcel', 'createdBy', 'company'])
+                ->whereIn('company_id', $userCompanyIds)
+                ->orderBy('created_at', 'desc')
+                ->paginate(20);
+        }
 
         // Calculate cod_amount sum for each recolte
         $recoltes->getCollection()->transform(function ($recolte) {
@@ -45,8 +77,16 @@ class RecolteController extends BaseController
             return $recolte;
         });
 
+        // Get companies for filtering
+        if ($user->role === 'admin') {
+            $companies = \App\Models\Company::active()->get(['id', 'name', 'code']);
+        } else {
+            $companies = $user->companies()->where('is_active', true)->get(['companies.id', 'companies.name', 'companies.code']);
+        }
+
         return Inertia::render('Recolte/Index', [
-            'recoltes' => $recoltes
+            'recoltes' => $recoltes,
+            'companies' => $companies
         ]);
     }
 
@@ -55,29 +95,66 @@ class RecolteController extends BaseController
      */
     public function create()
     {
+        $user = auth()->user();
+        
         // Get users who have created collections (agents and admins) with their available collections
-        $users = \App\Models\User::whereHas('collections', function($query) {
-                $query->whereDoesntHave('recoltes');
-            })
-            ->with(['collections' => function($query) {
-                $query->with(['parcel'])
-                    ->whereDoesntHave('recoltes')
-                    ->orderBy('collected_at', 'desc');
-            }])
-            ->select('id', 'display_name', 'email', 'role','uid')
-            ->orderBy('display_name')
-            ->get();
+        // Filter by company access
+        if ($user->role === 'admin') {
+            // Admins can see all users and their collections
+            $users = \App\Models\User::whereHas('collections', function($query) {
+                    $query->whereDoesntHave('recoltes');
+                })
+                ->with(['collections' => function($query) {
+                    $query->with(['parcel'])
+                        ->whereDoesntHave('recoltes')
+                        ->orderBy('collected_at', 'desc');
+                }])
+                ->select('id', 'first_name', 'email', 'role','uid')
+                ->orderBy('first_name')
+                ->get();
+        } else {
+            // Other users can only see users from their assigned companies
+            $userCompanyIds = $user->companies()->pluck('companies.id');
+            $users = \App\Models\User::whereHas('collections', function($query) use ($userCompanyIds) {
+                    $query->whereDoesntHave('recoltes')
+                          ->whereHas('parcel', function($parcelQuery) use ($userCompanyIds) {
+                              $parcelQuery->whereIn('company_id', $userCompanyIds);
+                          });
+                })
+                ->with(['collections' => function($query) use ($userCompanyIds) {
+                    $query->with(['parcel'])
+                        ->whereDoesntHave('recoltes')
+                        ->whereHas('parcel', function($parcelQuery) use ($userCompanyIds) {
+                            $parcelQuery->whereIn('company_id', $userCompanyIds);
+                        })
+                        ->orderBy('collected_at', 'desc');
+                }])
+                ->select('id', 'first_name', 'email', 'role','uid')
+                ->orderBy('first_name')
+                ->get();
+        }
 
         // Calculate total amounts for each user's collections
         $users->each(function($user) {
             $user->total_amount = $user->collections->sum('amount');
         });
 
-        // Get active money cases
-        $activeCases = \App\Models\MoneyCase::where('status', 'active')
-            ->select('id', 'name', 'description', 'balance')
-            ->orderBy('name')
-            ->get();
+        // Get active money cases - filter by user's companies
+        if ($user->role === 'admin') {
+            // Admins can see all active money cases
+            $activeCases = \App\Models\MoneyCase::where('status', 'active')
+                ->select('id', 'name', 'description', 'balance')
+                ->orderBy('name')
+                ->get();
+        } else {
+            // Other users can only see money cases from their assigned companies
+            $userCompanyIds = $user->companies()->pluck('companies.id');
+            $activeCases = \App\Models\MoneyCase::where('status', 'active')
+                ->whereIn('company_id', $userCompanyIds)
+                ->select('id', 'name', 'description', 'balance')
+                ->orderBy('name')
+                ->get();
+        }
 
         return Inertia::render('Recolte/Create', [
             'users' => $users,
@@ -94,20 +171,60 @@ class RecolteController extends BaseController
             'note' => 'nullable|string|max:1000',
             'collection_ids' => 'required|array|min:1',
             'collection_ids.*' => 'exists:collections,id',
-            'case_id' => 'nullable|exists:money_cases,id'
+            'case_id' => 'nullable|exists:money_cases,id',
+            'manual_amount' => 'required|numeric|min:0',
+            'amount_discrepancy_note' => 'nullable|string|max:1000'
         ]);
 
         DB::beginTransaction();
         
         try {
+            // Get the collections to determine the company
+            $collections = Collection::whereIn('id', $request->collection_ids)
+                ->with('parcel')
+                ->get();
+            
+            // Determine company from collections' parcels
+            $companyIds = $collections->pluck('parcel.company_id')->unique()->filter();
+            
+            if ($companyIds->count() === 0) {
+                throw new \Exception('No valid company found for the selected collections.');
+            }
+            
+            if ($companyIds->count() > 1) {
+                throw new \Exception('All collections must belong to the same company.');
+            }
+            
+            $companyId = $companyIds->first();
+            
+            // Calculate total amount from collections
+            $totalAmount = $collections->sum('amount');
+            $manualAmount = $request->manual_amount;
+            
+            // Check for discrepancy and validate note requirement
+            $hasDiscrepancy = abs($totalAmount - $manualAmount) > 0.01; // Allow for small rounding differences
+            if ($hasDiscrepancy && empty($request->amount_discrepancy_note)) {
+                return back()->withErrors([
+                    'amount_discrepancy_note' => 'A note explaining the amount discrepancy is required when the manual amount differs from the calculated total.'
+                ])->withInput();
+            }
+            
+            // Validate user has access to this company
+            $user = Auth::user();
+            if ($user->role !== 'admin' && !$user->belongsToCompany($companyId)) {
+                throw new \Exception('You do not have access to this company.');
+            }
+            
             // Create the recolte
             $recolte = Recolte::create([
                 'note' => $request->note,
-                'created_by' => Auth::id()
+                'created_by' => Auth::id(),
+                'company_id' => $companyId,
+                'manual_amount' => $manualAmount,
+                'amount_discrepancy_note' => $hasDiscrepancy ? $request->amount_discrepancy_note : null
             ]);
 
             // Attach the selected collections and update their case_id if provided
-            $collections = Collection::whereIn('id', $request->collection_ids)->get();
             
             // Free money cases for collections being recolted
             $casesToFree = $collections->whereNotNull('case_id')->pluck('case_id')->unique();
@@ -134,8 +251,15 @@ class RecolteController extends BaseController
 
             DB::commit();
 
+            $message = "Recolte #{$recolte->code} created successfully with " . count($request->collection_ids) . " collections.";
+            $message .= " Calculated total: " . number_format($totalAmount, 2) . " DZD, Manual amount: " . number_format($manualAmount, 2) . " DZD";
+            
+            if ($hasDiscrepancy) {
+                $message .= " (Discrepancy noted)";
+            }
+            
             return redirect()->route('recoltes.index')
-                ->with('success', "Recolte #{$recolte->code} created successfully with " . count($request->collection_ids) . " collections.");
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollback();
@@ -200,15 +324,32 @@ class RecolteController extends BaseController
      */
     public function edit(Recolte $recolte)
     {
+        $user = auth()->user();
         $recolte->load(['collections.parcel']);
         
         // Get available collections that haven't been recolted yet (excluding current recolte's collections)
-        $availableCollections = Collection::with(['parcel'])
-            ->whereDoesntHave('recoltes', function ($query) use ($recolte) {
-                $query->where('recolte_id', '!=', $recolte->id);
-            })
-            ->orderBy('collected_at', 'desc')
-            ->get();
+        // Filter by company access
+        if ($user->role === 'admin') {
+            // Admins can see all available collections
+            $availableCollections = Collection::with(['parcel'])
+                ->whereDoesntHave('recoltes', function ($query) use ($recolte) {
+                    $query->where('recolte_id', '!=', $recolte->id);
+                })
+                ->orderBy('collected_at', 'desc')
+                ->get();
+        } else {
+            // Other users can only see collections from their assigned companies
+            $userCompanyIds = $user->companies()->pluck('companies.id');
+            $availableCollections = Collection::with(['parcel'])
+                ->whereDoesntHave('recoltes', function ($query) use ($recolte) {
+                    $query->where('recolte_id', '!=', $recolte->id);
+                })
+                ->whereHas('parcel', function($query) use ($userCompanyIds) {
+                    $query->whereIn('company_id', $userCompanyIds);
+                })
+                ->orderBy('collected_at', 'desc')
+                ->get();
+        }
 
         return Inertia::render('Recolte/Edit', [
             'recolte' => $recolte,

@@ -23,13 +23,15 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
     private $states = [];
     private $cities = [];
     private $detailedErrors = [];
+    private $companyId = null;
 
-    public function __construct()
+    public function __construct($companyId = null)
     {
         // Initialize empty arrays - will be populated when needed
         $this->states = [];
         $this->cities = [];
         $this->detailedErrors = [];
+        $this->companyId = $companyId;
     }
 
     /**
@@ -91,6 +93,16 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
             $notes = $this->cleanUtf8((string) ($row['remarque'] ?? ''));
             $reference = $this->cleanUtf8((string) ($row['ref'] ?? ''));
             $products = $this->cleanUtf8((string) ($row['produits'] ?? ''));
+            // Debug: Check what we're getting from Excel
+            $rawDateValue = $row['date_creation'] ?? 'NOT_FOUND';
+            Log::info("Excel date debugging", [
+                'row_number' => $rowNumber,
+                'raw_date_value' => $rawDateValue,
+                'raw_date_type' => gettype($rawDateValue),
+                'available_columns' => array_keys($row)
+            ]);
+            
+            $parcelCreationDate = $this->parseDate($rawDateValue);
 
             // Find state from database (don't create new ones)
             $stateId = $this->findStateInDatabase($stateName);
@@ -130,10 +142,21 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
                 $deliveryType = 'stopdesk'; // If COD amount > 0, set as stopdesk
             }
 
+            // Get company ID - use provided company or default to 1
+            $companyId = $this->companyId ?? 1;
+            
+            // Debug: Log what we're about to save
+            Log::info("Creating parcel with parcel_creation_date", [
+                'tracking_number' => $trackingNumber,
+                'parcel_creation_date' => $parcelCreationDate,
+                'parcel_creation_date_type' => gettype($parcelCreationDate),
+                'parcel_creation_date_is_null' => is_null($parcelCreationDate)
+            ]);
+            
             // Create parcel
             $parcel = new Parcel([
                 'tracking_number' => $trackingNumber,
-                'company_id' => 1, // Default company ID - you may want to make this configurable
+                'company_id' => $companyId,
                 'sender_name' => $senderName,
                 'sender_phone' => '', // Not provided in Excel format
                 'sender_address' => '', // Not provided in Excel format
@@ -160,6 +183,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
                 'notes' => $notes,
                 'reference' => $reference,
                 'secondary_phone' => $secondaryPhone,
+                'parcel_creation_date' => $parcelCreationDate,
                 'status' => 'pending', // Default status
             ]);
 
@@ -261,6 +285,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
             'commune' => 'nullable|max:255', // Commune (City) - can be string or numeric
             'wilaya' => 'nullable|max:255', // Wilaya (State) - can be string or numeric
             'total' => 'nullable|numeric|min:0', // Total (COD Amount) - numeric only
+            'date_creation' => 'nullable|date', // Date création (Parcel Creation Date) - optional date
         ];
     }
 
@@ -330,6 +355,85 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
     public function getSkippedCount(): int
     {
         return $this->skippedCount;
+    }
+
+    /**
+     * Parse date from Excel cell value
+     */
+    private function parseDate($dateValue)
+    {
+        Log::info("parseDate called", [
+            'value' => $dateValue,
+            'type' => gettype($dateValue),
+            'empty' => empty($dateValue),
+            'is_string' => is_string($dateValue)
+        ]);
+        
+        if (empty($dateValue)) {
+            Log::info("parseDate returning null - empty value");
+            return null;
+        }
+
+        // If it's already a Carbon instance or DateTime
+        if ($dateValue instanceof \Carbon\Carbon || $dateValue instanceof \DateTime) {
+            return $dateValue;
+        }
+
+        // If it's a numeric value (Excel serial date)
+        if (is_numeric($dateValue)) {
+            try {
+                // Excel serial date starts from 1900-01-01
+                $excelEpoch = new \DateTime('1900-01-01');
+                $excelEpoch->add(new \DateInterval('P' . (int)$dateValue . 'D'));
+                return $excelEpoch;
+            } catch (\Exception $e) {
+                Log::warning("Failed to parse Excel serial date: {$dateValue}", ['error' => $e->getMessage()]);
+                return null;
+            }
+        }
+
+        // Try to parse as string date
+        $dateString = trim((string)$dateValue);
+        if (empty($dateString)) {
+            return null;
+        }
+
+        // Try common date formats
+        $formats = [
+            'Y-m-d',
+            'd/m/Y',
+            'm/d/Y',
+            'd-m-Y',
+            'Y-m-d H:i:s',
+            'd/m/Y H:i:s',
+            'm/d/Y H:i:s',
+            'd-m-Y H:i:s',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                $date = \DateTime::createFromFormat($format, $dateString);
+                if ($date && $date->format($format) === $dateString) {
+                    return $date;
+                }
+            } catch (\Exception $e) {
+                continue;
+            }
+        }
+
+        // Try Carbon's flexible parsing
+        try {
+            $result = \Carbon\Carbon::parse($dateString);
+            Log::info("parseDate success with Carbon", [
+                'input' => $dateString,
+                'result' => $result,
+                'result_type' => gettype($result)
+            ]);
+            return $result;
+        } catch (\Exception $e) {
+            Log::warning("Failed to parse date: {$dateString}", ['error' => $e->getMessage()]);
+            return null;
+        }
     }
 
     /**

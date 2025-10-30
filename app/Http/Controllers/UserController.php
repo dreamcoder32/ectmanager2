@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -16,18 +17,28 @@ class UserController extends Controller
      */
     public function index()
     {
-        $users = User::with('manager', 'subordinates')
+        $users = User::with(['manager', 'subordinates', 'companies'])
             ->select([
-                'id', 'uid', 'display_name', 'email', 'role', 'is_active',
+                'id', 'uid', 'first_name', 'email', 'role', 'is_active',
                 'first_name', 'last_name', 'date_of_birth', 'identity_card_number',
                 'national_identification_number', 'started_working_at', 
                 'payment_day_of_month', 'monthly_salary', 'manager_id'
             ])
-            ->orderBy('display_name')
+            ->orderBy('first_name')
             ->get();
 
+        // Calculate statistics
+        $stats = [
+            'total' => $users->count(),
+            'supervisors' => $users->where('role', 'supervisor')->count(),
+            'agents' => $users->where('role', 'agent')->count(),
+            'admins' => $users->where('role', 'admin')->count(),
+            'active' => $users->where('is_active', true)->count(),
+        ];
+
         return Inertia::render('Users/Index', [
-            'users' => $users
+            'users' => $users,
+            'stats' => $stats
         ]);
     }
 
@@ -39,12 +50,19 @@ class UserController extends Controller
         // Get potential supervisors (users who can manage others)
         $supervisors = User::where('role', 'supervisor')
             ->orWhere('role', 'admin')
-            ->select('id', 'display_name', 'first_name', 'last_name')
-            ->orderBy('display_name')
+            ->select('id', 'first_name', 'first_name', 'last_name')
+            ->orderBy('first_name')
+            ->get();
+
+        // Get all active companies
+        $companies = Company::active()
+            ->select('id', 'name', 'code')
+            ->orderBy('name')
             ->get();
 
         return Inertia::render('Users/Create', [
-            'supervisors' => $supervisors
+            'supervisors' => $supervisors,
+            'companies' => $companies
         ]);
     }
 
@@ -54,7 +72,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'display_name' => 'nullable|string|max:255',
+            'first_name' => 'nullable|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|in:admin,supervisor,agent',
@@ -67,7 +85,9 @@ class UserController extends Controller
             'payment_day_of_month' => 'nullable|integer|min:1|max:31',
             'monthly_salary' => 'nullable|numeric|min:0',
             'manager_id' => 'nullable|exists:users,id',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'company_ids' => 'nullable|array',
+            'company_ids.*' => 'exists:companies,id'
         ]);
 
         if ($validator->fails()) {
@@ -76,7 +96,7 @@ class UserController extends Controller
 
         $user = User::create([
             'uid' => 'USR' . str_pad(User::count() + 1, 6, '0', STR_PAD_LEFT),
-            'display_name' => $request->display_name,
+            'first_name' => $request->first_name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role,
@@ -92,6 +112,11 @@ class UserController extends Controller
             'is_active' => $request->is_active ?? true
         ]);
 
+        // Attach companies to user
+        if ($request->filled('company_ids')) {
+            $user->companies()->attach($request->company_ids);
+        }
+
         return redirect()->route('users.index')->with('success', 'User created successfully.');
     }
 
@@ -100,7 +125,7 @@ class UserController extends Controller
      */
     public function show(User $user)
     {
-        $user->load('manager', 'subordinates');
+        $user->load('manager', 'subordinates', 'companies');
         
         return Inertia::render('Users/Show', [
             'user' => $user
@@ -116,13 +141,23 @@ class UserController extends Controller
         $supervisors = User::where('role', 'supervisor')
             ->orWhere('role', 'admin')
             ->where('id', '!=', $user->id)
-            ->select('id', 'display_name', 'first_name', 'last_name')
-            ->orderBy('display_name')
+            ->select('id', 'first_name', 'first_name', 'last_name')
+            ->orderBy('first_name')
             ->get();
+
+        // Get all active companies
+        $companies = Company::active()
+            ->select('id', 'name', 'code')
+            ->orderBy('name')
+            ->get();
+
+        // Load user's companies
+        $user->load('companies');
 
         return Inertia::render('Users/Edit', [
             'user' => $user,
-            'supervisors' => $supervisors
+            'supervisors' => $supervisors,
+            'companies' => $companies
         ]);
     }
 
@@ -132,7 +167,7 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         $validator = Validator::make($request->all(), [
-            'display_name' => 'required|string|max:255',
+            'first_name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'password' => 'nullable|string|min:8',
             'role' => 'required|in:admin,supervisor,agent',
@@ -145,7 +180,9 @@ class UserController extends Controller
             'payment_day_of_month' => 'nullable|integer|min:1|max:31',
             'monthly_salary' => 'nullable|numeric|min:0',
             'manager_id' => 'nullable|exists:users,id',
-            'is_active' => 'boolean'
+            'is_active' => 'boolean',
+            'company_ids' => 'nullable|array',
+            'company_ids.*' => 'exists:companies,id'
         ]);
 
         if ($validator->fails()) {
@@ -153,7 +190,7 @@ class UserController extends Controller
         }
 
         $updateData = [
-            'display_name' => $request->display_name,
+            'first_name' => $request->first_name,
             'email' => $request->email,
             'role' => $request->role,
             'first_name' => $request->first_name,
@@ -175,6 +212,11 @@ class UserController extends Controller
 
         $user->update($updateData);
 
+        // Sync companies
+        if ($request->has('company_ids')) {
+            $user->companies()->sync($request->company_ids ?? []);
+        }
+
         return redirect()->route('users.index')->with('success', 'User updated successfully.');
     }
 
@@ -191,5 +233,47 @@ class UserController extends Controller
         $user->delete();
 
         return redirect()->route('users.index')->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Add companies to a user.
+     */
+    public function addCompanies(Request $request, User $user)
+    {
+        $request->validate([
+            'company_ids' => 'required|array',
+            'company_ids.*' => 'exists:companies,id'
+        ]);
+
+        $user->companies()->syncWithoutDetaching($request->company_ids);
+
+        return back()->with('success', 'Companies added successfully.');
+    }
+
+    /**
+     * Remove companies from a user.
+     */
+    public function removeCompanies(Request $request, User $user)
+    {
+        $request->validate([
+            'company_ids' => 'required|array',
+            'company_ids.*' => 'exists:companies,id'
+        ]);
+
+        $user->companies()->detach($request->company_ids);
+
+        return back()->with('success', 'Companies removed successfully.');
+    }
+
+    /**
+     * Get user's companies.
+     */
+    public function getCompanies(User $user)
+    {
+        $companies = $user->companies()->select('id', 'name', 'code')->get();
+        
+        return response()->json([
+            'companies' => $companies
+        ]);
     }
 }

@@ -78,7 +78,7 @@
         <v-list>
           <v-list-item>
             <v-list-item-content>
-              <v-list-item-title>{{ $page.props.auth.user.display_name }}</v-list-item-title>
+              <v-list-item-title>{{ $page.props.auth.user.first_name }}</v-list-item-title>
               <v-list-item-subtitle>{{ $page.props.auth.user.email }}</v-list-item-subtitle>
             </v-list-item-content>
           </v-list-item>

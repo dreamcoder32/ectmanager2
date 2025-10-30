@@ -46,6 +46,8 @@
                           :error-messages="errors.driver_commission"
                         />
                       </v-col>
+
+                   
                       <v-col cols="12" md="12">
                         <v-file-input
                           v-model="xlsxFile"
@@ -142,6 +144,40 @@
                         </v-card>
                       </v-col>
 
+                         <!-- Manual Amount Field -->
+                         <v-col cols="12" md="4" class="mt-4">
+                        <v-text-field
+                          v-model.number="manualAmount"
+                          type="number"
+                          step="0.01"
+                          label="Manual Amount (DZD) *"
+                          outlined
+                          required
+                          :error-messages="errors.manual_amount"
+                          prepend-inner-icon="mdi-cash"
+                          :hint="`Calculated total: ${formatCurrency(calculatedTotal)}`"
+                          persistent-hint
+                        />
+                      </v-col>
+
+                      <!-- Discrepancy Note Field (shown when amounts differ) -->
+                      <v-col cols="12" v-if="hasAmountDiscrepancy" class="mt-4">
+                        <v-textarea
+                          v-model="amountDiscrepancyNote"
+                          label="Amount Discrepancy Note *"
+                          placeholder="Please explain why the manual amount differs from the calculated total..."
+                          outlined
+                          rows="3"
+                          required
+                          :error-messages="errors.amount_discrepancy_note"
+                          color="warning"
+                        >
+                          <template #prepend-inner>
+                            <v-icon color="warning">mdi-alert-circle</v-icon>
+                          </template>
+                        </v-textarea>
+                      </v-col>
+
                       <v-col cols="12" v-if="missingTrackingNumbers.length">
                         <v-alert type="warning" outlined>
                           {{ $t('common.clear') }}: 
@@ -210,7 +246,9 @@ export default {
       parseSummary: null,
       processing: false,
       errors: {},
-      parcelCommissionMap: {}
+      parcelCommissionMap: {},
+      manualAmount: null,
+      amountDiscrepancyNote: ''
     }
   },
   watch: {
@@ -236,8 +274,21 @@ export default {
     }
   },
   computed: {
+    calculatedTotal() {
+      return this.foundParcels.reduce((sum, p) => {
+        const codAmount = Number(p.cod_amount) || 0;
+        const commission = this.parcelCommissionMap[p.tracking_number] || this.driverCommission;
+        return sum + Math.max(0, codAmount - commission);
+      }, 0);
+    },
+    hasAmountDiscrepancy() {
+      if (!this.manualAmount || !this.calculatedTotal) return false;
+      return Math.abs(this.calculatedTotal - this.manualAmount) > 0.01;
+    },
     canSubmit() {
-      return this.selectedDriverId && this.driverCommission >= 0 && this.selectedTrackingNumbers.length > 0 && !this.processing;
+      const hasRequiredFields = this.selectedDriverId && this.driverCommission >= 0 && this.selectedTrackingNumbers.length > 0 && this.manualAmount > 0;
+      const hasDiscrepancyNote = !this.hasAmountDiscrepancy || (this.hasAmountDiscrepancy && this.amountDiscrepancyNote.trim());
+      return hasRequiredFields && hasDiscrepancyNote && !this.processing;
     },
     totalCod() {
       return this.foundParcels.reduce((sum, p) => sum + (Number(p.cod_amount) || 0), 0);
@@ -336,7 +387,9 @@ export default {
               const num = Number(val);
               return [key, isFinite(num) && num >= 0 ? num : 0];
             })
-          )
+          ),
+          manual_amount: this.manualAmount,
+          amount_discrepancy_note: this.amountDiscrepancyNote
         };
         const resp = await fetch('/driver-settlement/process', {
           method: 'POST',
@@ -370,6 +423,14 @@ export default {
       } finally {
         this.processing = false;
       }
+    },
+    formatCurrency(amount) {
+      return new Intl.NumberFormat('fr-DZ', {
+        style: 'currency',
+        currency: 'DZD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      }).format(amount || 0);
     }
   }
 }

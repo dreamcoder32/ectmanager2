@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
         // Create admin user
         User::create([
             'uid' => 'admin-001',
-            'display_name' => 'System Administrator',
+            'first_name' => 'System Administrator',
             'email' => 'admin@delivery.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
@@ -37,7 +37,7 @@ class DatabaseSeeder extends Seeder
         // Create agent user
         User::create([
             'uid' => 'agent-001',
-            'display_name' => 'Agent User',
+            'first_name' => 'Agent User',
             'email' => 'agent@delivery.com',
             'password' => Hash::make('password'),
             'role' => 'agent',

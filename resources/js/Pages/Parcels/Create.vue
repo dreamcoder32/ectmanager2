@@ -31,7 +31,7 @@
               </v-card-title>
               <v-card-text>
                 <v-row>
-                  <v-col cols="12" md="8">
+                  <v-col cols="12" md="6">
                     <v-file-input
                       v-model="excelFile"
                       :label="'Select Excel file (.xlsx, .xls)'"
@@ -42,11 +42,26 @@
                       @change="clearExcelErrors"
                     ></v-file-input>
                   </v-col>
-                  <v-col cols="12" md="4" class="d-flex align-center">
+                  
+                  <!-- Company Selection for Import -->
+                  <v-col cols="12" md="3" v-if="showCompanySelection">
+                    <v-select
+                      v-model="selectedCompanyId"
+                      :items="props.userCompanies"
+                      item-title="name"
+                      item-value="id"
+                      label="Select Company"
+                      outlined
+                      :error-messages="companyErrors"
+                      @change="clearCompanyErrors"
+                    ></v-select>
+                  </v-col>
+                  
+                  <v-col cols="12" md="3" class="d-flex align-center">
                     <v-btn
                       color="success"
                       :loading="uploadingExcel"
-                      :disabled="!excelFile"
+                      :disabled="!excelFile || (showCompanySelection && !selectedCompanyId)"
                       @click="uploadExcel"
                       block
                     >
@@ -309,6 +324,7 @@ const { t } = useI18n()
 
 const props = defineProps({
   errors: Object,
+  userCompanies: Array,
 })
 
 const states = ref([])
@@ -339,9 +355,18 @@ const uploadMessage = ref('')
 const uploadMessageType = ref('success')
 const excelErrors = ref([])
 
+// Company selection for import
+const selectedCompanyId = ref(null)
+const showCompanySelection = ref(false)
+const companyErrors = ref([])
+
 const clearExcelErrors = () => {
   excelErrors.value = []
   uploadMessage.value = ''
+}
+
+const clearCompanyErrors = () => {
+  companyErrors.value = []
 }
 
 const uploadExcel = async () => {
@@ -350,9 +375,15 @@ const uploadExcel = async () => {
   uploadingExcel.value = true
   uploadMessage.value = ''
   excelErrors.value = []
+  companyErrors.value = []
 
   const formData = new FormData()
   formData.append('excel_file', excelFile.value)
+  
+  // Add company ID if user has multiple companies
+  if (selectedCompanyId.value) {
+    formData.append('company_id', selectedCompanyId.value)
+  }
 
   try {
     console.log('Starting Excel upload...', excelFile.value.name)
@@ -379,7 +410,11 @@ const uploadExcel = async () => {
       uploadMessage.value = response.data.message || 'Import failed'
       uploadMessageType.value = 'error'
       
-      if (response.data.errors && response.data.errors.length > 0) {
+      // Handle company selection requirement
+      if (response.data.requires_company_selection) {
+        showCompanySelection.value = true
+        companyErrors.value = ['Please select a company for the import']
+      } else if (response.data.errors && response.data.errors.length > 0) {
         excelErrors.value = response.data.errors
       }
     }
@@ -444,6 +479,13 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error loading states:', error)
     states.value = [] // Ensure states is always an array
+  }
+  
+  // Check if user has multiple companies for import
+  if (props.userCompanies && props.userCompanies.length > 1) {
+    showCompanySelection.value = true
+  } else if (props.userCompanies && props.userCompanies.length === 1) {
+    selectedCompanyId.value = props.userCompanies[0].id
   }
 })
 </script>

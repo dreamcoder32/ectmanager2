@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             // Personal Information
-            $table->string('first_name')->nullable()->after('display_name');
+            $table->string('first_name')->nullable()->after('first_name');
             $table->string('last_name')->nullable()->after('first_name');
             $table->date('date_of_birth')->nullable()->after('last_name');
             $table->string('identity_card_number')->nullable()->unique()->after('date_of_birth');

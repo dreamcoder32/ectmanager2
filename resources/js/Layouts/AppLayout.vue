@@ -73,6 +73,8 @@
         </v-list-item>
 
         <v-list-item 
+        v-if="$page.props.auth.user.role === 'admin' || $page.props.auth.user.role === 'supervisor'"
+
           @click="$inertia.visit('/recoltes')" 
           link
           :class="{ 'sidebar-item-active': $page.component.startsWith('Recoltes/') }"
@@ -227,6 +229,36 @@
       
       <v-spacer></v-spacer>
       
+      <!-- Global Parcel Search -->
+      <div class="d-flex align-center mr-4" style="max-width: 300px; width: 100%;">
+        <v-text-field
+          v-model="parcelSearchQuery"
+          :label="$t('parcels.search_global')"
+          prepend-inner-icon="mdi-magnify"
+          variant="outlined"
+          density="compact"
+          hide-details
+          clearable
+          @keyup.enter="searchParcel"
+          @click:clear="clearParcelSearch"
+          style="background: white; border-radius: 12px;"
+          class="parcel-search-field"
+        >
+          <template v-slot:append>
+            <v-btn
+              @click="searchParcel"
+              icon
+              size="small"
+              color="primary"
+              variant="text"
+              :disabled="!parcelSearchQuery"
+            >
+              <v-icon size="18">mdi-magnify</v-icon>
+            </v-btn>
+          </template>
+        </v-text-field>
+      </div>
+      
       <!-- Action Buttons Slot -->
       <slot name="actions"></slot>
 
@@ -246,7 +278,7 @@
             <span v-if="$page?.props?.auth?.user" 
                   class="text-body-2 font-weight-medium d-none d-sm-inline"
                   style="color: #1a1d29; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              {{ $page.props.auth.user.display_name || $page.props.auth.user.first_name || $page.props.auth.user.email }}
+              {{ $page.props.auth.user.first_name || $page.props.auth.user.first_name || $page.props.auth.user.email }}
             </span>
           </v-chip>
         </template>
@@ -305,12 +337,30 @@ export default {
   },
   data() {
     return {
-      drawer: true
+      drawer: true,
+      parcelSearchQuery: ''
     }
   },
   methods: {
     logout() {
       router.post('/logout')
+    },
+    searchParcel() {
+      if (!this.parcelSearchQuery || this.parcelSearchQuery.trim() === '') {
+        return
+      }
+      
+      // Navigate to parcels page with search query
+      router.get('/parcels', {
+        search: this.parcelSearchQuery.trim(),
+        page: 1
+      }, {
+        preserveState: false,
+        preserveScroll: false
+      })
+    },
+    clearParcelSearch() {
+      this.parcelSearchQuery = ''
     }
   }
 }
@@ -382,5 +432,74 @@ export default {
   background: #e5e7eb !important;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Parcel Search Field - NUCLEAR Vuetify Override */
+.parcel-search-field :deep(.v-input__control) {
+  border-radius: 8px !important;
+  background: white !important;
+  border: 1px solid #d1d5db !important;
+  transition: all 0.2s ease !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.parcel-search-field :deep(.v-field__outline),
+.parcel-search-field :deep(.v-field__outline__start),
+.parcel-search-field :deep(.v-field__outline__end),
+.parcel-search-field :deep(.v-field__outline__notch) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.parcel-search-field :deep(.v-field__outline__start::before),
+.parcel-search-field :deep(.v-field__outline__end::before),
+.parcel-search-field :deep(.v-field__outline__notch::before) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  width: 0 !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.parcel-search-field :deep(.v-input--is-focused .v-input__control) {
+  border-color: #6b7280 !important;
+  box-shadow: 0 0 0 3px rgba(107, 114, 128, 0.1) !important;
+  outline: none !important;
+}
+
+.parcel-search-field :deep(.v-input__control:hover) {
+  border-color: #9ca3af !important;
+  outline: none !important;
+}
+
+.parcel-search-field :deep(.v-field__input) {
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  outline: none !important;
+}
+
+.parcel-search-field :deep(.v-field__append-inner) {
+  padding: 0 8px !important;
+}
+
+/* Force remove any remaining Vuetify focus styling */
+.parcel-search-field :deep(.v-input--is-focused *) {
+  outline: none !important;
+}
+
+.parcel-search-field :deep(.v-field__outline *) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 </style>

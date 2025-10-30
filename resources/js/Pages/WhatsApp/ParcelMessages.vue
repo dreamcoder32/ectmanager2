@@ -124,7 +124,7 @@
                         
                         <div class="text-caption text-grey">
                           {{ message.message_type === 'outgoing' && message.user ? 
-                             `Sent by: ${message.user.display_name || message.user.email}` : 
+                             `Sent by: ${message.user.first_name || message.user.email}` : 
                              `From: ${parcel.recipient_name}` }}
                         </div>
                       </div>

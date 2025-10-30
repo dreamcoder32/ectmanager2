@@ -61,7 +61,7 @@
                 $tracking = optional($collection->parcel)->tracking_number ?? 'N/A';
                 $amount = (int) round(optional($collection->parcel)->cod_amount ?? 0);
                 $phone = optional($collection->parcel)->recipient_phone ?? 'N/A';
-                $by = $collection->createdBy ? ($collection->createdBy->display_name ?? ($collection->createdBy->name ?? 'N/A')) : 'N/A';
+                $by = $collection->createdBy ? ($collection->createdBy->first_name ?? ($collection->createdBy->name ?? 'N/A')) : 'N/A';
                 $date = $collection->collected_at ? $collection->collected_at->format('Y-m-d H:i') : '';
                 $rawType = $collection->parcel_type ?? (optional($collection->parcel)->delivery_type ?? null);
                 if ($rawType) {

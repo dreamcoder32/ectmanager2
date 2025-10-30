@@ -205,7 +205,7 @@ const submit = () => {
 
 :deep(.login-input .v-field--focused) {
   background: rgba(255, 255, 255, 0.1);
-  border-color: #667eea;
+  border-color: #6b7280;
   box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
 }
 

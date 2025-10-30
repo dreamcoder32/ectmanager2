@@ -40,7 +40,9 @@ class Parcel extends Model
         'secondary_phone',
         'collected_at',
         'delivered_at',
+        'parcel_creation_date',
         'assigned_driver_id',
+        'description',
     ];
 
     protected $casts = [
@@ -54,6 +56,7 @@ class Parcel extends Model
         'whatsapp_verified_at' => 'datetime',
         'collected_at' => 'datetime',
         'delivered_at' => 'datetime',
+        'parcel_creation_date' => 'datetime',
     ];
 
     /**
