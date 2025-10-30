@@ -2,6 +2,7 @@ import { createI18n } from 'vue-i18n'
 
 const messages = {
   en: {
+    
     navigation: {
       dashboard: 'Dashboard',
       parcels: 'Parcels',
@@ -11,7 +12,9 @@ const messages = {
       logout: 'Log Out',
       drivers: 'Drivers',
       driverSettlement: 'Driver Settlement',
-      expenses: 'Expenses'
+      expenses: 'Expenses',
+      whatsapp: 'WhatsApp Management',
+      companies: 'Companies'
     },
     dashboard: {
       title: 'Dashboard',
@@ -49,21 +52,6 @@ const messages = {
       status_cancelled: 'Cancelled',
       cod_amount: 'COD Amount',
       company: 'Company'
-    },
-    common: {
-      save: 'Save',
-      cancel: 'Cancel',
-      delete: 'Delete',
-      edit: 'Edit',
-      view: 'View',
-      search: 'Search',
-      filter: 'Filter',
-      export: 'Export',
-      import: 'Import',
-      clear: 'Clear',
-      version: 'Version',
-      languageChanged: 'Language changed successfully',
-      currency:'Da'
     },
     time: {
       just_now: 'just now',
@@ -156,6 +144,61 @@ const messages = {
       import_xlsx_title: 'Import Driver Settlement XLSX',
       net_amount: 'Net Amount',
       total_net: 'Total Net'
+    },
+    companies: {
+      title: 'Companies',
+      subtitle: 'Manage company settings and WhatsApp integrations',
+      list: 'Companies List',
+      create: 'Create Company',
+      edit: 'Edit Company',
+      company_details: 'Company Details',
+      name: 'Company Name',
+      code: 'Company Code',
+      email: 'Email',
+      phone: 'Phone',
+      address: 'Address',
+      commission: 'Commission',
+      status: 'Status',
+      is_active: 'Active',
+      whatsapp_status: 'WhatsApp Status',
+      whatsapp_configured: 'Configured',
+      whatsapp_not_configured: 'Not Configured',
+      whatsapp_configuration: 'WhatsApp Configuration',
+      whatsapp_api_key: 'WhatsApp API Key',
+      whatsapp_api_key_help: 'Enter your wasenderapi.com API key for this company',
+      desk_pickup_template: 'Desk Pickup Message Template',
+      desk_pickup_template_label: 'Message Template',
+      desk_pickup_template_hint: 'Customize the message sent to recipients when their parcel arrives at the desk',
+      available_placeholders: 'Available Placeholders',
+      placeholder_company_name: 'Company name',
+      placeholder_recipient_name: 'Recipient name',
+      placeholder_parcel_designation: 'Parcel designation/description',
+      placeholder_parcel_amount: 'Parcel amount (COD)',
+      placeholder_tracking_number: 'Tracking number',
+      placeholder_recipient_phone: 'Recipient phone',
+      placeholder_recipient_address: 'Recipient address',
+      test_connection: 'Test Connection',
+      search: 'Search companies...'
+    },
+    common: {
+      save: 'Save',
+      cancel: 'Cancel',
+      delete: 'Delete',
+      edit: 'Edit',
+      view: 'View',
+      search: 'Search',
+      filter: 'Filter',
+      export: 'Export',
+      import: 'Import',
+      clear: 'Clear',
+      version: 'Version',
+      languageChanged: 'Language changed successfully',
+      currency: 'Da',
+      active: 'Active',
+      inactive: 'Inactive',
+      close: 'Close',
+      reset: 'Reset',
+      not_provided: 'Not provided'
     }
   },
   fr: {
@@ -170,7 +213,9 @@ const messages = {
       drivers: 'Livreurs',
       driverSettlement: 'Règlement des livreurs',
       expenses: 'Dépenses',
-      users:'Utilisateurs'
+      users:'Utilisateurs',
+      whatsapp: 'Gestion WhatsApp',
+      companies: 'Entreprises'
     },
     dashboard: {
       title: 'Tableau de bord',
@@ -203,22 +248,6 @@ const messages = {
       status_delivered: 'Livré',
       status_returned: 'Retourné',
       status_cancelled: 'Annulé'
-    },
-    common: {
-      save: 'Enregistrer',
-      cancel: 'Annuler',
-      delete: 'Supprimer',
-      edit: 'Modifier',
-      view: 'Voir',
-      search: 'Rechercher',
-      filter: 'Filtrer',
-      export: 'Exporter',
-      import: 'Importer',
-      clear: 'Effacer',
-      version: 'Version',
-      languageChanged: 'Langue changée avec succès',
-            currency:'Da'
-
     },
     time: {
       just_now: 'à l\'instant',
@@ -311,6 +340,61 @@ const messages = {
       import_xlsx_title: 'Importer le fichier XLSX du règlement du Livreur',
       net_amount: 'Montant net',
       total_net: 'Net total'
+    },
+    companies: {
+      title: 'Entreprises',
+      subtitle: 'Gérer les paramètres des entreprises et les intégrations WhatsApp',
+      list: 'Liste des Entreprises',
+      create: 'Créer une Entreprise',
+      edit: 'Modifier l\'Entreprise',
+      company_details: 'Détails de l\'Entreprise',
+      name: 'Nom de l\'Entreprise',
+      code: 'Code de l\'Entreprise',
+      email: 'Email',
+      phone: 'Téléphone',
+      address: 'Adresse',
+      commission: 'Commission',
+      status: 'Statut',
+      is_active: 'Actif',
+      whatsapp_status: 'Statut WhatsApp',
+      whatsapp_configured: 'Configuré',
+      whatsapp_not_configured: 'Non Configuré',
+      whatsapp_configuration: 'Configuration WhatsApp',
+      whatsapp_api_key: 'Clé API WhatsApp',
+      whatsapp_api_key_help: 'Entrez votre clé API wasenderapi.com pour cette entreprise',
+      desk_pickup_template: 'Modèle de Message de Retrait au Bureau',
+      desk_pickup_template_label: 'Modèle de Message',
+      desk_pickup_template_hint: 'Personnalisez le message envoyé aux destinataires lorsque leur colis arrive au bureau',
+      available_placeholders: 'Espaces réservés disponibles',
+      placeholder_company_name: 'Nom de l\'entreprise',
+      placeholder_recipient_name: 'Nom du destinataire',
+      placeholder_parcel_designation: 'Désignation/description du colis',
+      placeholder_parcel_amount: 'Montant du colis (COD)',
+      placeholder_tracking_number: 'Numéro de suivi',
+      placeholder_recipient_phone: 'Téléphone du destinataire',
+      placeholder_recipient_address: 'Adresse du destinataire',
+      test_connection: 'Tester la Connexion',
+      search: 'Rechercher des entreprises...'
+    },
+    common: {
+      save: 'Enregistrer',
+      cancel: 'Annuler',
+      delete: 'Supprimer',
+      edit: 'Modifier',
+      view: 'Voir',
+      search: 'Rechercher',
+      filter: 'Filtrer',
+      export: 'Exporter',
+      import: 'Importer',
+      clear: 'Effacer',
+      version: 'Version',
+      languageChanged: 'Langue changée avec succès',
+      currency: 'Da',
+      active: 'Actif',
+      inactive: 'Inactif',
+      close: 'Fermer',
+      reset: 'Réinitialiser',
+      not_provided: 'Non fourni'
     }
   },
   ar: {
@@ -372,8 +456,12 @@ const messages = {
       clear: 'مسح',
       version: 'الإصدار',
       languageChanged: 'تم تغيير اللغة بنجاح',
-            currency:'دج'
-
+      currency: 'دج',
+      active: 'نشط',
+      inactive: 'غير نشط',
+      close: 'إغلاق',
+      reset: 'إعادة تعيين',
+      not_provided: 'غير متوفر'
     },
     time: {
       just_now: 'الآن',

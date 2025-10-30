@@ -19,9 +19,9 @@
             <v-card 
               class="mb-4" 
               elevation="2"
-              style="border-radius: 12px;"
+              style="border-radius: 16px; overflow: hidden;"
             >
-              <v-card-title class="pa-4 bg-primary text-white">
+              <v-card-title class="pa-4 text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                 <v-icon left>mdi-barcode-scan</v-icon>
                 {{ $t('stopdesk_payment.barcode_scanner') }}
               </v-card-title>
@@ -42,10 +42,10 @@
                 >
                   <template v-slot:append>
                     <v-btn 
-                      color="primary" 
                       @click="searchParcel"
                       :loading="searching"
                       size="large"
+                      style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;"
                     >
                       {{ $t('stopdesk_payment.search') }}
                     </v-btn>
@@ -59,9 +59,9 @@
               v-if="showManualEntry"
               class="mb-4" 
               elevation="2"
-              style="border-radius: 12px;"
+              style="border-radius: 16px; overflow: hidden;"
             >
-              <v-card-title class="pa-4 bg-warning text-white">
+              <v-card-title class="pa-4 text-white" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
                 <v-icon left>mdi-package-variant-plus</v-icon>
                 {{ $t('stopdesk_payment.manual_parcel_entry') }}
                 <v-spacer></v-spacer>
@@ -154,13 +154,14 @@
                       color="grey" 
                       @click="cancelManualEntry"
                       class="mr-2"
+                      variant="outlined"
                     >
                       {{ $t('stopdesk_payment.cancel') }}
                     </v-btn>
                     <v-btn 
-                      color="success" 
                       @click="addManualParcel"
                       :disabled="!isManualParcelValid"
+                      style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;"
                     >
                       <v-icon left>mdi-plus</v-icon>
                       {{ $t('stopdesk_payment.add_to_queue') }}
@@ -173,10 +174,10 @@
             <!-- Active Parcels List -->
             <v-card 
               elevation="2"
-              style="border-radius: 12px;"
+              style="border-radius: 16px; overflow: hidden;"
               class="mb-2"
             >
-              <v-card-title class="pa-4 bg-orange text-white">
+              <v-card-title class="pa-4 text-white" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
                 <v-icon left>mdi-package-variant</v-icon>
                 {{ $t('stopdesk_payment.pending_payments') }} ({{ activeParcels.length }})
               </v-card-title>
@@ -194,8 +195,8 @@
                     class="pa-4 border-b"
                   >
                     <template v-slot:prepend>
-                      <v-avatar color="primary" class="mr-4">
-                        <v-icon>mdi-package</v-icon>
+                      <v-avatar class="mr-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <v-icon color="white">mdi-package</v-icon>
                       </v-avatar>
                     </template>
                     
@@ -286,11 +287,11 @@
                               {{ $t('stopdesk_payment.remove') }}
                             </v-btn>
                             <v-btn
-                              color="success"
                               @click="confirmPayment(parcel, index)"
                               :disabled="!parcel.amountGiven || parcel.amountGiven < parcel.cod_amount || processingPayment"
                               :loading="processingPayment"
                               size="small"
+                              style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;"
                             >
                               <v-icon left size="small">mdi-check</v-icon>
                               {{ $t('stopdesk_payment.confirm_payment') }}
@@ -310,13 +311,16 @@
             <!-- Recent Collections Card -->
             <v-card 
               elevation="2"
-              style="border-radius: 12px; position: sticky; top: 20px;"
+              class="recent-collections-card"
+              style="border-radius: 16px; position: sticky; top: 20px; overflow: hidden;"
             >
-              <v-card-title class="pa-4 bg-success text-white">
+              <v-card-title class="pa-4 text-white recent-collections-header" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
                 <v-icon left>mdi-check-circle</v-icon>
                 {{ $t('stopdesk_payment.recent_collections') }} <b> ({{localRecentCollections.length}}) </b>
               </v-card-title>
-              <v-card-text class="pa-0" style="max-height: 600px; overflow-y: auto;">
+              
+              <!-- Scrollable Collections List -->
+              <div class="recent-collections-scrollable">
                 <div v-if="localRecentCollections.length === 0" class="text-center pa-4">
                   <v-icon size="48" color="grey-lighten-1">mdi-history</v-icon>
                   <p class="text-body-2 text-grey mt-2">{{ $t('stopdesk_payment.no_recent_collections') }}</p>
@@ -328,11 +332,9 @@
                     :key="`collection-${collection.id}-${index}`"
                     class="pa-3 border-b"
                   >
-
-                  
                     <template v-slot:prepend>
-                      <v-avatar size="32" color="success">
-                        <v-icon size="16">mdi-check</v-icon>
+                      <v-avatar size="32" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                        <v-icon size="16" color="white">mdi-check</v-icon>
                       </v-avatar>
                     </template>
                     
@@ -349,8 +351,10 @@
                     </template>
                   </v-list-item>
                 </v-list>
-                
-                <!-- Total Sum at the bottom -->
+              </div>
+              
+              <!-- Fixed Total Sum at the bottom -->
+              <div class="recent-collections-total">
                 <v-divider></v-divider>
                 <div class="pa-4 bg-grey-lighten-5">
                   <div class="d-flex justify-space-between align-center">
@@ -362,7 +366,7 @@
                     </span>
                   </div>
                 </div>
-              </v-card-text>
+              </div>
             </v-card>
           </v-col>
         </v-row>
@@ -376,15 +380,20 @@
             bottom: 20px; 
             right: 20px;
             z-index: 1000;
-            background: white;
-            padding: 16px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            width: 260px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            width: 280px;
           "
         >
           <div class="d-flex align-center mb-3">
-            <v-icon color="primary" class="mr-2">mdi-cash-register</v-icon>
+            <v-avatar size="32" class="mr-2" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+              <v-icon color="white" size="18">mdi-cash-register</v-icon>
+            </v-avatar>
             <span class="text-body-1 font-weight-bold">{{ $t('stopdesk_payment.money_case') }}:</span>
           </div>
           
@@ -441,6 +450,33 @@
         </div>
         
       </v-container>
+
+      <!-- Snackbar Notifications -->
+      <v-snackbar
+        v-model="snackbar.show"
+        :color="snackbar.color"
+        :timeout="snackbar.timeout"
+        location="bottom center"
+        style="margin-bottom: 20px;"
+      >
+        <div class="d-flex align-center">
+          <v-icon class="mr-2" :color="snackbar.iconColor || 'white'">
+            {{ snackbar.icon }}
+          </v-icon>
+          <span class="text-body-1">{{ snackbar.message }}</span>
+        </div>
+        <template v-slot:actions>
+          <v-btn
+            color="white"
+            variant="text"
+            @click="snackbar.show = false"
+            icon
+            size="small"
+          >
+            <v-icon>mdi-close</v-icon>
+          </v-btn>
+        </template>
+      </v-snackbar>
     </template>
   </AppLayout>
 </template>
@@ -497,7 +533,16 @@ export default {
         company: '',
         state: '',
         city: ''
-      }
+      },
+      snackbar: {
+        show: false,
+        message: '',
+        color: 'success',
+        icon: 'mdi-check-circle',
+        iconColor: 'white',
+        timeout: 3000
+      },
+      successAudio: null
     }
   },
   mounted() {
@@ -505,6 +550,10 @@ export default {
     if (this.userLastActiveCaseId && this.activeCases.some(c => c.id === this.userLastActiveCaseId)) {
       this.selectedCaseId = this.userLastActiveCaseId
     }
+    
+    // Initialize success sound
+    this.successAudio = new Audio('/paid.wav')
+    this.successAudio.volume = 0.9 // Set volume to 70%
     
     // Focus on barcode input when component mounts
     this.$nextTick(() => {
@@ -602,21 +651,47 @@ export default {
     },
 
     showError(message) {
-      // You can implement a toast notification system here
-      console.error('Error:', message)
-      // For now, we'll use console.error, but you should implement proper user feedback
+      this.snackbar = {
+        show: true,
+        message: message,
+        color: 'error',
+        icon: 'mdi-alert-circle',
+        iconColor: 'white',
+        timeout: 4000
+      }
     },
 
     showWarning(message) {
-      // You can implement a toast notification system here
-      console.warn('Warning:', message)
-      // For now, we'll use console.warn, but you should implement proper user feedback
+      this.snackbar = {
+        show: true,
+        message: message,
+        color: 'warning',
+        icon: 'mdi-alert',
+        iconColor: 'white',
+        timeout: 3500
+      }
     },
 
     showSuccess(message) {
-      // You can implement a toast notification system here
-      console.log('Success:', message)
-      // For now, we'll use console.log, but you should implement proper user feedback
+      this.snackbar = {
+        show: true,
+        message: message,
+        color: 'success',
+        icon: 'mdi-check-circle',
+        iconColor: 'white',
+        timeout: 3000
+      }
+      this.playSuccessSound()
+    },
+
+    playSuccessSound() {
+      if (this.successAudio) {
+        // Reset the audio to the beginning in case it's already playing
+        this.successAudio.currentTime = 0
+        this.successAudio.play().catch(error => {
+          console.warn('Could not play success sound:', error)
+        })
+      }
     },
 
     resetSearchState() {
@@ -921,28 +996,83 @@ export default {
   border-bottom: none;
 }
 
+/* Card hover effects */
+.v-card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12) !important;
+}
+
 /* Custom scrollbar for sidebar */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: rgba(0,0,0,0.05);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+}
+
+/* Recent Collections Card specific styles */
+.recent-collections-card {
+  max-height: 500px;
+  display: flex;
+  flex-direction: column;
+}
+
+.recent-collections-header {
+  flex-shrink: 0;
+}
+
+.recent-collections-scrollable {
+  flex-grow: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.recent-collections-total {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  background: white;
+  z-index: 1;
 }
 
 /* Focus styles for barcode input */
 .v-text-field--focused .v-field {
-  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3);
+}
+
+/* Button gradient effects */
+.v-btn {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* Avatar gradient animations */
+.v-avatar {
+  transition: all 0.3s ease;
+}
+
+.v-avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
 }
 
 /* Fixed bottom total collections */
@@ -952,9 +1082,10 @@ export default {
   left: 0 !important;
   right: 0 !important;
   z-index: 1000 !important;
-  background: #f5f5f5 !important;
-  border-top: 1px solid #e0e0e0 !important;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0,0,0,0.08) !important;
+  box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Shake animation for case selection */
@@ -969,6 +1100,30 @@ export default {
 }
 
 .case-selection-container {
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.case-selection-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.2) !important;
+}
+
+/* List item hover effects */
+.v-list-item {
+  transition: all 0.2s ease;
+}
+
+.v-list-item:hover {
+  background: rgba(102, 126, 234, 0.05) !important;
+  transform: translateX(4px);
+}
+
+/* Chip animations */
+.v-chip {
+  transition: all 0.2s ease;
+}
+
+.v-chip:hover {
+  transform: scale(1.05);
 }
 </style>

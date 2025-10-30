@@ -31,10 +31,14 @@ class DashboardController extends Controller
         // Get money case statistics
         $caseStats = $this->getCaseStats($startDate, $endDate);
         
+        // Get daily statistics for charts
+        $dailyStats = $this->getDailyStats($startDate, $endDate);
+        
         return Inertia::render('Dashboard/Index', [
             'stats' => $stats,
             'recentParcels' => $recentParcels,
             'caseStats' => $caseStats,
+            'dailyStats' => $dailyStats,
             'filters' => [
                 'start' => $startDate->toDateString(),
                 'end' => $endDate->toDateString(),
@@ -155,5 +159,46 @@ class DashboardController extends Controller
             'active_cases_count' => $activeCases->count(),
             'cases' => $activeCases->take(5)
         ];
+    }
+    
+    /**
+     * Get daily statistics for charts.
+     */
+    private function getDailyStats(Carbon $startDate, Carbon $endDate)
+    {
+        $dailyData = [];
+        $currentDate = $startDate->copy();
+        
+        // Loop through each day in the range
+        while ($currentDate->lte($endDate)) {
+            $dayStart = $currentDate->copy()->startOfDay();
+            $dayEnd = $currentDate->copy()->endOfDay();
+            
+            // Revenue (margin from collections)
+            $revenue = Collection::whereBetween('collected_at', [$dayStart, $dayEnd])
+                ->sum('margin');
+            
+            // Money collected (total amount from collections)
+            $moneyCollected = Collection::whereBetween('collected_at', [$dayStart, $dayEnd])
+                ->whereDoesntHave('recoltes')
+                ->sum('amount');
+            
+            // Number of delivered parcels
+            $deliveredParcels = Parcel::where('status', 'delivered')
+                ->whereBetween('delivered_at', [$dayStart, $dayEnd])
+                ->count();
+            
+            $dailyData[] = [
+                'date' => $currentDate->format('Y-m-d'),
+                'date_formatted' => $currentDate->format('M d'),
+                'revenue' => (float) $revenue,
+                'money_collected' => (float) $moneyCollected,
+                'delivered_parcels' => $deliveredParcels,
+            ];
+            
+            $currentDate->addDay();
+        }
+        
+        return $dailyData;
     }
 }

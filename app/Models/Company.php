@@ -10,8 +10,13 @@ class Company extends Model
     protected $fillable = [
         'name',
         'code',
+        'email',
+        'phone',
+        'address',
         'is_active',
         'commission',
+        'whatsapp_api_key',
+        'whatsapp_desk_pickup_template',
     ];
 
     protected $casts = [
@@ -23,7 +28,8 @@ class Company extends Model
      * The attributes that should be hidden for serialization.
      */
     protected $hidden = [
-        'commission',
+        // Removed commission and whatsapp_api_key from hidden fields
+        // as they are needed in the frontend
     ];
 
     /**
@@ -40,6 +46,14 @@ class Company extends Model
     public function margins(): HasMany
     {
         return $this->hasMany(Margin::class);
+    }
+
+    /**
+     * Get the parcel messages for the company.
+     */
+    public function parcelMessages(): HasMany
+    {
+        return $this->hasMany(ParcelMessage::class);
     }
 
     /**

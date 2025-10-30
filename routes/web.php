@@ -17,6 +17,9 @@ use App\Http\Controllers\CommissionPaymentController;
 use App\Http\Controllers\MoneyCaseController;
 use App\Http\Controllers\FinancialDashboardController;
 use App\Http\Controllers\DriverController;
+use App\Http\Controllers\WhatsAppController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\WhatsAppWebhookController;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -197,5 +200,47 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/financial-dashboard', [FinancialDashboardController::class, 'index'])->name('financial-dashboard.index');
     Route::get('/financial-dashboard/reports', [FinancialDashboardController::class, 'reports'])->name('financial-dashboard.reports');
 });
+
+// Company routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/companies', [CompanyController::class, 'index'])->name('companies.index');
+    Route::get('/companies/create', [CompanyController::class, 'create'])->name('companies.create');
+    Route::post('/companies', [CompanyController::class, 'store'])->name('companies.store');
+    Route::get('/companies/{company}', [CompanyController::class, 'show'])->name('companies.show');
+    Route::get('/companies/{company}/edit', [CompanyController::class, 'edit'])->name('companies.edit');
+    Route::put('/companies/{company}', [CompanyController::class, 'update'])->name('companies.update');
+    
+    // WhatsApp API endpoints
+    Route::post('/companies/{company}/test-whatsapp-connection', [CompanyController::class, 'testWhatsAppConnection'])->name('companies.test-whatsapp-connection');
+    Route::put('/companies/{company}/whatsapp-api-key', [CompanyController::class, 'updateWhatsAppApiKey'])->name('companies.whatsapp-api-key');
+    Route::get('/companies/whatsapp-status', [CompanyController::class, 'getWhatsAppStatus'])->name('companies.whatsapp-status');
+});
+
+// WhatsApp routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp.index');
+    Route::get('/whatsapp/parcels/{parcel}/messages', [WhatsAppController::class, 'showParcelMessages'])->name('whatsapp.parcel-messages');
+    
+    // API endpoints
+    Route::post('/whatsapp/parcels/{parcel}/send-message', [WhatsAppController::class, 'sendMessage'])->name('whatsapp.send-message');
+    Route::post('/whatsapp/send-bulk-messages', [WhatsAppController::class, 'sendBulkMessages'])->name('whatsapp.send-bulk-messages');
+    Route::post('/whatsapp/parcels/{parcel}/desk-pickup-notification', [WhatsAppController::class, 'sendDeskPickupNotification'])->name('whatsapp.desk-pickup-notification');
+    Route::post('/whatsapp/parcels/{parcel}/delivery-notification', [WhatsAppController::class, 'sendDeliveryNotification'])->name('whatsapp.delivery-notification');
+    Route::post('/whatsapp/parcels/{parcel}/collection-notification', [WhatsAppController::class, 'sendCollectionNotification'])->name('whatsapp.collection-notification');
+    Route::get('/whatsapp/parcels/{parcel}/message-history', [WhatsAppController::class, 'getMessageHistory'])->name('whatsapp.message-history');
+    Route::post('/whatsapp/parcels/{parcel}/toggle-tag', [WhatsAppController::class, 'toggleWhatsAppTag'])->name('whatsapp.toggle-tag');
+    Route::get('/whatsapp/companies/status', [WhatsAppController::class, 'getCompaniesStatus'])->name('whatsapp.companies-status');
+    Route::post('/whatsapp/companies/{company}/test-connection', [WhatsAppController::class, 'testConnection'])->name('whatsapp.test-connection');
+    
+    // Phone verification endpoints
+    Route::post('/whatsapp/parcels/{parcel}/verify-phones', [WhatsAppController::class, 'verifyParcelPhoneNumbers'])->name('whatsapp.verify-phones');
+    Route::post('/whatsapp/bulk-verify-phones', [WhatsAppController::class, 'bulkVerifyPhoneNumbers'])->name('whatsapp.bulk-verify-phones');
+    Route::post('/whatsapp/companies/{company}/check-phone', [WhatsAppController::class, 'checkPhoneOnWhatsApp'])->name('whatsapp.check-phone');
+});
+
+// WhatsApp Webhook routes (public access for wasenderapi.com)
+Route::post('/webhook/whatsapp/incoming', [WhatsAppWebhookController::class, 'handleIncomingMessage'])->name('webhook.whatsapp.incoming');
+Route::get('/webhook/whatsapp/verify', [WhatsAppWebhookController::class, 'verifyWebhook'])->name('webhook.whatsapp.verify');
+Route::get('/webhook/whatsapp/status', [WhatsAppWebhookController::class, 'getWebhookStatus'])->name('webhook.whatsapp.status');
 
 require __DIR__.'/auth.php';

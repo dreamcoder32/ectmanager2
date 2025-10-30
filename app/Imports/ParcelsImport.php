@@ -124,6 +124,12 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
                 ]);
             }
 
+            // Determine delivery type based on COD amount
+            $deliveryType = 'home_delivery'; // Default to home delivery
+            if (is_numeric($codAmount) && floatval($codAmount) > 0) {
+                $deliveryType = 'stopdesk'; // If COD amount > 0, set as stopdesk
+            }
+
             // Create parcel
             $parcel = new Parcel([
                 'tracking_number' => $trackingNumber,
@@ -145,6 +151,11 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
                 'declared_value' => 0, // Default declared value
                 'cod_amount' => is_numeric($codAmount) ? floatval($codAmount) : 0,
                 'delivery_fee' => 0, // Default delivery fee
+                'delivery_type' => $deliveryType, // Set delivery type based on COD
+                'has_whatsapp_tag' => false, // Default to false
+                'recipient_phone_whatsapp' => null, // Will be verified later
+                'secondary_phone_whatsapp' => null, // Will be verified later
+                'whatsapp_verified_at' => null, // Will be set when verified
                 'description' => $products,
                 'notes' => $notes,
                 'reference' => $reference,

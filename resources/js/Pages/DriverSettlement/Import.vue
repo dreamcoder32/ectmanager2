@@ -25,17 +25,8 @@
                 <v-card-text class="">
                   <v-form @submit.prevent="submitProcess">
                     <v-row>
-                      <v-col cols="12" md="12">
-                        <v-file-input
-                          v-model="xlsxFile"
-                          :label="$t('driverSettlement.upload_xlsx')"
-                          accept=".xlsx,.xls"
-                          prepend-icon="mdi-file-excel"
-                          outlined
-                          @change="onXlsxChange"
-                        />
-                      </v-col>
-                      <v-col cols="12" md="6">
+                     
+                      <v-col cols="12" md="6" class="mt-4">
                         <v-select
                           v-model="selectedDriverId"
                           :items="drivers"
@@ -46,13 +37,23 @@
                           :error-messages="errors.driver_id"
                         />
                       </v-col>
-                      <v-col cols="12" md="4">
+                      <v-col cols="12" md="4" class="mt-4">
                         <v-text-field
                           v-model.number="driverCommission"
                           type="number"
                           :label="$t('driverSettlement.driver_commission_da')"
                           outlined
                           :error-messages="errors.driver_commission"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="12">
+                        <v-file-input
+                          v-model="xlsxFile"
+                          :label="$t('driverSettlement.upload_xlsx')"
+                          accept=".xlsx,.xls"
+                          prepend-icon="mdi-file-excel"
+                          outlined
+                          @change="onXlsxChange"
                         />
                       </v-col>
                       <!-- <v-col cols="12" md="8">

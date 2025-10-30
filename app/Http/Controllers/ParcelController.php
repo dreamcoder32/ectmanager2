@@ -38,6 +38,10 @@ class ParcelController extends Controller
             $query->where('city_id', $request->city_id);
         }
 
+        if ($request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -54,8 +58,9 @@ class ParcelController extends Controller
 
         return Inertia::render('Parcels/Index', [
             'parcels' => $parcels,
-            'filters' => $request->only(['status', 'state_id', 'city_id', 'search']),
+            'filters' => $request->only(['status', 'state_id', 'city_id', 'company_id', 'search']),
             'states' => State::active()->get(),
+            'companies' => Company::active()->get(),
             'cities' => [], // Temporarily disable cities to test UTF-8 issue
         ]);
     }
@@ -102,7 +107,7 @@ class ParcelController extends Controller
      */
     public function show(Parcel $parcel)
     {
-        $parcel->load(['company', 'assignedDriver', 'state', 'city', 'collections', 'callLogs']);
+        $parcel->load(['company', 'assignedDriver', 'state', 'city', 'collections', 'callLogs', 'messages']);
 
         return Inertia::render('Parcels/Show', [
             'parcel' => $parcel,

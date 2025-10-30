@@ -31,6 +31,10 @@ class Parcel extends Model
         'delivery_fee',
         'status',
         'delivery_type',
+        'has_whatsapp_tag',
+        'recipient_phone_whatsapp',
+        'secondary_phone_whatsapp',
+        'whatsapp_verified_at',
         'notes',
         'reference',
         'secondary_phone',
@@ -44,6 +48,10 @@ class Parcel extends Model
         'declared_value' => 'decimal:2',
         'cod_amount' => 'decimal:2',
         'delivery_fee' => 'decimal:2',
+        'has_whatsapp_tag' => 'boolean',
+        'recipient_phone_whatsapp' => 'boolean',
+        'secondary_phone_whatsapp' => 'boolean',
+        'whatsapp_verified_at' => 'datetime',
         'collected_at' => 'datetime',
         'delivered_at' => 'datetime',
     ];
@@ -86,6 +94,14 @@ class Parcel extends Model
     public function callLogs(): HasMany
     {
         return $this->hasMany(CallLog::class);
+    }
+
+    /**
+     * Get the messages for the parcel.
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(ParcelMessage::class);
     }
 
     /**
@@ -165,4 +181,52 @@ class Parcel extends Model
     // {
     //     return $this->delivery_type === 'home_delivery';
     // }
+
+    /**
+     * Check if WhatsApp phone verification has been completed.
+     */
+    public function isWhatsAppVerified(): bool
+    {
+        return !is_null($this->whatsapp_verified_at);
+    }
+
+    /**
+     * Check if recipient phone is on WhatsApp.
+     */
+    public function hasRecipientPhoneWhatsApp(): bool
+    {
+        return $this->recipient_phone_whatsapp === true;
+    }
+
+    /**
+     * Check if secondary phone is on WhatsApp.
+     */
+    public function hasSecondaryPhoneWhatsApp(): bool
+    {
+        return $this->secondary_phone_whatsapp === true;
+    }
+
+    /**
+     * Check if any phone number is on WhatsApp.
+     */
+    public function hasAnyPhoneWhatsApp(): bool
+    {
+        return $this->hasRecipientPhoneWhatsApp() || $this->hasSecondaryPhoneWhatsApp();
+    }
+
+    /**
+     * Get the best phone number for WhatsApp (prefer recipient phone).
+     */
+    public function getBestWhatsAppPhone(): ?string
+    {
+        if ($this->hasRecipientPhoneWhatsApp() && !empty($this->recipient_phone)) {
+            return $this->recipient_phone;
+        }
+        
+        if ($this->hasSecondaryPhoneWhatsApp() && !empty($this->secondary_phone)) {
+            return $this->secondary_phone;
+        }
+        
+        return null;
+    }
 }
