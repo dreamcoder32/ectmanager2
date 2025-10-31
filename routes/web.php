@@ -30,6 +30,12 @@ Route::get('/', function () {
 });
 
 
+Route::get('/phpinfo', function() {
+    return response()->json([
+        'sockets_enabled' => extension_loaded('sockets'),
+        'available_extensions' => get_loaded_extensions()
+    ]);
+});
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
