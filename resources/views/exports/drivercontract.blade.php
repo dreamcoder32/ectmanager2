@@ -126,7 +126,7 @@
         <div class="section">
             <p>
                 بين الشركة ، <span class="bold">Anderson National Express ،</span> <span class="bold">SPA Transport de marchandises</span> ، التي يقع مقرها 
-                الجزائر تحت رقم <span class="bold">99 ب -0007650- 16/00</span> ، يمثلها السيد <span class="bold">OUADAH OMAR</span>
+                الجزائر تحت رقم <span class="bold">99 ب -0007650- 16/00</span> ، يمثلها السيد <span class="bold">Aberkane Hakim</span>
             </p>
             <p style="text-align: center;">و السيد، <span class="filled-text"> Merzak Djnidi</span></p>
         </div>
