@@ -69,7 +69,7 @@ class MoneyCase extends Model
             ->sum('amount');
         $totalExpenses = $this->expenses()->sum('amount');
         
-        return $totalCollections - $totalExpenses;
+        return $totalCollections;
     }
 
     /**
