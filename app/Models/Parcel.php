@@ -10,53 +10,53 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 class Parcel extends Model
 {
     protected $fillable = [
-        'tracking_number',
-        'company_id',
-        'sender_name',
-        'sender_phone',
-        'sender_address',
-        'receiver_name',
-        'receiver_phone',
-        'receiver_address',
-        'recipient_name',
-        'recipient_phone',
-        'recipient_address',
-        'wilaya_code',
-        'commune',
-        'state_id',
-        'city_id',
-        'weight',
-        'declared_value',
-        'cod_amount',
-        'delivery_fee',
-        'status',
-        'delivery_type',
-        'has_whatsapp_tag',
-        'recipient_phone_whatsapp',
-        'secondary_phone_whatsapp',
-        'whatsapp_verified_at',
-        'notes',
-        'reference',
-        'secondary_phone',
-        'collected_at',
-        'delivered_at',
-        'parcel_creation_date',
-        'assigned_driver_id',
-        'description',
+        "tracking_number",
+        "company_id",
+        "sender_name",
+        "sender_phone",
+        "sender_address",
+        "receiver_name",
+        "receiver_phone",
+        "receiver_address",
+        "recipient_name",
+        "recipient_phone",
+        "recipient_address",
+        "wilaya_code",
+        "commune",
+        "state_id",
+        "city_id",
+        "weight",
+        "declared_value",
+        "cod_amount",
+        "delivery_fee",
+        "status",
+        "delivery_type",
+        "has_whatsapp_tag",
+        "recipient_phone_whatsapp",
+        "secondary_phone_whatsapp",
+        "whatsapp_verified_at",
+        "notes",
+        "reference",
+        "secondary_phone",
+        "collected_at",
+        "delivered_at",
+        "parcel_creation_date",
+        "assigned_driver_id",
+        "description",
     ];
 
     protected $casts = [
-        'weight' => 'decimal:2',
-        'declared_value' => 'decimal:2',
-        'cod_amount' => 'decimal:2',
-        'delivery_fee' => 'decimal:2',
-        'has_whatsapp_tag' => 'boolean',
-        'recipient_phone_whatsapp' => 'boolean',
-        'secondary_phone_whatsapp' => 'boolean',
-        'whatsapp_verified_at' => 'datetime',
-        'collected_at' => 'datetime',
-        'delivered_at' => 'datetime',
-        'parcel_creation_date' => 'datetime',
+        "weight" => "decimal:2",
+        "declared_value" => "decimal:2",
+        "cod_amount" => "decimal:2",
+        "delivery_fee" => "decimal:2",
+        "has_whatsapp_tag" => "boolean",
+        "recipient_phone_whatsapp" => "boolean",
+        "secondary_phone_whatsapp" => "boolean",
+        "whatsapp_verified_at" => "datetime",
+        "collected_at" => "datetime",
+        "delivered_at" => "datetime",
+        "parcel_creation_date" => "datetime",
     ];
 
     /**
@@ -72,7 +72,7 @@ class Parcel extends Model
      */
     public function assignedDriver(): BelongsTo
     {
-        return $this->belongsTo(Driver::class, 'assigned_driver_id');
+        return $this->belongsTo(Driver::class, "assigned_driver_id");
     }
 
     /**
@@ -120,7 +120,23 @@ class Parcel extends Model
      */
     public function latestCollection(): HasOne
     {
-        return $this->hasOne(Collection::class)->latest('collected_at');
+        return $this->hasOne(Collection::class)->latest("collected_at");
+    }
+
+    /**
+     * Get the price changes for the parcel.
+     */
+    public function priceChanges(): HasMany
+    {
+        return $this->hasMany(ParcelPriceChange::class);
+    }
+
+    /**
+     * Get the latest price change for the parcel.
+     */
+    public function latestPriceChange(): HasOne
+    {
+        return $this->hasOne(ParcelPriceChange::class)->latest();
     }
 
     /**
@@ -128,7 +144,7 @@ class Parcel extends Model
      */
     public function scopeByStatus($query, $status)
     {
-        return $query->where('status', $status);
+        return $query->where("status", $status);
     }
 
     /**
@@ -136,7 +152,7 @@ class Parcel extends Model
      */
     public function scopeByCompany($query, $companyId)
     {
-        return $query->where('company_id', $companyId);
+        return $query->where("company_id", $companyId);
     }
 
     /**
@@ -144,12 +160,12 @@ class Parcel extends Model
      */
     public function scopeByLocation($query, $wilayaCode, $commune = null)
     {
-        $query->where('wilaya_code', $wilayaCode);
-        
+        $query->where("wilaya_code", $wilayaCode);
+
         if ($commune) {
-            $query->where('commune', $commune);
+            $query->where("commune", $commune);
         }
-        
+
         return $query;
     }
 
@@ -158,7 +174,7 @@ class Parcel extends Model
      */
     public function scopeByDriver($query, $driverId)
     {
-        return $query->where('assigned_driver_id', $driverId);
+        return $query->where("assigned_driver_id", $driverId);
     }
 
     /**
@@ -166,7 +182,7 @@ class Parcel extends Model
      */
     public function isDelivered(): bool
     {
-        return $this->status === 'delivered';
+        return $this->status === "delivered";
     }
 
     /**
@@ -174,7 +190,7 @@ class Parcel extends Model
      */
     public function isStopdesk(): bool
     {
-        return $this->delivery_type === 'stopdesk';
+        return $this->delivery_type === "stopdesk";
     }
 
     /**
@@ -214,7 +230,8 @@ class Parcel extends Model
      */
     public function hasAnyPhoneWhatsApp(): bool
     {
-        return $this->hasRecipientPhoneWhatsApp() || $this->hasSecondaryPhoneWhatsApp();
+        return $this->hasRecipientPhoneWhatsApp() ||
+            $this->hasSecondaryPhoneWhatsApp();
     }
 
     /**
@@ -222,14 +239,20 @@ class Parcel extends Model
      */
     public function getBestWhatsAppPhone(): ?string
     {
-        if ($this->hasRecipientPhoneWhatsApp() && !empty($this->recipient_phone)) {
+        if (
+            $this->hasRecipientPhoneWhatsApp() &&
+            !empty($this->recipient_phone)
+        ) {
             return $this->recipient_phone;
         }
-        
-        if ($this->hasSecondaryPhoneWhatsApp() && !empty($this->secondary_phone)) {
+
+        if (
+            $this->hasSecondaryPhoneWhatsApp() &&
+            !empty($this->secondary_phone)
+        ) {
             return $this->secondary_phone;
         }
-        
+
         return null;
     }
 }

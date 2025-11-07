@@ -226,6 +226,28 @@
                             </v-chip>
                         </template>
 
+                        <template v-slot:item.cod_amount="{ item }">
+                            <div class="d-flex align-center">
+                                <span>{{ item.cod_amount }} DZD</span>
+                                <v-tooltip
+                                    v-if="item.price_modified"
+                                    location="top"
+                                >
+                                    <template v-slot:activator="{ props }">
+                                        <v-icon
+                                            v-bind="props"
+                                            size="small"
+                                            color="warning"
+                                            class="ml-1"
+                                        >
+                                            mdi-pencil
+                                        </v-icon>
+                                    </template>
+                                    <span>Price has been modified</span>
+                                </v-tooltip>
+                            </div>
+                        </template>
+
                         <template v-slot:item.status="{ item }">
                             <v-chip
                                 :color="getStatusColor(item.status)"
@@ -295,6 +317,15 @@
                                 title="Send Desk Pickup Notification"
                             >
                                 <v-icon>mdi-bell-ring</v-icon>
+                            </v-btn>
+                            <v-btn
+                                icon
+                                size="small"
+                                @click="openPriceChangeDialog(item)"
+                                color="primary"
+                                title="Change Price"
+                            >
+                                <v-icon>mdi-currency-usd</v-icon>
                             </v-btn>
                             <v-btn
                                 icon
@@ -445,6 +476,187 @@
                                 :loading="verifying"
                             >
                                 Verify All ({{ selectedParcels.length }})
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-dialog>
+
+                <!-- Price Change Dialog -->
+                <v-dialog v-model="showPriceChangeDialog" max-width="600px">
+                    <v-card>
+                        <v-card-title>
+                            <span class="text-h5">Change Parcel Price</span>
+                        </v-card-title>
+                        <v-card-text>
+                            <div v-if="selectedParcel">
+                                <v-row>
+                                    <v-col cols="12">
+                                        <v-text-field
+                                            label="Tracking Number"
+                                            :value="
+                                                selectedParcel.tracking_number
+                                            "
+                                            readonly
+                                        ></v-text-field>
+                                    </v-col>
+                                    <v-col cols="12">
+                                        <v-text-field
+                                            label="Current Price (DZD)"
+                                            :value="selectedParcel.cod_amount"
+                                            readonly
+                                        ></v-text-field>
+                                    </v-col>
+                                    <v-col cols="12">
+                                        <v-text-field
+                                            v-model.number="newPrice"
+                                            label="New Price (DZD)"
+                                            type="number"
+                                            min="0"
+                                            step="0.01"
+                                            placeholder="Enter new price..."
+                                            required
+                                        ></v-text-field>
+                                    </v-col>
+                                    <v-col cols="12">
+                                        <v-textarea
+                                            v-model="priceChangeReason"
+                                            label="Reason (Optional)"
+                                            rows="3"
+                                            placeholder="Enter reason for price change..."
+                                        ></v-textarea>
+                                    </v-col>
+                                    <v-col cols="12">
+                                        <v-btn
+                                            variant="text"
+                                            color="info"
+                                            @click="viewPriceHistory"
+                                            prepend-icon="mdi-history"
+                                            size="small"
+                                        >
+                                            View Price History
+                                        </v-btn>
+                                    </v-col>
+                                </v-row>
+                            </div>
+                        </v-card-text>
+                        <v-card-actions>
+                            <v-spacer></v-spacer>
+                            <v-btn
+                                color="grey"
+                                text
+                                @click="closePriceChangeDialog"
+                            >
+                                Cancel
+                            </v-btn>
+                            <v-btn
+                                color="primary"
+                                @click="updatePrice"
+                                :loading="updatingPrice"
+                            >
+                                Update Price
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-dialog>
+
+                <!-- Price History Dialog -->
+                <v-dialog v-model="showPriceHistoryDialog" max-width="700px">
+                    <v-card>
+                        <v-card-title>
+                            <span class="text-h5">Price Change History</span>
+                        </v-card-title>
+                        <v-card-text>
+                            <div v-if="selectedParcel">
+                                <v-alert
+                                    type="info"
+                                    variant="tonal"
+                                    class="mb-4"
+                                >
+                                    Tracking Number:
+                                    {{ selectedParcel.tracking_number }}
+                                </v-alert>
+                                <div
+                                    v-if="loadingPriceHistory"
+                                    class="text-center py-4"
+                                >
+                                    <v-progress-circular
+                                        indeterminate
+                                        color="primary"
+                                    ></v-progress-circular>
+                                </div>
+                                <div v-else-if="priceHistory.length === 0">
+                                    <v-alert type="info" variant="tonal">
+                                        No price changes recorded for this
+                                        parcel.
+                                    </v-alert>
+                                </div>
+                                <v-timeline v-else side="end" align="start">
+                                    <v-timeline-item
+                                        v-for="change in priceHistory"
+                                        :key="change.id"
+                                        dot-color="primary"
+                                        size="small"
+                                    >
+                                        <v-card>
+                                            <v-card-text>
+                                                <div
+                                                    class="d-flex justify-space-between mb-2"
+                                                >
+                                                    <span
+                                                        class="text-subtitle-2"
+                                                    >
+                                                        {{ change.changed_by }}
+                                                    </span>
+                                                    <span
+                                                        class="text-caption text-medium-emphasis"
+                                                    >
+                                                        {{ change.changed_at }}
+                                                    </span>
+                                                </div>
+                                                <div
+                                                    class="d-flex align-center mb-2"
+                                                >
+                                                    <v-chip
+                                                        size="small"
+                                                        color="error"
+                                                        class="mr-2"
+                                                    >
+                                                        {{ change.old_price }}
+                                                        DZD
+                                                    </v-chip>
+                                                    <v-icon size="small"
+                                                        >mdi-arrow-right</v-icon
+                                                    >
+                                                    <v-chip
+                                                        size="small"
+                                                        color="success"
+                                                        class="ml-2"
+                                                    >
+                                                        {{ change.new_price }}
+                                                        DZD
+                                                    </v-chip>
+                                                </div>
+                                                <div
+                                                    v-if="change.reason"
+                                                    class="text-caption"
+                                                >
+                                                    <strong>Reason:</strong>
+                                                    {{ change.reason }}
+                                                </div>
+                                            </v-card-text>
+                                        </v-card>
+                                    </v-timeline-item>
+                                </v-timeline>
+                            </div>
+                        </v-card-text>
+                        <v-card-actions>
+                            <v-spacer></v-spacer>
+                            <v-btn
+                                color="grey"
+                                text
+                                @click="showPriceHistoryDialog = false"
+                            >
+                                Close
                             </v-btn>
                         </v-card-actions>
                     </v-card>
@@ -727,10 +939,17 @@ export default {
         const showMessageDialog = ref(false);
         const showBulkMessageDialog = ref(false);
         const showBulkVerifyDialog = ref(false);
+        const showPriceChangeDialog = ref(false);
+        const showPriceHistoryDialog = ref(false);
         const selectedParcel = ref(null);
         const messageText = ref("");
         const bulkMessageText = ref("");
-        const currentPage = ref(1);
+        const newPrice = ref(0);
+        const priceChangeReason = ref("");
+        const updatingPrice = ref(false);
+        const loadingPriceHistory = ref(false);
+        const priceHistory = ref([]);
+        const currentPage = ref(props.parcels.current_page || 1);
 
         const snackbar = reactive({
             show: false,
@@ -1424,6 +1643,93 @@ export default {
             return "Not on WA";
         };
 
+        const openPriceChangeDialog = (parcel) => {
+            selectedParcel.value = parcel;
+            newPrice.value = parcel.cod_amount;
+            priceChangeReason.value = "";
+            showPriceChangeDialog.value = true;
+        };
+
+        const closePriceChangeDialog = () => {
+            showPriceChangeDialog.value = false;
+            selectedParcel.value = null;
+            newPrice.value = 0;
+            priceChangeReason.value = "";
+        };
+
+        const updatePrice = async () => {
+            if (!selectedParcel.value) return;
+            if (!newPrice.value || newPrice.value < 0) {
+                showSnackbar("Please enter a valid price", "error");
+                return;
+            }
+
+            updatingPrice.value = true;
+            try {
+                const response = await fetch(
+                    `/whatsapp/parcels/${selectedParcel.value.id}/update-price`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": document
+                                .querySelector('meta[name="csrf-token"]')
+                                .getAttribute("content"),
+                        },
+                        body: JSON.stringify({
+                            new_price: newPrice.value,
+                            reason: priceChangeReason.value,
+                        }),
+                    },
+                );
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showSnackbar("Price updated successfully!", "success");
+                    closePriceChangeDialog();
+                    // Reload parcels to show updated price
+                    router.reload();
+                } else {
+                    showSnackbar(
+                        result.error || "Failed to update price",
+                        "error",
+                    );
+                }
+            } catch (error) {
+                showSnackbar("Error updating price", "error");
+            } finally {
+                updatingPrice.value = false;
+            }
+        };
+
+        const fetchPriceHistory = async () => {
+            if (!selectedParcel.value) return;
+
+            loadingPriceHistory.value = true;
+            try {
+                const response = await fetch(
+                    `/whatsapp/parcels/${selectedParcel.value.id}/price-history`,
+                );
+                const result = await response.json();
+
+                if (result.success) {
+                    priceHistory.value = result.data;
+                } else {
+                    showSnackbar("Failed to load price history", "error");
+                }
+            } catch (error) {
+                showSnackbar("Error loading price history", "error");
+            } finally {
+                loadingPriceHistory.value = false;
+            }
+        };
+
+        const viewPriceHistory = async () => {
+            showPriceHistoryDialog.value = true;
+            await fetchPriceHistory();
+        };
+
         return {
             loading,
             sending,
@@ -1435,10 +1741,17 @@ export default {
             showMessageDialog,
             showBulkMessageDialog,
             showBulkVerifyDialog,
-            showQrDialog,
+            showPriceChangeDialog,
+            showPriceHistoryDialog,
             selectedParcel,
             messageText,
             bulkMessageText,
+            newPrice,
+            priceChangeReason,
+            updatingPrice,
+            loadingPriceHistory,
+            priceHistory,
+            resetSessionInfo,
             currentPage,
             snackbar,
             formattedLastChecked,
@@ -1466,6 +1779,12 @@ export default {
             showSnackbar,
             handleDisconnectedSession,
             fetchQrCode,
+            openPriceChangeDialog,
+            closePriceChangeDialog,
+            updatePrice,
+            viewPriceHistory,
+            fetchPriceHistory,
+            showQrDialog,
         };
     },
 };

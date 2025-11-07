@@ -81,12 +81,14 @@ class ParcelController extends Controller
             ->orderBy("created_at", "desc")
             ->paginate($perPage);
 
-        // Manually append messages_count to each parcel for serialization
+        // Manually append messages_count and price_modified to each parcel for serialization
         $parcels->getCollection()->transform(function ($parcel) {
             // Force load messages count if not already set
             if (!isset($parcel->messages_count)) {
                 $parcel->loadCount("messages");
             }
+            // Add price_modified flag
+            $parcel->price_modified = $parcel->priceChanges()->exists();
             return $parcel;
         });
 

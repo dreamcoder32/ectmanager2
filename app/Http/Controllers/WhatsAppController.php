@@ -7,7 +7,9 @@ use App\Services\WhatsAppService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Parcel;
+use App\Models\ParcelPriceChange;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class WhatsAppController extends Controller
 {
@@ -39,6 +41,12 @@ class WhatsAppController extends Controller
         }
 
         $parcels = $query->latest()->paginate(15);
+
+        // Add price_modified flag to each parcel
+        $parcels->getCollection()->transform(function ($parcel) {
+            $parcel->price_modified = $parcel->priceChanges()->exists();
+            return $parcel;
+        });
 
         $companies = Company::all();
 
@@ -178,5 +186,96 @@ class WhatsAppController extends Controller
             ],
             500,
         );
+    }
+
+    /**
+     * Update the price of a parcel and track the change.
+     */
+    public function updateParcelPrice(Request $request, Parcel $parcel)
+    {
+        $request->validate([
+            "new_price" => "required|numeric|min:0",
+            "reason" => "nullable|string|max:500",
+        ]);
+
+        $oldPrice = $parcel->cod_amount;
+        $newPrice = $request->input("new_price");
+
+        // Check if price actually changed
+        if ($oldPrice == $newPrice) {
+            return response()->json(
+                [
+                    "success" => false,
+                    "error" => "New price is the same as the current price.",
+                ],
+                422,
+            );
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // Update parcel price
+            $parcel->update([
+                "cod_amount" => $newPrice,
+            ]);
+
+            // Record the price change
+            ParcelPriceChange::create([
+                "parcel_id" => $parcel->id,
+                "old_price" => $oldPrice,
+                "new_price" => $newPrice,
+                "changed_by" => Auth::id(),
+                "reason" => $request->input("reason"),
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                "success" => true,
+                "message" => "Price updated successfully.",
+                "data" => [
+                    "old_price" => $oldPrice,
+                    "new_price" => $newPrice,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return response()->json(
+                [
+                    "success" => false,
+                    "error" => "Failed to update price: " . $e->getMessage(),
+                ],
+                500,
+            );
+        }
+    }
+
+    /**
+     * Get the price change history for a parcel.
+     */
+    public function getPriceChangeHistory(Parcel $parcel)
+    {
+        $priceChanges = $parcel
+            ->priceChanges()
+            ->with("changedBy:id,name")
+            ->orderBy("created_at", "desc")
+            ->get()
+            ->map(function ($change) {
+                return [
+                    "id" => $change->id,
+                    "old_price" => $change->old_price,
+                    "new_price" => $change->new_price,
+                    "reason" => $change->reason,
+                    "changed_by" => $change->changedBy->name,
+                    "changed_at" => $change->created_at->format("Y-m-d H:i:s"),
+                ];
+            });
+
+        return response()->json([
+            "success" => true,
+            "data" => $priceChanges,
+        ]);
     }
 }
