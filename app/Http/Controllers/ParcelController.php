@@ -650,6 +650,7 @@ class ParcelController extends Controller
         // First, check if parcel exists at all
         $parcel = Parcel::with(["company", "state", "city"])
             ->where("tracking_number", $request->tracking_number)
+            ->orWhere("reference", $request->tracking_number)
             ->first();
 
         if (!$parcel) {
