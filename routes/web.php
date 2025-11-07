@@ -242,6 +242,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/whatsapp/parcels/{parcel}/toggle-tag', [WhatsAppController::class, 'toggleWhatsAppTag'])->name('whatsapp.toggle-tag');
     Route::get('/whatsapp/companies/status', [WhatsAppController::class, 'getCompaniesStatus'])->name('whatsapp.companies-status');
     Route::post('/whatsapp/companies/{company}/test-connection', [WhatsAppController::class, 'testConnection'])->name('whatsapp.test-connection');
+    Route::get('/whatsapp/companies/{company}/session-status', [WhatsAppController::class, 'getCompanySessionStatus'])->name('whatsapp.session-status');
+    Route::get('/whatsapp/companies/{company}/qrcode', [WhatsAppController::class, 'getSessionQrCode'])->name('whatsapp.companies.qrcode');
     
     // Phone verification endpoints
     Route::post('/whatsapp/parcels/{parcel}/verify-phones', [WhatsAppController::class, 'verifyParcelPhoneNumbers'])->name('whatsapp.verify-phones');

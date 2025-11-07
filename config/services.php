@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'wasender' => [
+        'api_key' => env('WSNAPI_KEY'),
+    ],
+
 ];
