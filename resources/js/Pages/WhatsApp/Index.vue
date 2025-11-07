@@ -467,6 +467,13 @@
                             ></v-btn>
                         </v-card-title>
                         <v-card-text class="pa-6">
+                            <!-- Debug: Show which condition is active -->
+                            <div v-if="false" class="text-caption mb-2">
+                                Loading: {{ sessionInfo.loading }} | QR Image:
+                                {{ !!sessionInfo.qrCodeImage }} | QR Error:
+                                {{ !!sessionInfo.qrError }}
+                            </div>
+
                             <div
                                 v-if="sessionInfo.loading"
                                 class="text-center py-8"
@@ -529,6 +536,74 @@
                                         "Unable to retrieve QR code. Please try refreshing."
                                     }}
                                 </v-alert>
+
+                                <!-- Debug Information -->
+                                <v-expansion-panels class="mt-4 mb-4">
+                                    <v-expansion-panel>
+                                        <v-expansion-panel-title>
+                                            <v-icon left>mdi-bug</v-icon>
+                                            Debug Information
+                                        </v-expansion-panel-title>
+                                        <v-expansion-panel-text>
+                                            <div class="text-left">
+                                                <p>
+                                                    <strong>Status:</strong>
+                                                    {{ sessionInfo.status }}
+                                                </p>
+                                                <p>
+                                                    <strong>Needs QR:</strong>
+                                                    {{ sessionInfo.needsQr }}
+                                                </p>
+                                                <p>
+                                                    <strong
+                                                        >QR Code Raw:</strong
+                                                    >
+                                                    {{
+                                                        sessionInfo.qrCodeRaw
+                                                            ? "Present (" +
+                                                              sessionInfo
+                                                                  .qrCodeRaw
+                                                                  .length +
+                                                              " chars)"
+                                                            : "Not present"
+                                                    }}
+                                                </p>
+                                                <p>
+                                                    <strong
+                                                        >QR Code Image:</strong
+                                                    >
+                                                    {{
+                                                        sessionInfo.qrCodeImage
+                                                            ? "Generated"
+                                                            : "Not generated"
+                                                    }}
+                                                </p>
+                                                <p>
+                                                    <strong>Error:</strong>
+                                                    {{
+                                                        sessionInfo.error ||
+                                                        "None"
+                                                    }}
+                                                </p>
+                                                <p>
+                                                    <strong>QR Error:</strong>
+                                                    {{
+                                                        sessionInfo.qrError ||
+                                                        "None"
+                                                    }}
+                                                </p>
+                                                <p class="mt-2">
+                                                    <small
+                                                        >Check browser console
+                                                        (F12) for detailed
+                                                        logs</small
+                                                    >
+                                                </p>
+                                            </div>
+                                        </v-expansion-panel-text>
+                                    </v-expansion-panel>
+                                </v-expansion-panels>
+
                                 <v-btn
                                     color="primary"
                                     @click="fetchSessionInfo"
@@ -602,7 +677,7 @@ export default {
         });
         const sessionInfo = reactive({
             loading: false,
-            status: null,
+            status: "UNKNOWN",
             needsQr: false,
             qrCodeRaw: null,
             qrCodeImage: null,
@@ -610,6 +685,42 @@ export default {
             qrError: null,
             lastCheckedAt: null,
         });
+
+        // Watch sessionInfo changes for debugging
+        watch(
+            () => sessionInfo.qrCodeImage,
+            (newVal, oldVal) => {
+                console.log("👀 sessionInfo.qrCodeImage changed:", {
+                    old: oldVal ? "Set" : "Not set",
+                    new: newVal ? "Set" : "Not set",
+                    newLength: newVal?.length,
+                });
+            },
+        );
+
+        watch(
+            () => sessionInfo.loading,
+            (newVal) => {
+                console.log("👀 sessionInfo.loading changed:", newVal);
+            },
+        );
+
+        // Watch for Show QR Code button visibility
+        watch(
+            () => ({
+                needsQr: sessionInfo.needsQr,
+                hasImage: !!sessionInfo.qrCodeImage,
+            }),
+            (newVal) => {
+                console.log(
+                    "🔘 Show QR Code button should be visible:",
+                    newVal.needsQr && newVal.hasImage,
+                );
+                console.log("   - needsQr:", newVal.needsQr);
+                console.log("   - hasImage:", newVal.hasImage);
+            },
+            { deep: true },
+        );
         const showQrDialog = ref(false);
         const qrRefreshInterval = ref(null);
         const selectedParcels = ref([]);
@@ -690,25 +801,29 @@ export default {
             const company = selectedCompany.value;
 
             if (!company || !company.whatsapp_api_key) {
+                console.log("❌ No company or API key");
                 return;
             }
 
+            console.log("🔄 Fetching session info for company:", company.name);
             sessionInfo.loading = true;
             sessionInfo.error = null;
             sessionInfo.qrError = null;
 
             try {
-                const response = await fetch(
-                    `/whatsapp/companies/${company.id}/session-status`,
-                    {
-                        headers: {
-                            Accept: "application/json",
-                            "X-Requested-With": "XMLHttpRequest",
-                        },
-                    },
-                );
+                const url = `/whatsapp/companies/${company.id}/session-status`;
+                console.log("📡 Fetching from:", url);
 
+                const response = await fetch(url, {
+                    headers: {
+                        Accept: "application/json",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                });
+
+                console.log("📥 Response status:", response.status);
                 const result = await response.json();
+                console.log("📦 Response data:", result);
 
                 if (!response.ok || !result.success) {
                     throw new Error(
@@ -724,6 +839,13 @@ export default {
                     result.data?.checked_at || new Date().toISOString();
 
                 const qrCodeValue = result.data?.qr_code || null;
+                console.log(
+                    "🔍 QR Code value received:",
+                    qrCodeValue ? `Yes (${qrCodeValue.length} chars)` : "No",
+                );
+                console.log("🔍 Needs QR:", sessionInfo.needsQr);
+                console.log("🔍 Status:", sessionInfo.status);
+
                 sessionInfo.qrCodeRaw = qrCodeValue;
 
                 if (qrCodeValue) {
@@ -731,9 +853,11 @@ export default {
                         typeof qrCodeValue === "string" &&
                         qrCodeValue.startsWith("data:")
                     ) {
+                        console.log("✅ QR code is already a data URL");
                         sessionInfo.qrCodeImage = qrCodeValue;
                     } else {
                         try {
+                            console.log("🎨 Converting QR code to data URL...");
                             sessionInfo.qrCodeImage = await QRCode.toDataURL(
                                 qrCodeValue,
                                 {
@@ -745,7 +869,14 @@ export default {
                                     },
                                 },
                             );
+                            console.log(
+                                "✅ QR code image generated successfully",
+                            );
                         } catch (qrRenderError) {
+                            console.error(
+                                "❌ QR code render error:",
+                                qrRenderError,
+                            );
                             sessionInfo.qrCodeImage = null;
                             sessionInfo.qrError =
                                 sessionInfo.qrError ||
@@ -753,16 +884,37 @@ export default {
                         }
                     }
                 } else {
+                    console.log("⚠️ No QR code value in response");
                     sessionInfo.qrCodeImage = null;
                 }
 
+                console.log(
+                    "🖼️ Final qrCodeImage:",
+                    sessionInfo.qrCodeImage ? "Set" : "Not set",
+                );
+                console.log(
+                    "🖼️ qrCodeImage type:",
+                    typeof sessionInfo.qrCodeImage,
+                );
+                console.log(
+                    "🖼️ qrCodeImage length:",
+                    sessionInfo.qrCodeImage?.length,
+                );
+                console.log(
+                    "🖼️ qrCodeImage preview:",
+                    sessionInfo.qrCodeImage?.substring(0, 100),
+                );
+
                 // Start auto-refresh if QR code is needed
                 if (sessionInfo.needsQr && sessionInfo.qrCodeImage) {
+                    console.log("🔄 Starting auto-refresh interval");
                     startQrRefreshInterval();
                 } else {
+                    console.log("⏹️ Not starting auto-refresh");
                     clearQrRefreshInterval();
                 }
             } catch (error) {
+                console.error("❌ Error fetching session info:", error);
                 sessionInfo.error =
                     error.message || "Failed to load WhatsApp session status";
             } finally {
