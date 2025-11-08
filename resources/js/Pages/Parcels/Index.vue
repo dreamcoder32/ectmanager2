@@ -37,14 +37,13 @@
                 <!-- Filters Section - Outside Cards -->
                 <div class="filters-section mb-6">
                     <v-row>
-                        <v-col cols="12" md="3">
+                        <v-col cols="12" md="2">
                             <v-text-field
-                                v-model="filters.search"
+                                v-model="tempFilters.search"
                                 :label="$t('parcels.search')"
                                 prepend-inner-icon="mdi-magnify"
                                 variant="outlined"
                                 density="compact"
-                                @input="debounceSearch"
                                 clearable
                                 color="primary"
                                 class="filter-field"
@@ -53,7 +52,7 @@
 
                         <v-col cols="12" md="2">
                             <v-select
-                                v-model="filters.status"
+                                v-model="tempFilters.status"
                                 :items="statusOptions"
                                 :label="$t('parcels.status')"
                                 item-title="text"
@@ -61,7 +60,6 @@
                                 variant="outlined"
                                 density="compact"
                                 clearable
-                                @change="applyFilters"
                                 color="primary"
                                 class="filter-field"
                             ></v-select>
@@ -69,7 +67,7 @@
 
                         <v-col cols="12" md="2">
                             <v-select
-                                v-model="filters.company_id"
+                                v-model="tempFilters.company_id"
                                 :items="companyOptions"
                                 :label="$t('parcels.company')"
                                 item-title="text"
@@ -77,7 +75,6 @@
                                 variant="outlined"
                                 density="compact"
                                 clearable
-                                @change="applyFilters"
                                 color="primary"
                                 class="filter-field"
                             ></v-select>
@@ -85,7 +82,7 @@
 
                         <v-col cols="12" md="2">
                             <v-select
-                                v-model="filters.state_id"
+                                v-model="tempFilters.state_id"
                                 :items="stateOptions"
                                 :label="$t('parcels.state')"
                                 item-title="text"
@@ -101,7 +98,7 @@
 
                         <v-col cols="12" md="2">
                             <v-select
-                                v-model="filters.city_id"
+                                v-model="tempFilters.city_id"
                                 :items="cityOptions"
                                 :label="$t('parcels.city')"
                                 item-title="text"
@@ -109,23 +106,41 @@
                                 variant="outlined"
                                 density="compact"
                                 clearable
-                                :disabled="!filters.state_id"
-                                @change="applyFilters"
+                                :disabled="!tempFilters.state_id"
                                 color="primary"
                                 class="filter-field"
                             ></v-select>
                         </v-col>
 
-                        <v-col cols="12" md="1" class="d-flex align-center">
+                        <v-col
+                            cols="12"
+                            md="1"
+                            class="d-flex flex-column align-center"
+                            style="gap: 8px"
+                        >
                             <v-btn
                                 color="primary"
+                                @click="applyFilters"
+                                variant="flat"
+                                size="small"
+                                class="filter-apply-btn"
+                                block
+                            >
+                                <v-icon left size="small"
+                                    >mdi-filter-check</v-icon
+                                >
+                                Apply
+                            </v-btn>
+                            <v-btn
+                                color="secondary"
                                 @click="clearFilters"
                                 variant="outlined"
                                 size="small"
                                 class="filter-clear-btn"
+                                block
                             >
-                                <v-icon left>mdi-refresh</v-icon>
-                                {{ $t("common.clear") }}
+                                <v-icon left size="small">mdi-refresh</v-icon>
+                                Clear
                             </v-btn>
                         </v-col>
                     </v-row>
@@ -183,6 +198,7 @@
                             </div>
                         </div>
                         <v-spacer></v-spacer>
+
                         <v-chip
                             v-if="filters.status"
                             color="primary"
@@ -994,6 +1010,13 @@ export default {
             updatingPrice: false,
             loadingPriceHistory: false,
             priceHistory: [],
+            tempFilters: {
+                search: this.filters.search || "",
+                status: this.filters.status || null,
+                state_id: this.filters.state_id || null,
+                city_id: this.filters.city_id || null,
+                company_id: this.filters.company_id || null,
+            },
             snackbar: {
                 show: false,
                 message: "",
@@ -1046,10 +1069,12 @@ export default {
             );
         },
         cityOptions() {
-            if (!this.filters.state_id) return [];
+            if (!this.tempFilters.state_id) return [];
             return (
                 this.cities
-                    ?.filter((city) => city.state_id === this.filters.state_id)
+                    ?.filter(
+                        (city) => city.state_id === this.tempFilters.state_id,
+                    )
                     .map((city) => ({
                         text: city.name,
                         value: city.id,
@@ -1103,18 +1128,16 @@ export default {
                 maximumFractionDigits: 0,
             }).format(amount);
         },
-        debounceSearch() {
-            clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(() => {
-                this.applyFilters();
-            }, 500);
-        },
         applyFilters() {
             this.currentPage = 1;
             router.get(
                 "/parcels",
                 {
-                    ...this.filters,
+                    search: this.tempFilters.search,
+                    status: this.tempFilters.status,
+                    state_id: this.tempFilters.state_id,
+                    city_id: this.tempFilters.city_id,
+                    company_id: this.tempFilters.company_id,
                     page: 1,
                 },
                 {
@@ -1130,7 +1153,7 @@ export default {
             );
         },
         clearFilters() {
-            this.filters = {
+            this.tempFilters = {
                 search: "",
                 status: null,
                 state_id: null,
@@ -1141,15 +1164,18 @@ export default {
             this.applyFilters();
         },
         onStateChange() {
-            this.filters.city_id = null;
-            this.applyFilters();
+            this.tempFilters.city_id = null;
         },
         onPageChange(page) {
             this.currentPage = page;
             router.get(
                 "/parcels",
                 {
-                    ...this.filters,
+                    search: this.tempFilters.search,
+                    status: this.tempFilters.status,
+                    state_id: this.tempFilters.state_id,
+                    city_id: this.tempFilters.city_id,
+                    company_id: this.tempFilters.company_id,
                     page: page,
                 },
                 {
@@ -1276,10 +1302,17 @@ export default {
     border-radius: 12px;
 }
 
+.filter-apply-btn {
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: none;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+}
+
 .filter-clear-btn {
     border-radius: 8px;
+    font-weight: 600;
     text-transform: none;
-    font-weight: 500;
 }
 
 /* Parcel Cards */

@@ -226,7 +226,10 @@ Route::middleware(["auth"])->group(function () {
     Route::get("/expenses/{expense}", [ExpenseController::class, "show"])->name(
         "expenses.show",
     );
-    // Route::get('/expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
+    Route::get("/expenses/{expense}/edit", [
+        ExpenseController::class,
+        "edit",
+    ])->name("expenses.edit");
     Route::put("/expenses/{expense}", [
         ExpenseController::class,
         "update",

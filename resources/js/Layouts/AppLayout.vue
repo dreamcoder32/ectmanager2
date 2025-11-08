@@ -181,7 +181,7 @@
                         "
                         class="font-weight-medium text-body-2"
                     >
-                        {{ $t("dashboard.recoltes") || "Collection Transfer" }}
+                        {{ $t("navigation.recoltes") || "Collection Transfer" }}
                     </v-list-item-title>
                 </v-list-item>
 
@@ -234,7 +234,7 @@
                                     : '#8b92a8'
                             "
                             size="22"
-                            >mdi-receipt</v-icon
+                            >mdi-content-cut</v-icon
                         >
                     </template>
                     <v-list-item-title
@@ -246,39 +246,6 @@
                         class="font-weight-medium text-body-2"
                     >
                         {{ t("navigation.expenses") }}
-                    </v-list-item-title>
-                </v-list-item>
-
-                <v-list-item
-                    v-if="$page.props.auth.user.role === 'admin'"
-                    @click="$inertia.visit('/expense-categories')"
-                    link
-                    :class="{
-                        'sidebar-item-active':
-                            $page.component.startsWith('ExpenseCategory/'),
-                    }"
-                    class="sidebar-item mb-1"
-                >
-                    <template v-slot:prepend>
-                        <v-icon
-                            :color="
-                                $page.component.startsWith('ExpenseCategory/')
-                                    ? '#667eea'
-                                    : '#8b92a8'
-                            "
-                            size="22"
-                            >mdi-tag-multiple</v-icon
-                        >
-                    </template>
-                    <v-list-item-title
-                        :class="
-                            $page.component.startsWith('ExpenseCategory/')
-                                ? 'text-white'
-                                : 'text-grey-lighten-1'
-                        "
-                        class="font-weight-medium text-body-2"
-                    >
-                        Depenses Categories
                     </v-list-item-title>
                 </v-list-item>
 
