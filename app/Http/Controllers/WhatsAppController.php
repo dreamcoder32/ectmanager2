@@ -42,12 +42,6 @@ class WhatsAppController extends Controller
 
         $parcels = $query->latest()->paginate(15);
 
-        // Add price_modified flag to each parcel
-        $parcels->getCollection()->transform(function ($parcel) {
-            $parcel->price_modified = $parcel->priceChanges()->exists();
-            return $parcel;
-        });
-
         $companies = Company::all();
 
         return Inertia::render("WhatsApp/Index", [

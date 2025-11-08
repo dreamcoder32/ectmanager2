@@ -663,7 +663,7 @@
                                                             font-weight: 500;
                                                         "
                                                     >
-                                                        {{
+                                                        <!-- {{
                                                             parcel.messages_count ||
                                                             0
                                                         }}
@@ -672,43 +672,46 @@
                                                             1
                                                                 ? "Message"
                                                                 : "Messages"
-                                                        }}
+                                                        }} -->
                                                     </div>
+                                                    <v-tooltip location="top">
+                                                        <template
+                                                            v-slot:activator="{
+                                                                props,
+                                                            }"
+                                                        >
+                                                            <v-btn
+                                                                v-bind="props"
+                                                                icon
+                                                                variant="flat"
+                                                                color="secondary"
+                                                                size="large"
+                                                                @click.stop="
+                                                                    openPriceChangeDialog(
+                                                                        parcel,
+                                                                    )
+                                                                "
+                                                            >
+                                                                <v-icon
+                                                                    size="20"
+                                                                    >mdi-cash-edit</v-icon
+                                                                >
+                                                            </v-btn>
+                                                        </template>
+                                                        <span
+                                                            >Change Price</span
+                                                        >
+                                                    </v-tooltip>
                                                 </div>
                                             </v-col>
 
                                             <!-- Actions -->
-                                            <v-col
+                                            <!-- <v-col
                                                 cols="12"
                                                 md="1"
                                                 class="d-flex align-center justify-center"
                                             >
-                                                <v-tooltip location="top">
-                                                    <template
-                                                        v-slot:activator="{
-                                                            props,
-                                                        }"
-                                                    >
-                                                        <v-btn
-                                                            v-bind="props"
-                                                            icon
-                                                            variant="flat"
-                                                            color="primary"
-                                                            size="small"
-                                                            @click.stop="
-                                                                openPriceChangeDialog(
-                                                                    parcel,
-                                                                )
-                                                            "
-                                                        >
-                                                            <v-icon size="20"
-                                                                >mdi-currency-usd</v-icon
-                                                            >
-                                                        </v-btn>
-                                                    </template>
-                                                    <span>Change Price</span>
-                                                </v-tooltip>
-                                            </v-col>
+                                            </v-col> -->
 
                                             <!-- Old Actions (commented) -->
                                             <!-- <v-col cols="12" md="2" class="d-flex align-center justify-end">
@@ -771,20 +774,24 @@
                                 <v-row>
                                     <v-col cols="12">
                                         <v-text-field
-                                            label="Tracking Number"
-                                            :value="
+                                            :model-value="
                                                 selectedParcel.tracking_number
                                             "
+                                            label="Tracking Number"
                                             readonly
                                             variant="outlined"
+                                            persistent-placeholder
                                         ></v-text-field>
                                     </v-col>
                                     <v-col cols="12">
                                         <v-text-field
+                                            :model-value="
+                                                selectedParcel.cod_amount
+                                            "
                                             label="Current Price (DZD)"
-                                            :value="selectedParcel.cod_amount"
                                             readonly
                                             variant="outlined"
+                                            persistent-placeholder
                                         ></v-text-field>
                                     </v-col>
                                     <v-col cols="12">
@@ -794,9 +801,8 @@
                                             type="number"
                                             min="0"
                                             step="0.01"
-                                            placeholder="Enter new price..."
-                                            required
                                             variant="outlined"
+                                            persistent-placeholder
                                         ></v-text-field>
                                     </v-col>
                                     <v-col cols="12">
@@ -804,8 +810,8 @@
                                             v-model="priceChangeReason"
                                             label="Reason (Optional)"
                                             rows="3"
-                                            placeholder="Enter reason for price change..."
                                             variant="outlined"
+                                            persistent-placeholder
                                         ></v-textarea>
                                     </v-col>
                                     <v-col cols="12">
@@ -1509,6 +1515,100 @@ export default {
 
 .filter-field :deep(.v-input__control:hover) {
     border-color: #9ca3af !important;
+}
+
+/* Fix input text visibility */
+.filter-field :deep(.v-field__input) {
+    color: #1f2937 !important;
+    opacity: 1 !important;
+    min-height: 40px !important;
+}
+
+.filter-field :deep(.v-field__input input) {
+    color: #1f2937 !important;
+    opacity: 1 !important;
+}
+
+.filter-field :deep(.v-select__selection-text) {
+    color: #1f2937 !important;
+    opacity: 1 !important;
+}
+
+.filter-field :deep(.v-field__field) {
+    color: #1f2937 !important;
+}
+
+/* Force label to always be in floating position when there's content */
+.filter-field :deep(.v-field__label) {
+    color: #6b7280 !important;
+    opacity: 1 !important;
+}
+
+.filter-field :deep(.v-field--active .v-label),
+.filter-field :deep(.v-field--focused .v-label),
+.filter-field :deep(.v-field--dirty .v-label),
+.filter-field :deep(.v-input--dirty .v-label),
+.filter-field :deep(.v-select .v-label) {
+    transform: translateY(-20px) scale(0.75) !important;
+    background: white !important;
+    padding: 0 4px !important;
+    z-index: 1 !important;
+}
+
+/* Make sure select always shows label as floated */
+.filter-field.v-select :deep(.v-label),
+.filter-field :deep(.v-select__selection ~ .v-label) {
+    transform: translateY(-20px) scale(0.75) !important;
+    background: white !important;
+    padding: 0 4px !important;
+}
+
+/* Dialog Input Fields Styling */
+.v-dialog .v-text-field :deep(.v-field__input),
+.v-dialog .v-textarea :deep(.v-field__input) {
+    color: #1f2937 !important;
+    opacity: 1 !important;
+}
+
+.v-dialog .v-text-field :deep(.v-field__input input),
+.v-dialog .v-textarea :deep(.v-field__input textarea) {
+    color: #1f2937 !important;
+    opacity: 1 !important;
+}
+
+.v-dialog .v-field__field {
+    color: #1f2937 !important;
+}
+
+/* Fix dialog label positioning */
+.v-dialog :deep(.v-field__label) {
+    color: #6b7280 !important;
+    opacity: 1 !important;
+}
+
+.v-dialog :deep(.v-field--active .v-label),
+.v-dialog :deep(.v-field--focused .v-label),
+.v-dialog :deep(.v-field--dirty .v-label),
+.v-dialog :deep(.v-input--dirty .v-label) {
+    transform: translateY(-20px) scale(0.75) !important;
+    background: white !important;
+    padding: 0 4px !important;
+    z-index: 1 !important;
+}
+
+/* Force readonly fields to also float label */
+.v-dialog :deep(.v-input--readonly .v-label) {
+    transform: translateY(-20px) scale(0.75) !important;
+    background: white !important;
+    padding: 0 4px !important;
+}
+
+/* Force all dialog fields with content to float their labels */
+.v-dialog :deep(.v-field:not(.v-field--no-label)) .v-label {
+    transform: translateY(-20px) scale(0.75) !important;
+    background: white !important;
+    padding: 0 4px !important;
+    z-index: 1 !important;
 }
 
 /* Dropdown Menu Styling */
