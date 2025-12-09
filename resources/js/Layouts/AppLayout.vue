@@ -396,7 +396,7 @@
                         border-top: 1px solid rgba(255, 255, 255, 0.08);
                     "
                 >
-                    <p class="text-caption text-grey mb-1">Version 2.0.1</p>
+                    <p class="text-caption text-grey mb-1">Version 2.1 le 09/12/2025</p>
                     <p class="text-caption text-grey-darken-1 mb-0">
                         © 2025 ECTManager
                     </p>
