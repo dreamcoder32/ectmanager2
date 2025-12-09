@@ -80,7 +80,8 @@ class DriverSettlementController extends Controller
             }
             foreach ($row as $col => $val) {
                 $text = strtolower(trim((string) $val));
-                if ($text === '') continue;
+                if ($text === '')
+                    continue;
                 foreach ($headerHints as $hint) {
                     if (strpos($text, $hint) !== false) {
                         $trackingColumn = $col;
@@ -124,7 +125,8 @@ class DriverSettlementController extends Controller
             foreach ($rows as $row) {
                 foreach ($row as $val) {
                     $text = strtoupper((string) $val);
-                    if ($text === '') continue;
+                    if ($text === '')
+                        continue;
                     // Extract long alphanumeric sequences (8-30 chars)
                     if (preg_match_all('/[A-Z0-9]{8,30}/', $text, $matches)) {
                         foreach ($matches[0] as $m) {
@@ -199,7 +201,10 @@ class DriverSettlementController extends Controller
             $skipped = [];
 
             foreach ($request->tracking_numbers as $tn) {
-                $parcel = Parcel::with('company')->where('tracking_number', $tn)->first();
+                $parcel = Parcel::with('company')
+                    ->where('tracking_number', $tn)
+                    ->lockForUpdate()
+                    ->first();
                 if (!$parcel) {
                     $skipped[] = ['tracking_number' => $tn, 'reason' => 'parcel_not_found'];
                     continue;
@@ -230,10 +235,10 @@ class DriverSettlementController extends Controller
 
                 // Calculate margin: company home delivery commission minus driver commission
                 $companyCommission = $parcel->company ? ($parcel->company->home_delivery_commission ?? 0) : 0;
-                $margin = max(0, $companyCommission - $commissionForParcel);
+                $margin = $companyCommission - $commissionForParcel;
 
                 // Create the collection record for home delivery
-                $netAmount = max(0, (float) ($parcel->cod_amount ?? 0) - (float) $commissionForParcel);
+                $netAmount = (float) ($parcel->cod_amount ?? 0) - (float) $commissionForParcel;
                 $collection = Collection::create([
                     'collected_at' => now(),
                     'parcel_id' => $parcel->id,
@@ -268,7 +273,7 @@ class DriverSettlementController extends Controller
             $collections = Collection::whereIn('id', $collectionIds)->get();
             $totalAmount = $collections->sum('amount');
             $manualAmount = $request->manual_amount;
-            
+
             // Check for discrepancy and validate note requirement
             $hasDiscrepancy = abs($totalAmount - $manualAmount) > 0.01; // Allow for small rounding differences
             if ($hasDiscrepancy && empty($request->amount_discrepancy_note)) {
@@ -298,7 +303,7 @@ class DriverSettlementController extends Controller
 
             // Create recolte and attach collections
             $recolte = Recolte::create([
-                'note' => ($request->note ? $request->note.' | ' : '').'Auto-created from driver settlement for '.$driver->name,
+                'note' => ($request->note ? $request->note . ' | ' : '') . 'Auto-created from driver settlement for ' . $driver->name,
                 'created_by' => Auth::id(),
                 'company_id' => $companyId,
                 'manual_amount' => $manualAmount,
@@ -308,7 +313,9 @@ class DriverSettlementController extends Controller
             // Update money case if provided and assign to collections
             if ($request->case_id) {
                 $collections = Collection::whereIn('id', $collectionIds)->get();
-                $collections->each(function ($c) use ($request) { $c->update(['case_id' => $request->case_id]); });
+                $collections->each(function ($c) use ($request) {
+                    $c->update(['case_id' => $request->case_id]);
+                });
             }
 
             // Attach collections to recolte first
@@ -324,9 +331,9 @@ class DriverSettlementController extends Controller
 
             DB::commit();
 
-            $message = "Recolte #{$recolte->code} created successfully with ".count($collectionIds)." collections.";
+            $message = "Recolte #{$recolte->code} created successfully with " . count($collectionIds) . " collections.";
             $message .= " Calculated total: " . number_format($totalAmount, 2) . " DZD, Manual amount: " . number_format($manualAmount, 2) . " DZD";
-            
+
             if ($hasDiscrepancy) {
                 $message .= " (Discrepancy noted)";
             }

@@ -278,7 +278,7 @@ export default {
       return this.foundParcels.reduce((sum, p) => {
         const codAmount = Number(p.cod_amount) || 0;
         const commission = this.parcelCommissionMap[p.tracking_number] || this.driverCommission;
-        return sum + Math.max(0, codAmount - commission);
+        return sum + (codAmount - commission);
       }, 0);
     },
     hasAmountDiscrepancy() {
@@ -286,7 +286,7 @@ export default {
       return Math.abs(this.calculatedTotal - this.manualAmount) > 0.01;
     },
     canSubmit() {
-      const hasRequiredFields = this.selectedDriverId && this.driverCommission >= 0 && this.selectedTrackingNumbers.length > 0 && this.manualAmount > 0;
+      const hasRequiredFields = this.selectedDriverId && this.driverCommission >= 0 && this.selectedTrackingNumbers.length > 0 && this.manualAmount != null && this.manualAmount >= 0;
       const hasDiscrepancyNote = !this.hasAmountDiscrepancy || (this.hasAmountDiscrepancy && this.amountDiscrepancyNote.trim());
       return hasRequiredFields && hasDiscrepancyNote && !this.processing;
     },
@@ -329,8 +329,7 @@ export default {
     netAmountForParcel(p) {
       const commission = Number(this.parcelCommissionMap[p.tracking_number] ?? this.driverCommission ?? 0) || 0;
       const cod = Number(p.cod_amount) || 0;
-      const net = cod - commission;
-      return net > 0 ? net : 0;
+      return cod - commission;
     },
     async onXlsxChange() {
       this.foundParcels = [];

@@ -355,11 +355,14 @@ class ParcelController extends Controller
 
             // Get user and handle company selection
             $user = Auth::user();
-            $userCompanies = $user
-                ->companies()
-                ->where("is_active", true)
-                ->get();
-
+            if ($user->role === 'admin') {
+                $userCompanies = \App\Models\Company::where('is_active', true)->get();
+            } else {
+                $userCompanies = $user
+                    ->companies()
+                    ->where("is_active", true)
+                    ->get();
+            }
             // Determine company ID for import
             $companyId = null;
             if ($userCompanies->count() === 1) {
@@ -370,7 +373,7 @@ class ParcelController extends Controller
                 $requestedCompanyId = $request->input("company_id");
                 if (
                     $requestedCompanyId &&
-                    $user->belongsToCompany($requestedCompanyId)
+                    ($user->role === 'admin' || $user->belongsToCompany($requestedCompanyId))
                 ) {
                     $companyId = $requestedCompanyId;
                 } else {
@@ -380,9 +383,7 @@ class ParcelController extends Controller
                             "message" =>
                                 "Please select a company for the import",
                             "requires_company_selection" => true,
-                            "companies" => $userCompanies->map(function (
-                                $company,
-                            ) {
+                            "companies" => $userCompanies->map(function ($company, ) {
                                 return [
                                     "id" => $company->id,
                                     "name" => $company->name,
@@ -559,26 +560,7 @@ class ParcelController extends Controller
             });
 
         // Debug: Log the query for troubleshooting
-        \Log::info("Stopdesk collections query", [
-            "user_id" => auth()->id(),
-            "total_collections" => \App\Models\Collection::where(
-                "created_by",
-                auth()->id(),
-            )->count(),
-            "collections_with_recoltes" => \App\Models\Collection::where(
-                "created_by",
-                auth()->id(),
-            )
-                ->whereHas("recoltes")
-                ->count(),
-            "collections_without_recoltes" => \App\Models\Collection::where(
-                "created_by",
-                auth()->id(),
-            )
-                ->whereDoesntHave("recoltes")
-                ->count(),
-            "filtered_count" => $recentCollections->count(),
-        ]);
+        // Debug logging removed to improve performance
 
         // Get active money cases for case selection - filter by user's companies
         $currentUserId = auth()->id();
@@ -720,7 +702,17 @@ class ParcelController extends Controller
         DB::beginTransaction();
 
         try {
-            $parcel = Parcel::findOrFail($request->parcel_id);
+            $parcel = Parcel::lockForUpdate()->findOrFail($request->parcel_id);
+
+            // Check if already delivered/collected to prevent double collection
+            if ($parcel->status === 'delivered' || $parcel->collections()->exists()) {
+                return back()->with([
+                    'paymentResult' => [
+                        'success' => false,
+                        'message' => 'Parcel is already delivered or collected'
+                    ]
+                ]);
+            }
             // Check if COD amount matches or if overpaid
             if ($request->amount_given < $parcel->cod_amount) {
                 return back()->with([

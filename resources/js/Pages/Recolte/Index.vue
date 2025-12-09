@@ -106,6 +106,27 @@
                    </v-chip>
                  </template>
 
+                 <!-- Type / Name Column -->
+                 <template v-slot:[`item.type_name`]="{ item }">
+                   <div class="d-flex align-center">
+                     <v-icon
+                       :color="item.type === 'driver' ? 'primary' : 'secondary'"
+                       size="20"
+                       class="mr-2"
+                     >
+                       {{ item.type === 'driver' ? 'mdi-truck-delivery' : 'mdi-account-tie' }}
+                     </v-icon>
+                     <div class="d-flex flex-column">
+                       <span class="text-body-2 font-weight-medium">
+                         {{ item.related_name }}
+                       </span>
+                       <span class="text-caption text-grey">
+                         {{ item.type === 'driver' ? 'Driver' : 'Agent' }}
+                       </span>
+                     </div>
+                   </div>
+                 </template>
+
                  <!-- Note Column -->
                  <template v-slot:[`item.note`]="{ item }">
                    <span v-if="item.note" class="text-body-2">{{ item.note }}</span>
@@ -119,7 +140,7 @@
                      text-color="white"
                      small
                    >
-                     {{ item.collections.length || 0 }} Collections
+                     {{ item.collections.length || 0 }} Colis
                    </v-chip>
                  </template>
 
@@ -297,6 +318,12 @@ export default {
           key: 'code',
           sortable: true,
           width: '120px'
+        },
+        {
+          title: 'Type / Name',
+          key: 'type_name',
+          sortable: false,
+          width: '200px'
         },
         {
           title: 'Note',

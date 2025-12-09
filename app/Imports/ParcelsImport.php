@@ -48,7 +48,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
     public function model(array $row): ?Parcel
     {
         $rowNumber = $this->importedCount + 2; // +2 because we start from row 2 (header) and count from 1
-        
+
         try {
             // Skip empty rows or rows without required data
             if (empty($row['id']) || empty($row['client'])) {
@@ -66,7 +66,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
 
             // Extract data from row using header mapping and clean UTF-8
             $trackingNumber = $this->cleanUtf8((string) $row['id']);
-            
+
             // Check if parcel with this tracking number already exists
             $existingParcel = Parcel::where('tracking_number', $trackingNumber)->first();
             if ($existingParcel) {
@@ -101,12 +101,12 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
                 'raw_date_type' => gettype($rawDateValue),
                 'available_columns' => array_keys($row)
             ]);
-            
+
             $parcelCreationDate = $this->parseDate($rawDateValue);
 
             // Find state from database (don't create new ones)
             $stateId = $this->findStateInDatabase($stateName);
-            
+
             // Find city from database (don't create new ones)
             $cityId = $this->findCityInDatabase($cityName, $stateId);
 
@@ -144,7 +144,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
 
             // Get company ID - use provided company or default to 1
             $companyId = $this->companyId ?? 1;
-            
+
             // Debug: Log what we're about to save
             Log::info("Creating parcel with parcel_creation_date", [
                 'tracking_number' => $trackingNumber,
@@ -152,7 +152,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
                 'parcel_creation_date_type' => gettype($parcelCreationDate),
                 'parcel_creation_date_is_null' => is_null($parcelCreationDate)
             ]);
-            
+
             // Create parcel
             $parcel = new Parcel([
                 'tracking_number' => $trackingNumber,
@@ -188,7 +188,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
             ]);
 
             $this->importedCount++;
-            
+
             return $parcel;
 
         } catch (\Exception $e) {
@@ -249,18 +249,18 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
 
         // Direct database query for exact match first
         $city = City::where('name', $cityName)
-                   ->where('state_id', $stateId)
-                   ->first();
-        
+            ->where('state_id', $stateId)
+            ->first();
+
         if ($city) {
             return $city->id;
         }
 
         // Try case-insensitive search
         $city = City::whereRaw('LOWER(name) = ?', [strtolower($cityName)])
-                   ->where('state_id', $stateId)
-                   ->first();
-        
+            ->where('state_id', $stateId)
+            ->first();
+
         if ($city) {
             return $city->id;
         }
@@ -330,7 +330,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
      */
     public function batchSize(): int
     {
-        return 500; // Increased from 100 for better performance with large files
+        return 100; // Reduced to prevent memory exhaustion on 512MB server
     }
 
     /**
@@ -338,7 +338,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
      */
     public function chunkSize(): int
     {
-        return 500; // Increased from 100 for better performance with large files
+        return 100; // Reduced to prevent memory exhaustion on 512MB server
     }
 
     /**
@@ -368,7 +368,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
             'empty' => empty($dateValue),
             'is_string' => is_string($dateValue)
         ]);
-        
+
         if (empty($dateValue)) {
             Log::info("parseDate returning null - empty value");
             return null;
@@ -384,7 +384,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
             try {
                 // Excel serial date starts from 1900-01-01
                 $excelEpoch = new \DateTime('1900-01-01');
-                $excelEpoch->add(new \DateInterval('P' . (int)$dateValue . 'D'));
+                $excelEpoch->add(new \DateInterval('P' . (int) $dateValue . 'D'));
                 return $excelEpoch;
             } catch (\Exception $e) {
                 Log::warning("Failed to parse Excel serial date: {$dateValue}", ['error' => $e->getMessage()]);
@@ -393,7 +393,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
         }
 
         // Try to parse as string date
-        $dateString = trim((string)$dateValue);
+        $dateString = trim((string) $dateValue);
         if (empty($dateString)) {
             return null;
         }
@@ -443,7 +443,7 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
     {
         // Remove any null bytes
         $text = str_replace("\0", '', $text);
-        
+
         // Check if the string is valid UTF-8
         if (!mb_check_encoding($text, 'UTF-8')) {
             // Try to convert from common encodings to UTF-8
@@ -454,11 +454,11 @@ class ParcelsImport implements ToModel, WithHeadingRow, WithValidation, WithBatc
                     return $converted;
                 }
             }
-            
+
             // If conversion fails, remove invalid characters
             $text = mb_convert_encoding($text, 'UTF-8', 'UTF-8');
         }
-        
+
         return trim($text);
     }
 }

@@ -138,9 +138,9 @@
                                 </v-chip>
                               </template>
 
-                              <template #[`item.parcel.client_name`]="{ item }">
+                              <template #[`item.parcel.recipient_name`]="{ item }">
                                 <div class="font-weight-medium">
-                                  {{ item.parcel?.client_name || 'N/A' }}
+                                  {{ item.parcel?.recipient_name || 'N/A' }}
                                 </div>
                               </template>
 
@@ -299,7 +299,7 @@ export default {
       errors: {},
       headers: [
         { text: 'Tracking Number', value: 'parcel.tracking_number', sortable: false },
-        { text: 'Client Name', value: 'parcel.client_name', sortable: false },
+        { text: 'Client Name', value: 'parcel.recipient_name', sortable: false },
         { text: 'Amount', value: 'amount', sortable: true },
         { text: 'Collected At', value: 'collected_at', sortable: true }
       ]

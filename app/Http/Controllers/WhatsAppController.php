@@ -79,6 +79,20 @@ class WhatsAppController extends Controller
         return response()->json($result);
     }
 
+    public function bulkVerifyPhoneNumbers(Request $request)
+    {
+        $request->validate([
+            "parcel_ids" => "required|array",
+            "parcel_ids.*" => "exists:parcels,id",
+        ]);
+
+        $result = $this->whatsappService->bulkVerifyPhoneNumbers(
+            $request->input("parcel_ids")
+        );
+
+        return response()->json($result);
+    }
+
     public function sendDeskPickupNotification(Parcel $parcel)
     {
         $result = $this->whatsappService->sendDeskPickupNotification($parcel);

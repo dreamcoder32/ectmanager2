@@ -109,7 +109,7 @@
                                 {{ collection.parcel?.tracking_number || 'N/A' }}
                               </v-list-item-title>
                               <v-list-item-subtitle class="text-caption">
-                                {{ collection.parcel?.client_name || 'N/A' }} - {{ collection.amount || '0.00' }} Da
+                                {{ collection.parcel?.recipient_name || 'N/A' }} - {{ collection.amount || '0.00' }} Da
                               </v-list-item-subtitle>
                             </v-list-item-content>
                             <v-list-item-action>
@@ -155,7 +155,7 @@
                                 {{ collection.parcel?.tracking_number || 'N/A' }}
                               </v-list-item-title>
                               <v-list-item-subtitle class="text-caption">
-                                {{ collection.parcel?.client_name || 'N/A' }} - {{ collection.amount || '0.00' }} Da
+                                {{ collection.parcel?.recipient_name || 'N/A' }} - {{ collection.amount || '0.00' }} Da
                               </v-list-item-subtitle>
                             </v-list-item-content>
                             <v-list-item-action>
@@ -240,9 +240,20 @@ export default {
   },
   computed: {
     currentCollections() {
-      return this.recolte.collections?.filter(collection => 
-        this.selectedCollectionIds.includes(collection.id)
-      ) || []
+      // Create a map of all known collections from both sources
+      const allCollections = new Map();
+      
+      // Add available collections first
+      this.availableCollections.forEach(c => allCollections.set(c.id, c));
+      
+      // Add/Overwrite with recolte collections (to ensure we have the ones currently assigned)
+      if (this.recolte.collections) {
+        this.recolte.collections.forEach(c => allCollections.set(c.id, c));
+      }
+      
+      return this.selectedCollectionIds
+        .map(id => allCollections.get(id))
+        .filter(c => c !== undefined);
     },
     filteredAvailableCollections() {
       let available = this.availableCollections.filter(collection => 
@@ -253,7 +264,7 @@ export default {
         const query = this.searchQuery.toLowerCase()
         available = available.filter(collection => 
           collection.parcel?.tracking_number?.toLowerCase().includes(query) ||
-          collection.parcel?.client_name?.toLowerCase().includes(query) ||
+          collection.parcel?.recipient_name?.toLowerCase().includes(query) ||
           collection.amount?.toString().includes(query)
         )
       }
