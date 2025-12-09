@@ -66,4 +66,12 @@ class Recolte extends Model
     {
         return $this->belongsTo(Company::class);
     }
+
+    /**
+     * Get the expenses associated with this recolte
+     */
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
+    }
 }

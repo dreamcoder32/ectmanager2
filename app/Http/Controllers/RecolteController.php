@@ -47,7 +47,7 @@ class RecolteController extends BaseController
         if ($user->role === 'admin') {
             // Admins can see all recoltes
             // Optimized: Removed 'collections.parcel' as it's not needed for the index view and is heavy
-            $query = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company']);
+            $query = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses']);
 
             // Apply company filter if provided
             if ($companyFilter) {
@@ -64,7 +64,7 @@ class RecolteController extends BaseController
                 $userCompanyIds = $userCompanyIds->intersect([$companyFilter]);
             }
 
-            $recoltes = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company'])
+            $recoltes = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses'])
                 ->whereIn('company_id', $userCompanyIds)
                 ->orderBy('created_at', 'desc')
                 ->paginate(20);
@@ -84,6 +84,10 @@ class RecolteController extends BaseController
                 $recolte->type = 'agent';
                 $recolte->related_name = ($firstCollection && $firstCollection->createdBy) ? $firstCollection->createdBy->first_name . ' ' . $firstCollection->createdBy->last_name : 'Unknown Agent';
             }
+
+            $recolte->expenses_count = $recolte->expenses->count();
+            $recolte->total_expenses = $recolte->expenses->sum('amount');
+            $recolte->net_total = ($recolte->manual_amount ?? $recolte->total_cod_amount) - $recolte->total_expenses;
 
             return $recolte;
         });
@@ -149,8 +153,20 @@ class RecolteController extends BaseController
                 ->get();
         }
 
-        // Calculate total amounts for each user's collections
+        // Fetch unlinked expenses for each user based on their collections' case_ids
+        // We iterate through users to get their collection case IDs
         $users->each(function ($user) {
+            $caseIds = $user->collections->pluck('case_id')->unique()->filter();
+
+            if ($caseIds->isNotEmpty()) {
+                $user->unlinked_expenses = \App\Models\Expense::whereIn('case_id', $caseIds)
+                    ->whereNull('recolte_id')
+                    ->where('status', '!=', 'rejected')
+                    ->get();
+            } else {
+                $user->unlinked_expenses = collect();
+            }
+
             $user->total_amount = $user->collections->sum('amount');
         });
 
@@ -276,9 +292,29 @@ class RecolteController extends BaseController
 
             $recolte->collections()->attach($request->collection_ids);
 
+            $message = "Recolte #{$recolte->code} created successfully with " . count($request->collection_ids) . " collections.";
+
+            // Automatically link unlinked expenses based on the collections' case_ids
+            // We get the case_ids from the collections we just attached
+            $caseIds = $collections->pluck('case_id')->unique()->filter();
+
+            if ($caseIds->isNotEmpty()) {
+                // Find unlinked expenses for these cases
+                $expensesToLink = \App\Models\Expense::whereIn('case_id', $caseIds)
+                    ->whereNull('recolte_id')
+                    ->where('status', '!=', 'rejected')
+                    ->get();
+
+                if ($expensesToLink->count() > 0) {
+                    foreach ($expensesToLink as $expense) {
+                        $expense->update(['recolte_id' => $recolte->id]);
+                    }
+                    $message .= " Linked " . $expensesToLink->count() . " expenses.";
+                }
+            }
+
             DB::commit();
 
-            $message = "Recolte #{$recolte->code} created successfully with " . count($request->collection_ids) . " collections.";
             $message .= " Calculated total: " . number_format($totalAmount, 2) . " DZD, Manual amount: " . number_format($manualAmount, 2) . " DZD";
 
             if ($hasDiscrepancy) {
@@ -299,7 +335,7 @@ class RecolteController extends BaseController
      */
     public function show(Recolte $recolte)
     {
-        $recolte->load(['collections.parcel', 'createdBy']);
+        $recolte->load(['collections.parcel', 'createdBy', 'expenses']);
 
         $totalAmount = $recolte->collections->sum('amount');
         $totalCollections = $recolte->collections->count();
@@ -307,11 +343,16 @@ class RecolteController extends BaseController
             return $collection->parcel ? $collection->parcel->cod_amount : 0;
         });
 
+        $totalExpenses = $recolte->expenses->sum('amount');
+        $netTotal = $totalAmount - $totalExpenses;
+
         return Inertia::render('Recolte/Show', [
             'recolte' => $recolte,
             'totalAmount' => $totalAmount,
             'totalCollections' => $totalCollections,
-            'totalCodAmount' => $totalCodAmount
+            'totalCodAmount' => $totalCodAmount,
+            'totalExpenses' => $totalExpenses,
+            'netTotal' => $netTotal
         ]);
     }
 
@@ -322,10 +363,17 @@ class RecolteController extends BaseController
     {
         $type = request()->query('type');
         if ($type === 'pdf') {
-            $recolte->load(['collections.parcel', 'collections.createdBy', 'createdBy']);
+            $recolte->load(['collections.parcel', 'collections.createdBy', 'createdBy', 'expenses']);
+
+            // Generate Barcode
+            $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+            $barcodeData = $generator->getBarcode('RCT-' . $recolte->id, $generator::TYPE_CODE_128);
+            $barcodeBase64 = base64_encode($barcodeData);
+
             $fileName = 'recolte_' . $recolte->code . '_' . date('Y-m-d') . '.pdf';
             $html = view('exports.recolte', [
                 'recolte' => $recolte,
+                'barcode' => $barcodeBase64,
             ])->render();
 
             // Generate PDF using Dompdf to avoid Node/Puppeteer dependency
@@ -337,8 +385,9 @@ class RecolteController extends BaseController
             $dompdf->render();
             $pdfOutput = $dompdf->output();
 
-            return response()->streamDownload(fn() => print ($pdfOutput), $fileName, [
+            return response()->stream(fn() => print ($pdfOutput), 200, [
                 'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="' . $fileName . '"',
             ]);
         }
 

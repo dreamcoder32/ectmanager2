@@ -163,6 +163,28 @@
                       Optional: Select a money case to deduct this expense from its balance.
                     </v-alert>
                   </v-col>
+
+                  <!-- Recolte Selection -->
+                  <v-col cols="12">
+                    <v-select
+                      v-model="form.recolte_id"
+                      :items="recolteOptions"
+                      label="Link to Recolte"
+                      variant="outlined"
+                      :error-messages="errors.recolte_id"
+                      prepend-inner-icon="mdi-barcode-scan"
+                      placeholder="No recolte linked"
+                      clearable
+                    ></v-select>
+                    <v-alert
+                      type="info"
+                      variant="tonal"
+                      class="mt-2"
+                      density="compact"
+                    >
+                      Optional: Link this expense to a specific Recolte (e.g. deduction from collected amount).
+                    </v-alert>
+                  </v-col>
                 </v-row>
               </v-form>
             </v-card-text>
@@ -207,6 +229,7 @@ export default {
         expense: Object,
         activeCases: Array,
         categories: Array,
+        recoltes: Array,
         errors: Object,
     },
     setup(props) {
@@ -219,6 +242,7 @@ export default {
             expense_date: props.expense.expense_date,
             payment_method: props.expense.payment_method || '',
             case_id: props.expense.case_id || null,
+            recolte_id: props.expense.recolte_id || null,
         });
 
         return { form };
@@ -236,6 +260,13 @@ export default {
                 title: `${moneyCase.name} (${this.formatCurrency(moneyCase.balance)})`,
                 value: moneyCase.id,
                 subtitle: `Balance: ${this.formatCurrency(moneyCase.balance)}`
+            })) || [];
+        },
+        recolteOptions() {
+            return this.recoltes?.map(recolte => ({
+                title: `RCT-${recolte.code} (${recolte.creator}) - ${recolte.created_at}`,
+                value: recolte.id,
+                subtitle: `Created by ${recolte.creator}`
             })) || [];
         },
         currencyOptions() {

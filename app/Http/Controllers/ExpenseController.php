@@ -53,9 +53,24 @@ class ExpenseController extends Controller
             ->orderBy('name')
             ->get();
 
+        // Get recent recoltes (last 50)
+        $recoltes = \App\Models\Recolte::with('createdBy')
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get()
+            ->map(function ($recolte) {
+                return [
+                    'id' => $recolte->id,
+                    'code' => $recolte->code,
+                    'created_at' => $recolte->created_at->format('Y-m-d'),
+                    'creator' => $recolte->createdBy ? $recolte->createdBy->name : 'Unknown'
+                ];
+            });
+
         return Inertia::render('Expense/Create', [
             'activeCases' => $activeCases,
-            'categories' => $categories
+            'categories' => $categories,
+            'recoltes' => $recoltes
         ]);
     }
 
@@ -72,11 +87,12 @@ class ExpenseController extends Controller
             'description' => 'nullable|string',
             'expense_date' => 'required|date',
             'payment_method' => ['nullable', Rule::in(['cash', 'bank_transfer', 'check', 'card'])],
-            'case_id' => 'nullable|exists:money_cases,id'
+            'case_id' => 'nullable|exists:money_cases,id',
+            'recolte_id' => 'nullable|exists:recoltes,id'
         ]);
 
         DB::beginTransaction();
-        
+
         try {
             $expense = Expense::create([
                 'title' => $validated['title'],
@@ -88,13 +104,14 @@ class ExpenseController extends Controller
                 'status' => 'pending',
                 'payment_method' => $validated['payment_method'],
                 'case_id' => $validated['case_id'],
+                'recolte_id' => $validated['recolte_id'] ?? null,
                 'created_by' => Auth::id(),
             ]);
 
             // If assigned to a case, deduct from case balance
             if ($validated['case_id']) {
                 $moneyCase = MoneyCase::find($validated['case_id']);
-                $moneyCase->updateBalance(-$validated['amount']); // Negative for expense
+                $moneyCase->updateBalance();
             }
 
             DB::commit();
@@ -152,7 +169,19 @@ class ExpenseController extends Controller
         return Inertia::render('Expense/Edit', [
             'expense' => $expense,
             'activeCases' => $activeCases,
-            'categories' => $categories
+            'categories' => $categories,
+            'recoltes' => \App\Models\Recolte::with('createdBy')
+                ->orderBy('created_at', 'desc')
+                ->limit(50)
+                ->get()
+                ->map(function ($recolte) {
+                    return [
+                        'id' => $recolte->id,
+                        'code' => $recolte->code,
+                        'created_at' => $recolte->created_at->format('Y-m-d'),
+                        'creator' => $recolte->createdBy ? $recolte->createdBy->name : 'Unknown'
+                    ];
+                })
         ]);
     }
 
@@ -177,11 +206,12 @@ class ExpenseController extends Controller
             'description' => 'nullable|string',
             'expense_date' => 'required|date',
             'payment_method' => ['nullable', Rule::in(['cash', 'bank_transfer', 'check', 'card'])],
-            'case_id' => 'nullable|exists:money_cases,id'
+            'case_id' => 'nullable|exists:money_cases,id',
+            'recolte_id' => 'nullable|exists:recoltes,id'
         ]);
 
         DB::beginTransaction();
-        
+
         try {
             $oldCaseId = $expense->case_id;
             $oldAmount = $expense->amount;
@@ -193,17 +223,17 @@ class ExpenseController extends Controller
             if ($oldCaseId && $oldCaseId != $validated['case_id']) {
                 // Remove from old case
                 $oldCase = MoneyCase::find($oldCaseId);
-                $oldCase->updateBalance($oldAmount); // Add back the old amount
+                $oldCase->updateBalance();
             }
 
             if ($validated['case_id'] && $validated['case_id'] != $oldCaseId) {
                 // Add to new case
                 $newCase = MoneyCase::find($validated['case_id']);
-                $newCase->updateBalance(-$validated['amount']); // Deduct new amount
+                $newCase->updateBalance();
             } elseif ($validated['case_id'] && $validated['case_id'] == $oldCaseId && $oldAmount != $validated['amount']) {
                 // Same case, different amount
                 $case = MoneyCase::find($validated['case_id']);
-                $case->updateBalance($oldAmount - $validated['amount']); // Adjust difference
+                $case->updateBalance();
             }
 
             DB::commit();
@@ -231,12 +261,12 @@ class ExpenseController extends Controller
         }
 
         DB::beginTransaction();
-        
+
         try {
             // If expense was assigned to a case, add back the amount
             if ($expense->case_id) {
                 $moneyCase = MoneyCase::find($expense->case_id);
-                $moneyCase->updateBalance($expense->amount); // Add back the amount
+                $moneyCase->updateBalance();
             }
 
             $expense->delete();
@@ -314,7 +344,7 @@ class ExpenseController extends Controller
         }
 
         DB::beginTransaction();
-        
+
         try {
             // If expense was assigned to a case, add back the amount
             if ($expense->case_id) {
@@ -340,12 +370,12 @@ class ExpenseController extends Controller
     private function authorizeExpenseAccess(Expense $expense)
     {
         $user = Auth::user();
-        
+
         // Agents can only access their own expenses
         if ($user->role === 'agent' && $expense->created_by !== $user->id) {
             abort(403, 'You can only access your own expenses.');
         }
-        
+
         // Supervisors and admins can access all expenses
     }
 }

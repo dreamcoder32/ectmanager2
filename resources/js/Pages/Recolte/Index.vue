@@ -179,9 +179,40 @@
                    <div v-else class="text-caption text-grey">
                      N/A
                    </div>
-                 </template>
+                  </template>
 
-                 <!-- Created By Column -->
+                  <!-- Expenses Column -->
+                  <template v-slot:[`item.expenses_count`]="{ item }">
+                    <div class="d-flex flex-column">
+                      <v-chip
+                        v-if="item.expenses_count > 0"
+                        color="error"
+                        text-color="white"
+                        small
+                        class="mb-1"
+                      >
+                        {{ item.expenses_count }} Exp.
+                      </v-chip>
+                      <span v-if="item.total_expenses > 0" class="text-caption text-error font-weight-bold">
+                        -{{ formatCurrency(item.total_expenses) }}
+                      </span>
+                      <span v-else class="text-caption text-grey">None</span>
+                    </div>
+                  </template>
+
+                  <!-- Net Total Column -->
+                  <template v-slot:[`item.net_total`]="{ item }">
+                    <v-chip
+                      color="success"
+                      text-color="white"
+                      small
+                      style="font-weight: 700;"
+                    >
+                      {{ formatCurrency(item.net_total) }} Da
+                    </v-chip>
+                  </template>
+
+                  <!-- Created By Column -->
                  <template v-slot:[`item.created_by`]="{ item }">
                    <div v-if="item.created_by">
                      <div class="text-body-2 font-weight-medium">{{ item.created_by.uid || 'Unknown User' }}</div>
@@ -350,6 +381,18 @@ export default {
           width: '150px'
         },
         {
+          title: 'Expenses',
+          key: 'expenses_count',
+          sortable: false,
+          width: '120px'
+        },
+        {
+          title: 'Net Total',
+          key: 'net_total',
+          sortable: false,
+          width: '150px'
+        },
+        {
           title: 'Company',
           key: 'company.name',
           sortable: true,
@@ -433,7 +476,7 @@ export default {
       this.$inertia.visit(`/recoltes/${id}/edit`)
     },
     exportPdf(id) {
-      window.location.href = `/recoltes/${id}/export?type=pdf`
+      window.open(`/recoltes/${id}/export?type=pdf`, '_blank')
     },
     deleteRecolte(recolte) {
       this.selectedRecolte = recolte

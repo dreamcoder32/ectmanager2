@@ -164,6 +164,36 @@
                         </v-card>
                       </v-col>
 
+                      <!-- Unlinked Expenses Alert -->
+                      <v-col cols="12" v-if="selectedUserId && unlinkedExpenses.length > 0">
+                        <v-alert
+                          type="warning"
+                          variant="tonal"
+                          border="start"
+                          elevation="2"
+                        >
+                          <template #prepend>
+                            <v-icon color="warning">mdi-cash-minus</v-icon>
+                          </template>
+                          <div class="text-subtitle-1 font-weight-bold">
+                            Pending Expenses Found
+                          </div>
+                          <div class="text-body-2">
+                            This user has {{ unlinkedExpenses.length }} unlinked expenses totaling 
+                            <strong>{{ formatCurrency(unlinkedExpenses.reduce((sum, e) => sum + parseFloat(e.amount), 0)) }}</strong>.
+                            These will be automatically linked to this Recolte.
+                          </div>
+                          <v-divider class="my-2"></v-divider>
+                          <v-list density="compact" bg-color="transparent">
+                            <v-list-item v-for="expense in unlinkedExpenses" :key="expense.id" :title="expense.title" :subtitle="formatDate(expense.expense_date)">
+                              <template #append>
+                                <span class="text-error font-weight-bold">- {{ formatCurrency(expense.amount) }}</span>
+                              </template>
+                            </v-list-item>
+                          </v-list>
+                        </v-alert>
+                      </v-col>
+
 
                       <!-- Manual Amount Field -->
                       <v-col cols="12" md="6">
@@ -285,6 +315,7 @@ export default {
       selectedUserId: null,
       selectedUserName: '',
       collections: [],
+      unlinkedExpenses: [],
       totalAmount: 0,
       loadingUsers: false,
       loadingCollections: false,
@@ -331,6 +362,7 @@ export default {
       if (selectedUser) {
         this.selectedUserName = selectedUser.first_name
         this.collections = selectedUser.collections || []
+        this.unlinkedExpenses = selectedUser.unlinked_expenses || []
         this.totalAmount = selectedUser.total_amount || 0
         this.form.collection_ids = []
         // this.form.manual_amount = this.totalAmount // Pre-fill with calculated total

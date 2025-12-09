@@ -28,6 +28,7 @@ class Expense extends Model
         'approved_at',
         'paid_at',
         'case_id',
+        'recolte_id',
     ];
 
     protected function casts(): array
@@ -79,7 +80,7 @@ class Expense extends Model
     public function salaryPayment(): BelongsTo
     {
         return $this->belongsTo(SalaryPayment::class, 'reference_id')
-                    ->where('reference_type', 'salary_payment');
+            ->where('reference_type', 'salary_payment');
     }
 
     /**
@@ -88,7 +89,7 @@ class Expense extends Model
     public function commissionPayment(): BelongsTo
     {
         return $this->belongsTo(CommissionPayment::class, 'reference_id')
-                    ->where('reference_type', 'commission_payment');
+            ->where('reference_type', 'commission_payment');
     }
 
     /**
@@ -97,6 +98,14 @@ class Expense extends Model
     public function moneyCase(): BelongsTo
     {
         return $this->belongsTo(MoneyCase::class, 'case_id');
+    }
+
+    /**
+     * Get the recolte this expense belongs to.
+     */
+    public function recolte(): BelongsTo
+    {
+        return $this->belongsTo(Recolte::class);
     }
 
     /**

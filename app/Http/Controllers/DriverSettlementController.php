@@ -303,7 +303,7 @@ class DriverSettlementController extends Controller
 
             // Create recolte and attach collections
             $recolte = Recolte::create([
-                'note' => ($request->note ? $request->note . ' | ' : '') . 'Auto-created from driver settlement for ' . $driver->name,
+                'note' => ($request->note ?? $request->amount_discrepancy_note),
                 'created_by' => Auth::id(),
                 'company_id' => $companyId,
                 'manual_amount' => $manualAmount,
@@ -322,12 +322,12 @@ class DriverSettlementController extends Controller
             $recolte->collections()->attach($collectionIds);
 
             // Then update money case balance to reflect recolted collections
-            if ($request->case_id) {
-                $moneyCase = MoneyCase::find($request->case_id);
-                if ($moneyCase) {
-                    $moneyCase->updateBalance();
-                }
-            }
+            // if ($request->case_id) {
+            //     $moneyCase = MoneyCase::find($request->case_id);
+            //     if ($moneyCase) {
+            //         $moneyCase->updateBalance();
+            //     }
+            // }
 
             DB::commit();
 

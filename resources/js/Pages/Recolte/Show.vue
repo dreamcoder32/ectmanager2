@@ -302,6 +302,55 @@
                                     </v-card-text>
                                 </v-card>
                             </v-col>
+
+                            <!-- Expenses Table -->
+                            <v-col cols="12" v-if="recolte.expenses && recolte.expenses.length > 0">
+                                <v-card>
+                                    <v-card-title class="error white--text">
+                                        <v-icon left color="white">mdi-cash-minus</v-icon>
+                                        Expenses ({{ recolte.expenses.length }})
+                                    </v-card-title>
+                                    <v-card-text class="pa-0">
+                                        <v-simple-table class="recolte-table">
+                                            <template v-slot:default>
+                                                <thead>
+                                                    <tr>
+                                                        <th class="text-left" style="width: 70%;">Description</th>
+                                                        <th class="text-right" style="width: 30%;">Montant</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr v-for="(expense, index) in recolte.expenses" :key="expense.id" :class="{'zebra-row': index % 2 === 1}">
+                                                        <td class="text-left">{{ expense.title }} {{ expense.description ? ' - ' + expense.description : '' }}</td>
+                                                        <td class="text-right">{{ formatAmount(expense.amount) }} Da</td>
+                                                    </tr>
+                                                </tbody>
+                                            </template>
+                                        </v-simple-table>
+                                    </v-card-text>
+                                </v-card>
+                            </v-col>
+
+                            <!-- Summary -->
+                            <v-col cols="12" md="6" offset-md="6">
+                                <v-card>
+                                    <v-card-text>
+                                        <v-row>
+                                            <v-col cols="6" class="text-right font-weight-bold">Total Recolté:</v-col>
+                                            <v-col cols="6" class="text-right">{{ formatAmount(totalAmount) }} Da</v-col>
+                                        </v-row>
+                                        <v-row v-if="totalExpenses > 0">
+                                            <v-col cols="6" class="text-right font-weight-bold error--text">Total Dépenses:</v-col>
+                                            <v-col cols="6" class="text-right error--text">- {{ formatAmount(totalExpenses) }} Da</v-col>
+                                        </v-row>
+                                        <v-divider class="my-2"></v-divider>
+                                        <v-row>
+                                            <v-col cols="6" class="text-right text-h6 font-weight-bold">Net à Verser:</v-col>
+                                            <v-col cols="6" class="text-right text-h6 font-weight-bold success--text">{{ formatAmount(netTotal) }} Da</v-col>
+                                        </v-row>
+                                    </v-card-text>
+                                </v-card>
+                            </v-col>
                         </v-row>
                     </v-container>
                 </v-main>
@@ -328,6 +377,14 @@ export default {
         errors: {
             type: Object,
             default: () => ({}),
+        },
+        totalExpenses: {
+            type: Number,
+            default: 0,
+        },
+        netTotal: {
+            type: Number,
+            default: 0,
         },
     },
     computed: {
