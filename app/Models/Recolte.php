@@ -16,6 +16,7 @@ class Recolte extends Model
         'company_id',
         'manual_amount',
         'amount_discrepancy_note',
+        'transfer_request_id',
     ];
 
     protected $casts = [
@@ -73,5 +74,13 @@ class Recolte extends Model
     public function expenses()
     {
         return $this->hasMany(Expense::class);
+    }
+
+    /**
+     * Get the transfer request associated with this recolte
+     */
+    public function transferRequest()
+    {
+        return $this->belongsTo(TransferRequest::class);
     }
 }

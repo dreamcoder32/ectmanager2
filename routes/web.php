@@ -218,6 +218,10 @@ Route::middleware(["auth"])->group(function () {
         \App\Http\Controllers\DriverSettlementController::class,
         "process",
     ])->name("driver-settlement.process");
+
+    // Transfer Requests
+    Route::resource('transfer-requests', \App\Http\Controllers\TransferRequestController::class)->only(['index', 'store', 'show']);
+    Route::post('transfer-requests/{transferRequest}/verify', [\App\Http\Controllers\TransferRequestController::class, 'verify'])->name('transfer-requests.verify');
 });
 
 // Expense routes

@@ -47,7 +47,7 @@ class RecolteController extends BaseController
         if ($user->role === 'admin') {
             // Admins can see all recoltes
             // Optimized: Removed 'collections.parcel' as it's not needed for the index view and is heavy
-            $query = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses']);
+            $query = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses', 'transferRequest']);
 
             // Apply company filter if provided
             if ($companyFilter) {
@@ -64,7 +64,7 @@ class RecolteController extends BaseController
                 $userCompanyIds = $userCompanyIds->intersect([$companyFilter]);
             }
 
-            $recoltes = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses'])
+            $recoltes = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses', 'transferRequest'])
                 ->whereIn('company_id', $userCompanyIds)
                 ->orderBy('created_at', 'desc')
                 ->paginate(20);
@@ -99,9 +99,12 @@ class RecolteController extends BaseController
             $companies = $user->companies()->where('is_active', true)->get(['companies.id', 'companies.name', 'companies.code']);
         }
 
+        $admins = \App\Models\User::where('role', 'admin')->get(['id', 'first_name', 'last_name']);
+
         return Inertia::render('Recolte/Index', [
             'recoltes' => $recoltes,
-            'companies' => $companies
+            'companies' => $companies,
+            'admins' => $admins,
         ]);
     }
 

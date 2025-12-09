@@ -111,7 +111,7 @@ class ExpenseController extends Controller
             // If assigned to a case, deduct from case balance
             if ($validated['case_id']) {
                 $moneyCase = MoneyCase::find($validated['case_id']);
-                $moneyCase->updateBalance();
+                // $moneyCase->updateBalance();
             }
 
             DB::commit();

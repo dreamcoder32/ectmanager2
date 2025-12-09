@@ -37,7 +37,7 @@
             elevation="2"
           >
             <v-icon left>mdi-file-pdf-box</v-icon>
-            Bulk Export PDF
+            Resumé PDF
           </v-btn>
           <v-btn
             color="info"
@@ -50,6 +50,29 @@
           >
             <v-icon left>mdi-file-document-multiple</v-icon>
             Bulk Detailed PDF
+          </v-btn>
+          <v-btn
+            color="success"
+            class="ml-2"
+            @click="transferDialog = true"
+            :disabled="selectedCount === 0"
+            prepend-icon="mdi-bank-transfer"
+            style="font-weight: 600; border-radius: 12px;"
+            elevation="2"
+          >
+            <v-icon left>mdi-bank-transfer</v-icon>
+            Transfer
+          </v-btn>
+          <v-btn
+            color="purple"
+            class="ml-2"
+            @click="$inertia.visit('/transfer-requests')"
+            prepend-icon="mdi-history"
+            style="font-weight: 600; border-radius: 12px;"
+            elevation="2"
+          >
+            <v-icon left>mdi-history</v-icon>
+            Transfer Requests
           </v-btn>
         </div>
 
@@ -117,6 +140,7 @@
                 show-select
                 return-object
                 v-model="selectedRecoltes"
+                :selectable-key="(item) => !item.transfer_request_id"
               >
                 <!-- Code Column -->
                  <template v-slot:[`item.code`]="{ item }">
@@ -244,7 +268,24 @@
                    <span v-else class="text-body-2 text--secondary">System</span>
                  </template>
 
-                 <!-- Created At Column -->
+                  <!-- Transfer Status Column -->
+                  <template v-slot:[`item.transfer_status`]="{ item }">
+                    <div v-if="item.transfer_request">
+                      <v-chip
+                        :color="item.transfer_request.status === 'success' ? 'success' : 'warning'"
+                        text-color="white"
+                        x-small
+                        style="font-weight: 600;"
+                      >
+                        {{ item.transfer_request.status.toUpperCase() }}
+                      </v-chip>
+                    </div>
+                    <div v-else>
+                      <span class="text-caption text-grey">Not Transferred</span>
+                    </div>
+                  </template>
+
+                  <!-- Created At Column -->
                  <template v-slot:[`item.created_at`]="{ item }">
                    <span class="text-body-2">{{ formatDate(item.created_at) }}</span>
                  </template>
@@ -328,6 +369,98 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Snackbar for notifications -->
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      :timeout="3000"
+      top
+    >
+      {{ snackbar.text }}
+      <template v-slot:actions>
+        <v-btn
+          variant="text"
+          @click="snackbar.show = false"
+        >
+          Close
+        </v-btn>
+      </template>
+    </v-snackbar>
+
+    <!-- Transfer Dialog -->
+    <v-dialog v-model="transferDialog" max-width="500px">
+      <v-card style="border-radius: 12px;">
+        <v-card-title class="text-h5 pa-6">
+          <v-icon left color="primary" size="28">mdi-bank-transfer</v-icon>
+          Transfer to Admin
+        </v-card-title>
+        <v-card-text class="pa-6 pt-0">
+          <p class="mb-4">Select an admin to transfer <strong>{{ selectedCount }}</strong> recoltes (Total: {{ formatCurrency(selectedTotalCodAmount) }} Da).</p>
+          <v-select
+            v-model="selectedAdmin"
+            :items="adminOptions"
+            item-title="text"
+            item-value="value"
+            label="Select Admin"
+            variant="outlined"
+            density="comfortable"
+            color="primary"
+          ></v-select>
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn
+            text
+            @click="transferDialog = false"
+            style="border-radius: 8px;"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            @click="createTransfer"
+            style="border-radius: 8px;"
+            :loading="transferring"
+            :disabled="!selectedAdmin"
+          >
+            Create Transfer
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Verify Dialog -->
+    <v-dialog v-model="verifyDialog" max-width="400px">
+      <v-card style="border-radius: 12px;">
+        <v-card-title class="text-h5 pa-6">
+          Verify Transfer
+        </v-card-title>
+        <v-card-text class="pa-6 pt-0">
+          <p class="mb-4">Transfer created! Enter the verification code provided by the admin to complete the transfer immediately.</p>
+          <v-text-field
+            v-model="verificationCode"
+            label="Verification Code"
+            variant="outlined"
+            density="comfortable"
+            autofocus
+            @keyup.enter="submitVerify"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions class="pa-6 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn text @click="verifyDialog = false">Close</v-btn>
+          <v-btn
+            color="primary"
+            @click="submitVerify"
+            :loading="verifying"
+            :disabled="!verificationCode"
+          >
+            Verify
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -350,6 +483,10 @@ export default {
     companies: {
       type: Array,
       default: () => []
+    },
+    admins: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -357,7 +494,19 @@ export default {
       loading: false,
       deleting: false,
       deleteDialog: false,
+      transferDialog: false,
+      verifyDialog: false,
+      transferring: false,
+      verifying: false,
+      selectedAdmin: null,
       selectedRecolte: null,
+      verificationCode: '',
+      pendingTransferId: null,
+      snackbar: {
+        show: false,
+        text: '',
+        color: 'success'
+      },
       selectedRecoltes: [],
       filters: {
         company_id: null
@@ -405,7 +554,7 @@ export default {
           width: '150px'
         },
         {
-          title: 'Expenses',
+          title: 'Depenses',
           key: 'expenses_count',
           sortable: false,
           width: '120px'
@@ -435,6 +584,12 @@ export default {
           width: '180px'
         },
         {
+          title: 'Transfer Status',
+          key: 'transfer_status',
+          sortable: false,
+          width: '120px'
+        },
+        {
           title: 'Actions',
           key: 'actions',
           sortable: false,
@@ -449,6 +604,12 @@ export default {
       return this.companies?.map(company => ({
         text: company.name,
         value: company.id
+      })) || []
+    },
+    adminOptions() {
+      return this.admins?.map(admin => ({
+        text: admin.first_name + ' ' + admin.last_name,
+        value: admin.id
       })) || []
     },
     selectedCount() {
@@ -628,6 +789,73 @@ export default {
         return 'warning'
       }
       return 'success'
+    },
+    createTransfer() {
+      if (!this.selectedAdmin || this.selectedCount === 0) return
+
+      this.transferring = true
+      router.post('/transfer-requests', {
+        admin_id: this.selectedAdmin,
+        recolte_ids: this.selectedRecoltes.map(r => r.id)
+      }, {
+        onSuccess: (page) => {
+          this.transferDialog = false
+          this.selectedRecoltes = []
+          this.selectedAdmin = null
+          this.transferring = false
+          this.snackbar = {
+            show: true,
+            text: 'Transfer request created successfully',
+            color: 'success'
+          }
+          
+          // Check for new_transfer_id in flash props
+          if (page.props.flash?.new_transfer_id) {
+            this.pendingTransferId = page.props.flash.new_transfer_id
+            this.verificationCode = ''
+            this.verifyDialog = true
+          }
+        },
+        onError: (errors) => {
+          this.transferring = false
+          this.snackbar = {
+            show: true,
+            text: errors.message || 'Error creating transfer request',
+            color: 'error'
+          }
+          console.error('Transfer Error:', errors)
+        }
+      })
+    },
+    submitVerify() {
+      if (!this.pendingTransferId || !this.verificationCode) return
+
+      this.verifying = true
+      router.post(`/transfer-requests/${this.pendingTransferId}/verify`, {
+        code: this.verificationCode
+      }, {
+        onSuccess: () => {
+          this.verifyDialog = false
+          this.pendingTransferId = null
+          this.verificationCode = ''
+          this.verifying = false
+          this.snackbar = {
+            show: true,
+            text: 'Transfer verified successfully!',
+            color: 'success'
+          }
+          // Refresh the list to show updated status
+          this.applyFilters()
+        },
+        onError: (errors) => {
+          this.verifying = false
+          this.snackbar = {
+            show: true,
+            text: errors.code || errors.message || 'Verification failed',
+            color: 'error'
+          }
+        }
+      })
     }
   }
 }

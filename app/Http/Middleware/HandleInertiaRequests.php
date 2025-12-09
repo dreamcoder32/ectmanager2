@@ -35,7 +35,10 @@ class HandleInertiaRequests extends Middleware
             ],
             'csrf_token' => csrf_token(),
             'flash' => [
-                'message' => fn () => $request->session()->get('message')
+                'message' => fn() => $request->session()->get('message'),
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
+                'new_transfer_id' => fn() => $request->session()->get('new_transfer_id'),
             ],
         ]);
     }
