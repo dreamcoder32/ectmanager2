@@ -27,6 +27,30 @@
             <v-icon left>mdi-plus</v-icon>
             Create New Recolte
           </v-btn>
+          <v-btn
+            color="secondary"
+            class="ml-2"
+            @click="bulkExport"
+            :disabled="selectedCount === 0"
+            prepend-icon="mdi-file-pdf-box"
+            style="font-weight: 600; border-radius: 12px;"
+            elevation="2"
+          >
+            <v-icon left>mdi-file-pdf-box</v-icon>
+            Bulk Export PDF
+          </v-btn>
+          <v-btn
+            color="info"
+            class="ml-2"
+            @click="bulkExportDetailed"
+            :disabled="selectedCount === 0"
+            prepend-icon="mdi-file-document-multiple"
+            style="font-weight: 600; border-radius: 12px;"
+            elevation="2"
+          >
+            <v-icon left>mdi-file-document-multiple</v-icon>
+            Bulk Detailed PDF
+          </v-btn>
         </div>
 
         <!-- Company Filter -->
@@ -477,6 +501,70 @@ export default {
     },
     exportPdf(id) {
       window.open(`/recoltes/${id}/export?type=pdf`, '_blank')
+    },
+    bulkExport() {
+      if (this.selectedCount === 0) return
+      
+      const ids = this.selectedRecoltes.map(r => r.id)
+      
+      // Create a form to submit post request in new tab
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/recoltes/bulk-export'
+      form.target = '_blank'
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      const csrfInput = document.createElement('input')
+      csrfInput.type = 'hidden'
+      csrfInput.name = '_token'
+      csrfInput.value = csrfToken
+      form.appendChild(csrfInput)
+      
+      // Add IDs
+      ids.forEach(id => {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = 'ids[]'
+        input.value = id
+        form.appendChild(input)
+      })
+      
+      document.body.appendChild(form)
+      form.submit()
+      document.body.removeChild(form)
+    },
+    bulkExportDetailed() {
+      if (this.selectedCount === 0) return
+      
+      const ids = this.selectedRecoltes.map(r => r.id)
+      
+      // Create a form to submit post request in new tab
+      const form = document.createElement('form')
+      form.method = 'POST'
+      form.action = '/recoltes/bulk-export-detailed'
+      form.target = '_blank'
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+      const csrfInput = document.createElement('input')
+      csrfInput.type = 'hidden'
+      csrfInput.name = '_token'
+      csrfInput.value = csrfToken
+      form.appendChild(csrfInput)
+      
+      // Add IDs
+      ids.forEach(id => {
+        const input = document.createElement('input')
+        input.type = 'hidden'
+        input.name = 'ids[]'
+        input.value = id
+        form.appendChild(input)
+      })
+      
+      document.body.appendChild(form)
+      form.submit()
+      document.body.removeChild(form)
     },
     deleteRecolte(recolte) {
       this.selectedRecolte = recolte

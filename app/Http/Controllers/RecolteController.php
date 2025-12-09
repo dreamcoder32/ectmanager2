@@ -396,6 +396,114 @@ class RecolteController extends BaseController
     }
 
     /**
+     * Export multiple recoltes to a single PDF summary.
+     */
+    public function bulkExport(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:recoltes,id'
+        ]);
+
+        $recoltes = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'expenses'])
+            ->whereIn('id', $request->ids)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Calculate totals for each recolte and grand totals
+        $grandTotalCollected = 0;
+        $grandTotalExpenses = 0;
+        $grandNetTotal = 0;
+
+        $recoltes->transform(function ($recolte) use (&$grandTotalCollected, &$grandTotalExpenses, &$grandNetTotal) {
+            $recolte->total_cod_amount = $recolte->collections->sum(function ($collection) {
+                return $collection->amount ?? 0;
+            });
+
+            $firstCollection = $recolte->collections->first();
+            if ($firstCollection && $firstCollection->driver_id) {
+                $recolte->type = 'driver';
+                $recolte->related_name = $firstCollection->driver ? $firstCollection->driver->name : 'Unknown Driver';
+            } else {
+                $recolte->type = 'agent';
+                $recolte->related_name = ($firstCollection && $firstCollection->createdBy) ? $firstCollection->createdBy->first_name . ' ' . $firstCollection->createdBy->last_name : 'Unknown Agent';
+            }
+
+            $recolte->total_expenses = $recolte->expenses->sum('amount');
+            $recolte->net_total = ($recolte->manual_amount ?? $recolte->total_cod_amount) - $recolte->total_expenses;
+
+            $grandTotalCollected += ($recolte->manual_amount ?? $recolte->total_cod_amount);
+            $grandTotalExpenses += $recolte->total_expenses;
+            $grandNetTotal += $recolte->net_total;
+
+            return $recolte;
+        });
+
+        $fileName = 'recoltes_bulk_' . date('Y-m-d_H-i') . '.pdf';
+        $html = view('exports.recoltes_bulk', [
+            'recoltes' => $recoltes,
+            'grandTotalCollected' => $grandTotalCollected,
+            'grandTotalExpenses' => $grandTotalExpenses,
+            'grandNetTotal' => $grandNetTotal
+        ])->render();
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+        $dompdf->setPaper('A4');
+        $dompdf->loadHtml($html);
+        $dompdf->render();
+        $pdfOutput = $dompdf->output();
+
+        return response()->stream(fn() => print ($pdfOutput), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+        ]);
+    }
+
+    /**
+     * Export multiple recoltes to a single PDF with full details for each.
+     */
+    public function bulkExportDetailed(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:recoltes,id'
+        ]);
+
+        $recoltes = Recolte::with(['collections.parcel', 'collections.createdBy', 'createdBy', 'expenses'])
+            ->whereIn('id', $request->ids)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
+
+        // Attach barcode to each recolte
+        $recoltes->each(function ($recolte) use ($generator) {
+            $barcodeData = $generator->getBarcode('RCT-' . $recolte->id, $generator::TYPE_CODE_128);
+            $recolte->barcode_base64 = base64_encode($barcodeData);
+        });
+
+        $fileName = 'recoltes_bulk_detailed_' . date('Y-m-d_H-i') . '.pdf';
+        $html = view('exports.recoltes_bulk_detailed', [
+            'recoltes' => $recoltes,
+        ])->render();
+
+        $options = new Options();
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new Dompdf($options);
+        $dompdf->setPaper('A4');
+        $dompdf->loadHtml('<style>@page { margin: 5mm }</style>' . $html);
+        $dompdf->render();
+        $pdfOutput = $dompdf->output();
+
+        return response()->stream(fn() => print ($pdfOutput), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $fileName . '"',
+        ]);
+    }
+
+    /**
      * Show the form for editing the specified resource.
      */
     public function edit(Recolte $recolte)

@@ -193,6 +193,14 @@ Route::middleware(["auth"])->group(function () {
         RecolteController::class,
         "export",
     ])->name("recoltes.export");
+    Route::post("/recoltes/bulk-export", [
+        RecolteController::class,
+        "bulkExport",
+    ])->name("recoltes.bulk-export");
+    Route::post("/recoltes/bulk-export-detailed", [
+        RecolteController::class,
+        "bulkExportDetailed",
+    ])->name("recoltes.bulk-export-detailed");
     // Route::get('/recoltes/{recolte}/edit', [RecolteController::class, 'edit'])->name('recoltes.edit');
     // Route::put('/recoltes/{recolte}', [RecolteController::class, 'update'])->name('recoltes.update');
     // Route::delete('/recoltes/{recolte}', [RecolteController::class, 'destroy'])->name('recoltes.destroy']);
