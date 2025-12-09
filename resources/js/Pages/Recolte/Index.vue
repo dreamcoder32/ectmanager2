@@ -122,7 +122,7 @@
                   Selected: {{ selectedCount }}
                 </v-chip>
                 <v-chip color="orange" class="mr-2" style="font-weight:600;" v-if="selectedCount > 0">
-                  Total COD: {{ formatCurrency(selectedTotalCodAmount) }} Da
+                  Total Net: {{ formatCurrency(selectedNetTotal) }} Da
                 </v-chip>
                 <span class="text-caption text-secondary">Use the checkboxes to select recoltes</span>
               </div>
@@ -131,7 +131,9 @@
                 :items="recoltes.data"
                 :loading="loading"
                 :server-items-length="recoltes.total"
-                :options.sync="options"
+                :items-per-page="options.itemsPerPage"
+                :page="options.page"
+                @update:options="updateOptions"
                 :footer-props="{
                   'items-per-page-options': [10, 25, 50, 100]
                 }"
@@ -144,14 +146,32 @@
               >
                 <!-- Code Column -->
                  <template v-slot:[`item.code`]="{ item }">
-                   <v-chip
-                     color="primary"
-                     text-color="white"
-                     small
-                     style="font-weight: 600;"
-                   >
-                     #RCT-{{ item.code }}
-                   </v-chip>
+                   <div class="d-flex flex-column align-start">
+                     <v-chip
+                       color="primary"
+                       text-color="white"
+                       size="small"
+                       class="mb-1"
+                       style="font-weight: 600;"
+                     >
+                       #RCT-{{ item.code }}
+                     </v-chip>
+                     
+                     <!-- Transfer Status -->
+                     <div v-if="item.transfer_request">
+                       <v-chip
+                         :color="item.transfer_request.status === 'success' ? 'success' : 'warning'"
+                         text-color="white"
+                         size="x-small"
+                         style="font-weight: 600; height: 20px;"
+                       >
+                         {{ item.transfer_request.status.toUpperCase() }}
+                       </v-chip>
+                     </div>
+                     <div v-else>
+                       <span class="text-caption text-grey" style="font-size: 10px;">Not Transferred</span>
+                     </div>
+                   </div>
                  </template>
 
                  <!-- Type / Name Column -->
@@ -268,22 +288,6 @@
                    <span v-else class="text-body-2 text--secondary">System</span>
                  </template>
 
-                  <!-- Transfer Status Column -->
-                  <template v-slot:[`item.transfer_status`]="{ item }">
-                    <div v-if="item.transfer_request">
-                      <v-chip
-                        :color="item.transfer_request.status === 'success' ? 'success' : 'warning'"
-                        text-color="white"
-                        x-small
-                        style="font-weight: 600;"
-                      >
-                        {{ item.transfer_request.status.toUpperCase() }}
-                      </v-chip>
-                    </div>
-                    <div v-else>
-                      <span class="text-caption text-grey">Not Transferred</span>
-                    </div>
-                  </template>
 
                   <!-- Created At Column -->
                  <template v-slot:[`item.created_at`]="{ item }">
@@ -396,7 +400,7 @@
           Transfer to Admin
         </v-card-title>
         <v-card-text class="pa-6 pt-0">
-          <p class="mb-4">Select an admin to transfer <strong>{{ selectedCount }}</strong> recoltes (Total: {{ formatCurrency(selectedTotalCodAmount) }} Da).</p>
+          <p class="mb-4">Select an admin to transfer <strong>{{ selectedCount }}</strong> recoltes (Total: {{ formatCurrency(selectedNetTotal) }} Da).</p>
           <v-select
             v-model="selectedAdmin"
             :items="adminOptions"
@@ -583,12 +587,7 @@ export default {
           sortable: true,
           width: '180px'
         },
-        {
-          title: 'Transfer Status',
-          key: 'transfer_status',
-          sortable: false,
-          width: '120px'
-        },
+
         {
           title: 'Actions',
           key: 'actions',
@@ -608,14 +607,16 @@ export default {
     },
     adminOptions() {
       return this.admins?.map(admin => ({
-        text: admin.first_name + ' ' + admin.last_name,
+        text: (admin.first_name || admin.last_name) 
+          ? `${admin.first_name || ''} ${admin.last_name || ''}`.trim() 
+          : (admin.email || `Admin ${admin.id}`),
         value: admin.id
       })) || []
     },
     selectedCount() {
       return Array.isArray(this.selectedRecoltes) ? this.selectedRecoltes.length : 0
     },
-    selectedTotalCodAmount() {
+    selectedNetTotal() {
       const selected = Array.isArray(this.selectedRecoltes) ? this.selectedRecoltes : []
       const list = Array.isArray(this.recoltes?.data) ? this.recoltes.data : []
       const byId = new Map(list.map(it => [it.id, it]))
@@ -624,21 +625,14 @@ export default {
         let amt = 0
         if (r && typeof r === 'object') {
           const raw = r.raw || r
-          amt = parseFloat(raw?.total_cod_amount ?? 0)
+          // Use net_total which is (manual_amount || total_cod_amount) - total_expenses
+          amt = parseFloat(raw?.net_total ?? 0)
         } else {
           const found = byId.get(r)
-          amt = parseFloat(found?.total_cod_amount ?? 0)
+          amt = parseFloat(found?.net_total ?? 0)
         }
         return sum + (isNaN(amt) ? 0 : amt)
       }, 0)
-    }
-  },
-  watch: {
-    options: {
-      handler() {
-        this.updateOptions(this.options)
-      },
-      deep: true
     }
   },
   methods: {

@@ -473,6 +473,22 @@
             <!-- Action Buttons Slot -->
             <slot name="actions"></slot>
 
+            <!-- Pending Transfers Notification -->
+            <v-btn
+                v-if="$page.props.pending_transfers_count > 0"
+                icon
+                class="mr-2"
+                @click="$inertia.visit('/transfer-requests')"
+            >
+                <v-badge
+                    :content="$page.props.pending_transfers_count"
+                    color="error"
+                    floating
+                >
+                    <v-icon color="grey-darken-1">mdi-bell-outline</v-icon>
+                </v-badge>
+            </v-btn>
+
             <!-- Language Switcher -->
             <LanguageSwitcher class="mr-2" />
 

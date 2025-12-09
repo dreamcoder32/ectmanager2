@@ -27,8 +27,8 @@ class TransferRequestController extends Controller
         $transfers = $query->paginate(20);
 
         $transfers->getCollection()->transform(function ($transfer) use ($user) {
-            if ($user->id !== $transfer->admin_id && !$user->isAdmin()) {
-                $transfer->makeHidden('verification_code');
+            if ($user->id === $transfer->admin_id) {
+                $transfer->makeVisible('verification_code');
             }
             return $transfer;
         });

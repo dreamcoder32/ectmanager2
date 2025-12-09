@@ -16,6 +16,10 @@ class TransferRequest extends Model
         'verification_code',
     ];
 
+    protected $hidden = [
+        'verification_code',
+    ];
+
     protected $appends = ['total_amount'];
 
     public function getTotalAmountAttribute()

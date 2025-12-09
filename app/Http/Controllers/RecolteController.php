@@ -54,7 +54,8 @@ class RecolteController extends BaseController
                 $query->where('company_id', $companyFilter);
             }
 
-            $recoltes = $query->orderBy('created_at', 'desc')->paginate(20);
+            $perPage = $request->input('per_page', 25);
+            $recoltes = $query->orderBy('created_at', 'desc')->paginate($perPage);
         } else {
             // Other users can only see recoltes from their assigned companies
             $userCompanyIds = $user->companies()->pluck('companies.id');
@@ -64,10 +65,11 @@ class RecolteController extends BaseController
                 $userCompanyIds = $userCompanyIds->intersect([$companyFilter]);
             }
 
+            $perPage = $request->input('per_page', 25);
             $recoltes = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses', 'transferRequest'])
                 ->whereIn('company_id', $userCompanyIds)
                 ->orderBy('created_at', 'desc')
-                ->paginate(20);
+                ->paginate($perPage);
         }
 
         // Calculate cod_amount sum for each recolte and determine type/name
