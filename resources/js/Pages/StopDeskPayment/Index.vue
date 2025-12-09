@@ -241,7 +241,7 @@
                                 <label class="text-caption text-grey-darken-1 mb-1 d-block">{{ $t('stopdesk_payment.change') }}</label>
                                 <div 
                                   class="text-h6 font-weight-bold pa-3 rounded border"
-                                  :class="parcel.changeAmount >= 0 ? 'text-success bg-success-lighten-5 border-success' : 'text-error bg-error-lighten-5 border-error'"
+                                  :class="parcel.changeAmount < 9000000 ? 'text-success bg-success-lighten-5 border-success' : 'text-error bg-error-lighten-5 border-error'"
                                 >
                                   {{ parcel.changeAmount }} {{ $t('common.currency') }}
                                 </div>
@@ -288,7 +288,7 @@
                             </v-btn>
                             <v-btn
                               @click="confirmPayment(parcel, index)"
-                              :disabled="!parcel.amountGiven || parcel.amountGiven < parcel.cod_amount || processingPayment"
+                              :disabled="(parcel.amountGiven === null || parcel.amountGiven === undefined) || parcel.amountGiven < parcel.cod_amount || processingPayment"
                               :loading="processingPayment"
                               size="small"
                               style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white;"
@@ -715,7 +715,8 @@ export default {
     },
     
     async confirmPayment(parcel, index) {
-      if (!parcel.amountGiven || parcel.amountGiven < parcel.cod_amount) {
+      // Allow 0 amount if COD is 0
+      if (parcel.amountGiven === null || parcel.amountGiven === undefined || parcel.amountGiven < parcel.cod_amount) {
         this.showError('Amount given must be greater than or equal to COD amount');
         return;
       }
