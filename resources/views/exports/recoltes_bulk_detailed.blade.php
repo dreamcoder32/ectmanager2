@@ -96,7 +96,7 @@
             <div class="header" style="position: relative;">
                 <div style="text-align: center; margin-bottom: 10px;">
                     <img src="data:image/png;base64,{{ $recolte->barcode_base64 }}" alt="Barcode">
-                    <div style="font-size: 10px;">RCT-{{ $recolte->id }}</div>
+                    <div style="font-size: 10px;">RCT-{{ $recolte->code }}</div>
                 </div>
                 <div><span class="label">Recolte Code:</span> RCT-{{ $recolte->code }} Créé par :
                     {{ optional($recolte->createdBy)->name }}

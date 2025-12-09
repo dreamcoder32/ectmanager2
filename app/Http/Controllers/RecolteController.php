@@ -522,7 +522,7 @@ class RecolteController extends BaseController
 
         // Attach barcode to each recolte
         $recoltes->each(function ($recolte) use ($generator) {
-            $barcodeData = $generator->getBarcode('RCT-' . $recolte->id, $generator::TYPE_CODE_128);
+            $barcodeData = $generator->getBarcode('RCT-' . $recolte->code, $generator::TYPE_CODE_128);
             $recolte->barcode_base64 = base64_encode($barcodeData);
         });
 
