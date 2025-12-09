@@ -625,52 +625,15 @@
                                                     class="whatsapp-count-section text-center"
                                                 >
                                                     <v-tooltip location="top">
-                                                        <template
-                                                            v-slot:activator="{
-                                                                props,
-                                                            }"
-                                                        >
-                                                            <v-btn
-                                                                v-bind="props"
-                                                                icon
-                                                                variant="flat"
-                                                                :color="
-                                                                    parcel.messages_count >
-                                                                    0
-                                                                        ? 'success'
-                                                                        : 'grey-lighten-2'
-                                                                "
-                                                                size="large"
-                                                                @click.stop
-                                                            >
-                                                                <v-badge
-                                                                    :content="
-                                                                        parcel.messages_count ||
-                                                                        0
-                                                                    "
-                                                                    :color="
-                                                                        parcel.messages_count >
-                                                                        0
-                                                                            ? 'red'
-                                                                            : 'grey'
-                                                                    "
-                                                                    overlap
-                                                                >
-                                                                    <v-icon
-                                                                        size="28"
-                                                                        >mdi-whatsapp</v-icon
-                                                                    >
-                                                                </v-badge>
-                                                            </v-btn>
-                                                        </template>
-                                                        <span
+                                                      
+                                                        <!-- <span
                                                             >{{
                                                                 parcel.messages_count ||
                                                                 0
                                                             }}
                                                             WhatsApp
                                                             message(s)</span
-                                                        >
+                                                        > -->
                                                     </v-tooltip>
                                                     <div
                                                         class="text-caption mt-1"

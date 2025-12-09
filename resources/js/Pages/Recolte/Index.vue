@@ -215,6 +215,14 @@
                 v-model="selectedRecoltes"
                 :selectable-key="(item) => !item.transfer_request_id"
               >
+                <!-- Dynamic Header Slots with Icons -->
+                <template v-for="header in headers" :key="header.key" v-slot:[`header.${header.key}`]="{ column }">
+                  <div class="d-flex align-center">
+                    <v-icon v-if="header.icon" size="18" class="mr-2" color="primary">{{ header.icon }}</v-icon>
+                    <span>{{ column.title }}</span>
+                  </div>
+                </template>
+
                 <!-- Code Column -->
                  <template v-slot:[`item.code`]="{ item }">
                    <div class="d-flex flex-column align-start">
@@ -225,7 +233,19 @@
                        class="mb-1"
                        style="font-weight: 600;"
                      >
-                                            <v-icon  v-if="hasAmountDiscrepancy(item)" color="warning" left size="12">mdi-alert</v-icon>
+                       <v-tooltip location="top" v-if="hasAmountDiscrepancy(item)">
+                         <template v-slot:activator="{ props }">
+                           <v-icon
+                             v-bind="props"
+                             color="warning"
+                             left
+                             size="12"
+                           >
+                             mdi-alert
+                           </v-icon>
+                         </template>
+                         <span>{{ item.amount_discrepancy_note || 'Discrepancy detected' }}</span>
+                       </v-tooltip>
 
                        #RCT-{{ item.code }}
                      </v-chip>
@@ -585,37 +605,43 @@ export default {
           title: 'Code',
           key: 'code',
           sortable: true,
-          width: '120px'
+          width: '120px',
+          icon: 'mdi-barcode'
         },
           {
           title: 'Net Total',
           key: 'net_total',
           sortable: true,
-          width: '150px'
+          width: '150px',
+          icon: 'mdi-cash-multiple'
         },
         {
           title: 'Collecté par',
           key: 'type_name',
           sortable: false,
-          width: '200px'
+          width: '200px',
+          icon: 'mdi-account-arrow-right'
         },
          {
           title: 'Recolté Par',
           key: 'created_by',
           sortable: false,
-          width: '250px'
+          width: '250px',
+          icon: 'mdi-account-check'
         },
         {
           title: 'Remarque',
           key: 'note',
           sortable: false,
-          width: '300px'
+          width: '300px',
+          icon: 'mdi-text'
         },
         {
           title: 'Collections',
           key: 'collections_count',
           sortable: true,
-          width: '150px'
+          width: '150px',
+          icon: 'mdi-package-variant-closed'
         },
       
      
@@ -623,21 +649,24 @@ export default {
           title: 'Depenses',
           key: 'expenses_count',
           sortable: false,
-          width: '120px'
+          width: '120px',
+          icon: 'mdi-cash-minus'
         },
       
         {
           title: 'Company',
           key: 'company.name',
           sortable: true,
-          width: '150px'
+          width: '150px',
+          icon: 'mdi-domain'
         },
        
         {
           title: 'Created At',
           key: 'created_at',
           sortable: true,
-          width: '180px'
+          width: '180px',
+          icon: 'mdi-calendar'
         },
 
         {
@@ -645,7 +674,8 @@ export default {
           key: 'actions',
           sortable: false,
           width: '100px',
-          align: 'center'
+          align: 'center',
+          icon: 'mdi-cog'
         }
       ]
     }
@@ -929,10 +959,13 @@ export default {
 }
 
 .simple-table >>> .v-data-table thead th {
-  background: #fafafa !important;
-  color: #333 !important;
-  font-weight: 500 !important;
+  background: #eef2f6 !important;
+  color: #455a64 !important;
+  font-weight: 600 !important;
   border-bottom: 1px solid #e0e0e0 !important;
+  text-transform: uppercase;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
 }
 
 .simple-table >>> .v-data-table tbody tr:hover {

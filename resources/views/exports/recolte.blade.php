@@ -103,13 +103,36 @@
             }
 
             @page {
-                margin: 10mm;
-            }
+                .tracking {
+                    width: 42%;
+                }
+
+                .amount {
+                    width: 18%;
+                }
+
+                .phone {
+                    width: 15%;
+                }
+
+
+
+                .date {
+                    width: 15%;
+                }
+
+                .type {
+                    width: 10%;
+                }
+
+                @page {
+                    margin: 10mm;
+                }
     </style>
 </head>
 
 <body>
-    <div class="header">
+    <div class="header" style="position: relative;">
         <div style="text-align: center; margin-bottom: 10px;">
             <img src="data:image/png;base64,{{ $barcode }}" alt="Barcode">
             <div style="font-size: 10px;">RCT-{{ $recolte->id }}</div>
@@ -134,9 +157,30 @@
         @endphp
         <div><span class="label">Total COD:</span> {{ number_format((int) round($totalCod)) }} Da</div>
         <div><span class="label">Recolté par:</span> {{ $recoltedBy }}</div>
-        <div>
-            <span class="label">Note:</span> {{ $recolte->note }}
+        <div style="position: absolute; top: 0; right: 0; text-align: right;">
+            @if($recolte->amount_discrepancy_note)
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMDAwMDAwIj48cGF0aCBkPSJNMTIgNS45OUwxOS41MyAxOUg0LjQ3TDEyIDUuOTlNMTIgMkwxIDIxaDIyTDEyIDJ6bTEgMTRoLTJ2Mmgydi0yem0wLTZoLTJ2NGgydi00eiIvPjwvc3ZnPg=="
+                    alt="Warning" width="100" height="100" style="vertical-align: top;" />
+            @endif
+            @if($recolte->note)
+                <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjMDAwMDAwIj48cGF0aCBkPSJNMTQgMkg2Yy0xLjEgMC0yIC45LTIgMnYxNmMwIDEuMS45IDIgMiAyaDEyYzEuMSAwIDItLjkgMi0yVjhsLTYtNnptMiAxNkg2VjRoN3Y1aDV2MTF6Ii8+PC9zdmc+"
+                    alt="Note" width="64" height="64" style="vertical-align: top;" />
+            @endif
         </div>
+
+        @if($recolte->amount_discrepancy_note)
+            <div
+                style="margin-top: 5px; background-color: #f8d7da; padding: 5px; border: 1px solid #f5c6cb; border-radius: 4px;">
+                <span class="label" style="color: #721c24;">Discrepancy:</span> {{ $recolte->amount_discrepancy_note }}
+            </div>
+        @endif
+
+        @if($recolte->note)
+            <div
+                style="margin-top: 5px; background-color: #fff3cd; padding: 5px; border: 1px solid #ffeeba; border-radius: 4px;">
+                <span class="label" style="color: #856404;">Note:</span> {{ $recolte->note }}
+            </div>
+        @endif
     </div>
 
     <table class="zebra">

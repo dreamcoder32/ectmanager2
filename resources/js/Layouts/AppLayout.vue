@@ -321,7 +321,7 @@
                     </v-list-item-title>
                 </v-list-item>
 
-                <v-list-item
+                <!-- <v-list-item
                     @click="$inertia.visit('/whatsapp')"
                     link
                     :class="{
@@ -351,7 +351,7 @@
                     >
                         {{ $t("navigation.whatsapp") }}
                     </v-list-item-title>
-                </v-list-item>
+                </v-list-item> -->
 
                 <v-list-item
                     v-if="$page.props.auth.user.role === 'admin'"
