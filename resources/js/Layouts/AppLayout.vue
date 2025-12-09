@@ -396,6 +396,17 @@
                         border-top: 1px solid rgba(255, 255, 255, 0.08);
                     "
                 >
+                    <v-btn
+                        color="warning"
+                        variant="tonal"
+                        size="small"
+                        class="mb-3"
+                        block
+                        @click="openUpdateDialog"
+                    >
+                        <v-icon start class="flash-icon">mdi-bell-ring</v-icon>
+                       الاطلاع على التحديثات 
+                    </v-btn>
                     <p class="text-caption text-grey mb-1">Version 2.1 le 09/12/2025</p>
                     <p class="text-caption text-grey-darken-1 mb-0">
                         © 2025 ECTManager
@@ -579,6 +590,34 @@
                 </v-container>
             </slot>
         </v-main>
+
+        <!-- Update Notice Dialog -->
+        <v-dialog v-model="showUpdateDialog" max-width="500">
+            <v-card>
+                <v-card-title class="text-h5 bg-primary text-white">
+                    Mise à jour v2.1
+                </v-card-title>
+                <v-card-text class="pa-4">
+                    <div dir="rtl" class="text-right">
+                        <p class="font-weight-bold mb-2">تم تحديث النظام اليوم بالتغييرات التالية:</p>
+                        <ul style="list-style-type: disc; padding-right: 20px;">
+                            <li class="mb-1"><strong>إصلاح مشكلة فقدان البيانات</strong> لضمان استقرار النظام.</li>
+                            <li class="mb-1">تحسين شامل لإدارة <strong>الركولت (Recolte) والمالية</strong>.</li>
+                            <li class="mb-1">تفعيل نظام <strong>التحويلات المالية (Transfers)</strong>.</li>
+                            <li class="mb-1">إدراج <strong>المصاريف (Expenses)</strong> وخصمها تلقائياً من الركولت.</li>
+                            <li class="mb-1">تسهيل قراءة تقارير PDF وإضافة أيقونات وتنبيهات بصرية واضحة.</li>
+                            <li class="mb-1">تحسينات في واجهة دفع StopDesk وإمكانية الدفع للطرود 0 دينار .</li>
+                              <li class="mb-1">يتم احتساب وخصم 0 جينار من الركولت عند إضافة طرد 0 دينار . بالنسبة للسائق</li>
+
+                        </ul>
+                    </div>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn color="primary" text @click="showUpdateDialog = false">إغلاق</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </v-app>
 </template>
 
@@ -606,6 +645,7 @@ export default {
         return {
             drawer: true,
             parcelSearchQuery: "",
+            showUpdateDialog: false,
         };
     },
     methods: {
@@ -635,6 +675,9 @@ export default {
         },
         clearParcelSearch() {
             this.parcelSearchQuery = "";
+        },
+        openUpdateDialog() {
+            this.showUpdateDialog = true;
         },
     },
 };
@@ -775,5 +818,15 @@ export default {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
+}
+
+@keyframes flash-smooth {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.flash-icon {
+    animation: flash-smooth 2s infinite ease-in-out;
 }
 </style>
