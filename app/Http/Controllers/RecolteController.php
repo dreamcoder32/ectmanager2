@@ -112,7 +112,7 @@ class RecolteController extends BaseController
 
             $recolte->expenses_count = $recolte->expenses->count();
             $recolte->total_expenses = $recolte->expenses->sum('amount');
-            $recolte->net_total = ($recolte->manual_amount ?? $recolte->total_cod_amount) - $recolte->total_expenses;
+            $recolte->net_total = $recolte->manual_amount ?? ($recolte->total_cod_amount - $recolte->total_expenses);
 
             return $recolte;
         });
@@ -284,13 +284,25 @@ class RecolteController extends BaseController
 
             // Calculate total amount from collections
             $totalAmount = $collections->sum('amount');
+
+            // Calculate pending expenses that will be linked
+            $caseIds = $collections->pluck('case_id')->unique()->filter();
+            $pendingExpensesTotal = 0;
+            if ($caseIds->isNotEmpty()) {
+                $pendingExpensesTotal = \App\Models\Expense::whereIn('case_id', $caseIds)
+                    ->whereNull('recolte_id')
+                    ->where('status', '!=', 'rejected')
+                    ->sum('amount');
+            }
+
+            $expectedAmount = $totalAmount - $pendingExpensesTotal;
             $manualAmount = $request->manual_amount;
 
             // Check for discrepancy and validate note requirement
-            $hasDiscrepancy = abs($totalAmount - $manualAmount) > 0.01; // Allow for small rounding differences
+            $hasDiscrepancy = abs($expectedAmount - $manualAmount) > 0.01; // Allow for small rounding differences
             if ($hasDiscrepancy && empty($request->amount_discrepancy_note)) {
                 return back()->withErrors([
-                    'amount_discrepancy_note' => 'A note explaining the amount discrepancy is required when the manual amount differs from the calculated total.'
+                    'amount_discrepancy_note' => 'A note explaining the amount discrepancy is required when the manual amount (' . number_format($manualAmount, 2) . ') differs from the calculated net total (' . number_format($expectedAmount, 2) . ').'
                 ])->withInput();
             }
 
@@ -357,7 +369,7 @@ class RecolteController extends BaseController
 
             DB::commit();
 
-            $message .= " Calculated total: " . number_format($totalAmount, 2) . " DZD, Manual amount: " . number_format($manualAmount, 2) . " DZD";
+            $message .= " Calculated Net Total: " . number_format($expectedAmount, 2) . " DZD (Gross: " . number_format($totalAmount, 2) . " - Expenses: " . number_format($pendingExpensesTotal, 2) . "), Manual amount: " . number_format($manualAmount, 2) . " DZD";
 
             if ($hasDiscrepancy) {
                 $message .= " (Discrepancy noted)";
@@ -386,7 +398,7 @@ class RecolteController extends BaseController
         });
 
         $totalExpenses = $recolte->expenses->sum('amount');
-        $netTotal = $totalAmount - $totalExpenses;
+        $netTotal = $recolte->manual_amount ?? ($totalAmount - $totalExpenses);
 
         return Inertia::render('Recolte/Show', [
             'recolte' => $recolte,
@@ -472,7 +484,7 @@ class RecolteController extends BaseController
             }
 
             $recolte->total_expenses = $recolte->expenses->sum('amount');
-            $recolte->net_total = ($recolte->manual_amount ?? $recolte->total_cod_amount) - $recolte->total_expenses;
+            $recolte->net_total = $recolte->manual_amount ?? ($recolte->total_cod_amount - $recolte->total_expenses);
 
             $grandTotalCollected += ($recolte->manual_amount ?? $recolte->total_cod_amount);
             $grandTotalExpenses += $recolte->total_expenses;

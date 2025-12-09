@@ -207,7 +207,7 @@
                           :error-messages="errors.manual_amount"
                           @input="clearError('manual_amount')"
                           prepend-inner-icon="mdi-cash"
-                          :hint="`Calculated total: ${formatCurrency(totalAmount)}`"
+                          :hint="`Calculated total: ${formatCurrency(netTotal)}`"
                           persistent-hint
                         ></v-text-field>
                       </v-col>
@@ -291,14 +291,19 @@
 </template>
 
 <script>
-import { Head } from '@inertiajs/vue3'
+import { Head, router } from '@inertiajs/vue3'
 import AppLayout from '@/Layouts/AppLayout.vue'
+import { useToast } from "vue-toastification"
 
 export default {
   name: 'RecolteCreate',
   components: {
     Head,
     AppLayout,
+  },
+  setup() {
+    const toast = useToast()
+    return { toast }
   },
   props: {
     users: {
@@ -337,12 +342,17 @@ export default {
     }
   },
   computed: {
+    netTotal() {
+      const expensesTotal = this.unlinkedExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0)
+      console.log('Computing netTotal:', { totalAmount: this.totalAmount, expensesTotal, unlinkedExpenses: this.unlinkedExpenses })
+      return this.totalAmount - expensesTotal
+    },
     hasAmountDiscrepancy() {
-      if (!this.form.manual_amount || !this.totalAmount) return false
-      return Math.abs(this.totalAmount - this.form.manual_amount) > 0.01
+      if (!this.form.manual_amount && this.form.manual_amount !== 0) return false
+      return Math.abs(this.netTotal - this.form.manual_amount) > 0.01
     },
     canSubmit() {
-      const hasRequiredFields = this.selectedUserId && this.form.collection_ids.length > 0 && this.form.manual_amount > 0
+      const hasRequiredFields = this.selectedUserId && this.form.collection_ids.length > 0 && (this.form.manual_amount > 0 || this.form.manual_amount === 0)
       const hasDiscrepancyNote = !this.hasAmountDiscrepancy || (this.hasAmountDiscrepancy && this.form.amount_discrepancy_note.trim())
       return hasRequiredFields && hasDiscrepancyNote && !this.processing
     }
@@ -361,40 +371,42 @@ export default {
       const selectedUser = this.users.find(user => user.id === this.selectedUserId)
       if (selectedUser) {
         this.selectedUserName = selectedUser.first_name
-        this.collections = selectedUser.collections || []
-        this.unlinkedExpenses = selectedUser.unlinked_expenses || []
-        this.totalAmount = selectedUser.total_amount || 0
+        this.collections = [...(selectedUser.collections || [])]
+        this.unlinkedExpenses = [...(selectedUser.unlinked_expenses || [])]
+        const totalExpenses = this.unlinkedExpenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0)
+        this.totalAmount = parseFloat(selectedUser.total_amount || 0)
         this.form.collection_ids = []
-        // this.form.manual_amount = this.totalAmount // Pre-fill with calculated total
+        this.form.manual_amount = this.totalAmount - totalExpenses
         this.form.amount_discrepancy_note = ''
         
         console.log('Selected user:', selectedUser.first_name)
         console.log('Collections:', this.collections)
         console.log('Total amount:', this.totalAmount)
+        console.log('Total expenses:', totalExpenses)
+        console.log('Calculated manual amount:', this.form.manual_amount)
       }
     },
 
-    async submitForm() {
+    submitForm() {
       if (!this.canSubmit) return
 
       this.processing = true
       this.errors = {}
 
-      try {
-        await this.$inertia.post('/recoltes', this.form, {
-          onError: (errors) => {
-            this.errors = errors
-          },
-          onSuccess: () => {
-            this.$toast.success('Collection transfer created successfully!')
-          }
-        })
-      } catch (error) {
-        console.error('Error creating recolte:', error)
-        this.$toast.error('Failed to create collection transfer')
-      } finally {
-        this.processing = false
-      }
+      router.post('/recoltes', this.form, {
+        onError: (errors) => {
+          this.errors = errors
+          this.toast.error('Please correct the errors.')
+        },
+        onSuccess: () => {
+          this.toast.success('Collection transfer created successfully!')
+          // Force navigation if it doesn't happen automatically
+          // router.visit('/recoltes') 
+        },
+        onFinish: () => {
+          this.processing = false
+        }
+      })
     },
 
     clearError(field) {

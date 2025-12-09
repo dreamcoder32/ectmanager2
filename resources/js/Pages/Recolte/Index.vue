@@ -870,8 +870,8 @@ export default {
       this.applyFilters()
     },
     hasAmountDiscrepancy(item) {
-      if (!item.manual_amount || item.manual_amount <= 0 || !item.total_cod_amount) return false
-      return Math.abs(item.total_cod_amount - item.manual_amount) > 0.01
+      // Only show discrepancy if there is an actual note
+      return !!item.amount_discrepancy_note
     },
     getAmountDiscrepancyColor(item) {
       if (this.hasAmountDiscrepancy(item)) {
