@@ -136,7 +136,7 @@
                   </v-col>
 
                   <!-- Recolte Selection -->
-                  <v-col cols="12">
+                  <v-col cols="12" v-if="recoltes.length > 0">
                     <v-select
                       v-model="form.recolte_id"
                       :items="recolteOptions"
@@ -247,9 +247,9 @@ export default {
     },
     recolteOptions() {
       return this.recoltes?.map(recolte => ({
-        title: `RCT-${recolte.code} (${recolte.creator}) - ${recolte.created_at}`,
+        title: `RCT-${recolte.code} (${recolte.creator}) - ${this.formatCurrency(recolte.balance)}`,
         value: recolte.id,
-        subtitle: `Created by ${recolte.creator}`
+        subtitle: `Created by ${recolte.creator} | Net Total: ${this.formatCurrency(recolte.balance)}`
       })) || []
     },
     paymentMethodOptions() {
@@ -264,8 +264,37 @@ export default {
       ]
     }
   },
+  watch: {
+    'form.case_id'(newVal) {
+      if (newVal) {
+        this.form.recolte_id = null
+      }
+    },
+    'form.recolte_id'(newVal) {
+      if (newVal) {
+        this.form.case_id = null
+      }
+    }
+  },
   methods: {
     submit() {
+      // Client-side balance check
+      if (this.form.case_id) {
+        const selectedCase = this.activeCases.find(c => c.id === this.form.case_id)
+        if (selectedCase && parseFloat(this.form.amount) > parseFloat(selectedCase.balance)) {
+          this.form.setError('amount', `Amount exceeds Money Case balance (${this.formatCurrency(selectedCase.balance)})`)
+          return
+        }
+      }
+
+      if (this.form.recolte_id) {
+        const selectedRecolte = this.recoltes.find(r => r.id === this.form.recolte_id)
+        if (selectedRecolte && parseFloat(this.form.amount) > parseFloat(selectedRecolte.balance)) {
+          this.form.setError('amount', `Amount exceeds Recolte net total (${this.formatCurrency(selectedRecolte.balance)})`)
+          return
+        }
+      }
+
       this.form.post(route('expenses.store'), {
         onSuccess: () => {
           // Form will redirect on success

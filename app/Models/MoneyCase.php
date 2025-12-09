@@ -67,7 +67,10 @@ class MoneyCase extends Model
         $totalCollections = $this->collections()
             ->whereDoesntHave('recoltes')
             ->sum('amount');
-        $totalExpenses = $this->expenses()->sum('amount');
+        $totalExpenses = $this->expenses()
+            ->whereNull('recolte_id')
+            ->where('status', '!=', 'rejected')
+            ->sum('amount');
 
         return $totalCollections - $totalExpenses;
     }
