@@ -19,6 +19,7 @@
 
             <template #content>
                 <v-btn
+                    v-if="!recolte.transfer_request_id"
                     color="primary"
                     @click="$inertia.visit(`/recoltes/${recolte.id}/edit`)"
                 >

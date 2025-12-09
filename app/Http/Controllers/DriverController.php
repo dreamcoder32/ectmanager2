@@ -17,12 +17,24 @@ class DriverController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
     {
-        $drivers = Driver::with(['state:id,name'])
-            ->select(['id', 'name', 'phone', 'license_number', 'vehicle_info', 'is_active', 'commission_rate', 'commission_type', 'commission_is_active', 'state_id'])
-            ->orderBy('name')
-            ->get();
+        $user = auth()->user();
+        $query = Driver::with(['state:id,name'])
+            ->select(['id', 'name', 'phone', 'license_number', 'vehicle_info', 'is_active', 'commission_rate', 'commission_type', 'commission_is_active', 'state_id', 'company_id']);
+
+        // Scope by company
+        if ($user->role !== 'admin') {
+            $companyIds = $user->companies()->pluck('companies.id');
+            $query->whereIn('company_id', $companyIds);
+        } elseif ($request->filled('company_id')) {
+            $query->where('company_id', $request->company_id);
+        }
+
+        $drivers = $query->orderBy('name')->get();
 
         return Inertia::render('Drivers/Index', [
             'drivers' => $drivers,
@@ -59,10 +71,17 @@ class DriverController extends Controller
             'birth_place' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:500',
             'contract_date' => 'nullable|date',
+            'company_id' => 'nullable|exists:companies,id',
         ]);
 
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
+        }
+
+        // Determine company_id
+        $companyId = $request->company_id;
+        if (!$companyId && auth()->user()->role !== 'admin') {
+            $companyId = auth()->user()->companies()->first()?->id;
         }
 
         $driver = Driver::create([
@@ -80,6 +99,7 @@ class DriverController extends Controller
             'birth_place' => $request->birth_place,
             'address' => $request->address,
             'contract_date' => $request->contract_date,
+            'company_id' => $companyId,
         ]);
 
         // Removed city syncing: communes are no longer linked to drivers
@@ -111,7 +131,7 @@ class DriverController extends Controller
             'vehicle_info' => 'nullable|string',
             'is_active' => 'boolean',
             'commission_rate' => 'nullable|numeric|min:0|max:600',
-            'commission_type' => ['nullable', Rule::in([ 'fixed_per_parcel'])],
+            'commission_type' => ['nullable', Rule::in(['fixed_per_parcel'])],
             'commission_is_active' => 'boolean',
             'state_id' => 'nullable|exists:states,id',
             // Contract-related fields
@@ -164,7 +184,7 @@ class DriverController extends Controller
             'birth_date' => optional($driver->birth_date)->format('Y-m-d'),
             'birth_place' => $driver->birth_place ?? '',
             'address' => $driver->address ?? '',
-            'commission'=>$driver->comission_rate,
+            'commission' => $driver->comission_rate,
             'license_number' => $driver->license_number ?? '',
             'contract_date' => optional($driver->contract_date)->format('Y-m-d') ?? date('Y-m-d'),
         ])->render();
@@ -183,7 +203,7 @@ class DriverController extends Controller
         // Register Cairo font family if TTF files are present
         $cairoRegular = public_path('fonts/cairo/Cairo-Regular.ttf');
         $cairoBold = public_path('fonts/cairo/Cairo-Bold.ttf');
-        
+
         // Prefer Noto Naskh Arabic as default font when present; CSS @font-face will load it
         $notoRegular = public_path('fonts/noto/NotoNaskhArabic-Regular.ttf');
         $notoBold = public_path('fonts/noto/NotoNaskhArabic-Bold.ttf');
@@ -217,7 +237,7 @@ class DriverController extends Controller
             'birth_date' => optional($driver->birth_date)->format('Y-m-d'),
             'birth_place' => $driver->birth_place ?? '',
             'address' => $driver->address ?? '',
-            'commission'=>$driver->commission_rate,
+            'commission' => $driver->commission_rate,
             'license_number' => $driver->license_number ?? '',
             'contract_date' => optional($driver->contract_date)->format('Y-m-d') ?? date('Y-m-d'),
         ]);

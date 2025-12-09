@@ -24,8 +24,18 @@ class Driver extends Model
         'birth_date',
         'birth_place',
         'address',
+        'address',
         'contract_date',
+        'company_id',
     ];
+
+    /**
+     * Get the company that owns the driver.
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
 
     protected $casts = [
         'is_active' => 'boolean',

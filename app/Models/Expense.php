@@ -29,7 +29,16 @@ class Expense extends Model
         'paid_at',
         'case_id',
         'recolte_id',
+        'company_id',
     ];
+
+    /**
+     * Get the company that owns the expense.
+     */
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
 
     protected function casts(): array
     {

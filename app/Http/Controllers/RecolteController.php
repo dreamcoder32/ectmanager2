@@ -609,6 +609,10 @@ class RecolteController extends BaseController
         DB::beginTransaction();
 
         try {
+            if ($recolte->transfer_request_id) {
+                throw new \Exception('Cannot update a recolte that is part of a transfer request.');
+            }
+
             // Update the recolte
             $recolte->update([
                 'note' => $request->note
@@ -631,25 +635,5 @@ class RecolteController extends BaseController
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Recolte $recolte)
-    {
-        DB::beginTransaction();
 
-        try {
-            // Detach all collections first
-            $recolte->collections()->detach();
-
-            // Delete the recolte
-            $recolte->delete();
-
-            DB::commit();
-
-            return redirect()->route('recoltes.index')
-                ->with('success', "Recolte #{$recolte->code} deleted successfully.");
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            return back()->withErrors(['error' => 'Failed to delete recolte: ' . $e->getMessage()]);
-        }
-    }
 }

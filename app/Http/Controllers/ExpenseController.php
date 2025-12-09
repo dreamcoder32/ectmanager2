@@ -16,17 +16,26 @@ class ExpenseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Expense::with(['createdBy', 'approvedBy', 'paidBy', 'moneyCase', 'category']);
+        $query = Expense::with(['createdBy', 'approvedBy', 'paidBy', 'moneyCase', 'category', 'company']);
 
         // Role-based filtering
         if ($user->role === 'agent') {
             // Agents can only see their own expenses
             $query->byUser($user->id);
+        } elseif ($user->role !== 'admin') {
+            // Supervisors can see expenses for their companies
+            $companyIds = $user->companies()->pluck('companies.id');
+            $query->whereIn('company_id', $companyIds);
+        } elseif ($request->filled('company_id')) {
+            // Admin can filter by company
+            $query->where('company_id', $request->company_id);
         }
-        // Supervisors and admins can see all expenses
 
         $expenses = $query->orderBy('created_at', 'desc')->paginate(20);
 
@@ -120,7 +129,8 @@ class ExpenseController extends Controller
             'expense_date' => 'required|date',
             'payment_method' => ['nullable', Rule::in(['cash', 'bank_transfer', 'check', 'card'])],
             'case_id' => 'nullable|exists:money_cases,id',
-            'recolte_id' => 'nullable|exists:recoltes,id'
+            'recolte_id' => 'nullable|exists:recoltes,id',
+            'company_id' => 'nullable|exists:companies,id',
         ]);
 
         // Ensure mutually exclusive selection
@@ -159,6 +169,18 @@ class ExpenseController extends Controller
             }
         }
 
+        // Determine company_id
+        $companyId = $request->company_id;
+        if (!$companyId) {
+            if ($request->case_id) {
+                $companyId = MoneyCase::find($request->case_id)->company_id;
+            } elseif ($request->recolte_id) {
+                $companyId = \App\Models\Recolte::find($request->recolte_id)->company_id;
+            } elseif (auth()->user()->role !== 'admin') {
+                $companyId = auth()->user()->companies()->first()?->id;
+            }
+        }
+
         DB::beginTransaction();
 
         try {
@@ -174,6 +196,7 @@ class ExpenseController extends Controller
                 'case_id' => $validated['case_id'],
                 'recolte_id' => $validated['recolte_id'] ?? null,
                 'created_by' => Auth::id(),
+                'company_id' => $companyId,
             ]);
 
             // If assigned to a case, deduct from case balance

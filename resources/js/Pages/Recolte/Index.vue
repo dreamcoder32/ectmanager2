@@ -385,7 +385,7 @@
                          </template>
                          <v-list-item-title>View</v-list-item-title>
                        </v-list-item>
-                       <v-list-item @click="editRecolte(item.id)">
+                       <v-list-item v-if="!item.transfer_request_id" @click="editRecolte(item.id)">
                          <template v-slot:prepend>
                            <v-icon color="warning">mdi-pencil</v-icon>
                          </template>
@@ -398,7 +398,7 @@
                          <v-list-item-title>Export PDF</v-list-item-title>
                        </v-list-item>
                        <v-divider></v-divider>
-                       <v-list-item @click="deleteRecolte(item)" class="text-error">
+                       <v-list-item v-if="!item.transfer_request_id" @click="deleteRecolte(item)" class="text-error">
                          <template v-slot:prepend>
                            <v-icon color="error">mdi-delete</v-icon>
                          </template>
