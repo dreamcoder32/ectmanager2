@@ -24,7 +24,6 @@
             style="font-weight: 600; border-radius: 12px;"
             elevation="2"
           >
-            <v-icon left>mdi-plus</v-icon>
             Create New Recolte
           </v-btn>
           <v-btn
@@ -36,7 +35,6 @@
             style="font-weight: 600; border-radius: 12px;"
             elevation="2"
           >
-            <v-icon left>mdi-file-pdf-box</v-icon>
             Resumé PDF
           </v-btn>
           <v-btn
@@ -48,7 +46,6 @@
             style="font-weight: 600; border-radius: 12px;"
             elevation="2"
           >
-            <v-icon left>mdi-file-document-multiple</v-icon>
             Bulk Detailed PDF
           </v-btn>
           <v-btn
@@ -60,7 +57,6 @@
             style="font-weight: 600; border-radius: 12px;"
             elevation="2"
           >
-            <v-icon left>mdi-bank-transfer</v-icon>
             Transfer
           </v-btn>
           <v-btn
@@ -71,7 +67,6 @@
             style="font-weight: 600; border-radius: 12px;"
             elevation="2"
           >
-            <v-icon left>mdi-history</v-icon>
             Transfer Requests
           </v-btn>
         </div>
@@ -80,26 +75,102 @@
         <v-card class="mb-4" elevation="1">
           <v-card-text class="pa-4">
             <v-row>
-              <v-col cols="12" md="4">
+              <!-- Company Filter -->
+              <v-col cols="12" sm="6" md="3">
                 <v-select
                   v-model="filters.company_id"
                   :items="companyOptions"
                   item-title="text"
                   item-value="value"
-                  label="Filter by Company"
+                  label="Company"
                   variant="outlined"
                   density="compact"
                   clearable
-                  @change="applyFilters"
+                  hide-details
+                  @update:modelValue="applyFilters"
                   color="primary"
                 ></v-select>
               </v-col>
-              <v-col cols="12" md="2" class="d-flex align-center">
+
+              <!-- Type Filter -->
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="filters.type"
+                  :items="[{text: 'Driver', value: 'driver'}, {text: 'Agent', value: 'agent'}]"
+                  item-title="text"
+                  item-value="value"
+                  label="Type"
+                  variant="outlined"
+                  density="compact"
+                  clearable
+                  hide-details
+                  @update:modelValue="applyFilters"
+                  color="primary"
+                ></v-select>
+              </v-col>
+
+              <!-- Created By Filter -->
+              <v-col cols="12" sm="6" md="3">
+                <v-select
+                  v-model="filters.created_by"
+                  :items="creatorOptions"
+                  item-title="text"
+                  item-value="value"
+                  label="Created By"
+                  variant="outlined"
+                  density="compact"
+                  clearable
+                  hide-details
+                  @update:modelValue="applyFilters"
+                  color="primary"
+                ></v-select>
+              </v-col>
+
+              <!-- Issue Filter -->
+              <v-col cols="12" sm="6" md="3">
+                <v-checkbox
+                  v-model="filters.has_issue"
+                  label="Has Discrepancy"
+                  density="compact"
+                  hide-details
+                  @update:modelValue="applyFilters"
+                  color="warning"
+                ></v-checkbox>
+              </v-col>
+
+              <!-- Date Range Start -->
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="filters.date_start"
+                  label="Start Date"
+                  type="date"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  @change="applyFilters"
+                ></v-text-field>
+              </v-col>
+
+              <!-- Date Range End -->
+              <v-col cols="12" sm="6" md="3">
+                <v-text-field
+                  v-model="filters.date_end"
+                  label="End Date"
+                  type="date"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                  @change="applyFilters"
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="12" sm="6" md="2" class="d-flex align-center">
                 <v-btn
                   color="grey"
                   variant="outlined"
                   @click="clearFilters"
                   class="filter-clear-btn"
+                  block
                 >
                   Clear Filters
                 </v-btn>
@@ -154,8 +225,11 @@
                        class="mb-1"
                        style="font-weight: 600;"
                      >
+                                            <v-icon  v-if="hasAmountDiscrepancy(item)" color="warning" left size="12">mdi-alert</v-icon>
+
                        #RCT-{{ item.code }}
                      </v-chip>
+                     
                      
                      <!-- Transfer Status -->
                      <div v-if="item.transfer_request">
@@ -224,30 +298,7 @@
                  </template>
 
                  <!-- Manual Amount Column -->
-                 <template v-slot:[`item.manual_amount`]="{ item }">
-                   <div class="d-flex flex-column" v-if="item.manual_amount && item.manual_amount > 0">
-                     <v-chip
-                       :color="getAmountDiscrepancyColor(item)"
-                       text-color="white"
-                       small
-                       class="mb-1"
-                     >
-                       {{ formatCurrency(item.manual_amount) }} Da
-                     </v-chip>
-                     <v-chip
-                       v-if="hasAmountDiscrepancy(item)"
-                       color="warning"
-                       text-color="white"
-                       x-small
-                     >
-                       <v-icon left size="12">mdi-alert</v-icon>
-                       Discrepancy
-                     </v-chip>
-                   </div>
-                   <div v-else class="text-caption text-grey">
-                     N/A
-                   </div>
-                  </template>
+            
 
                   <!-- Expenses Column -->
                   <template v-slot:[`item.expenses_count`]="{ item }">
@@ -491,6 +542,10 @@ export default {
     admins: {
       type: Array,
       default: () => []
+    },
+    creators: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -513,7 +568,12 @@ export default {
       },
       selectedRecoltes: [],
       filters: {
-        company_id: null
+        company_id: null,
+        type: null,
+        created_by: null,
+        has_issue: false,
+        date_start: null,
+        date_end: null
       },
       options: {
         page: 1,
@@ -527,14 +587,26 @@ export default {
           sortable: true,
           width: '120px'
         },
+          {
+          title: 'Net Total',
+          key: 'net_total',
+          sortable: true,
+          width: '150px'
+        },
         {
-          title: 'Type / Name',
+          title: 'Collecté par',
           key: 'type_name',
           sortable: false,
           width: '200px'
         },
+         {
+          title: 'Recolté Par',
+          key: 'created_by',
+          sortable: false,
+          width: '250px'
+        },
         {
-          title: 'Note',
+          title: 'Remarque',
           key: 'note',
           sortable: false,
           width: '300px'
@@ -545,42 +617,22 @@ export default {
           sortable: true,
           width: '150px'
         },
-        {
-          title: 'Calculated Amount',
-          key: 'total_cod_amount',
-          sortable: true,
-          width: '150px'
-        },
-        {
-          title: 'Manual Amount',
-          key: 'manual_amount',
-          sortable: true,
-          width: '150px'
-        },
+      
+     
         {
           title: 'Depenses',
           key: 'expenses_count',
           sortable: false,
           width: '120px'
         },
-        {
-          title: 'Net Total',
-          key: 'net_total',
-          sortable: false,
-          width: '150px'
-        },
+      
         {
           title: 'Company',
           key: 'company.name',
           sortable: true,
           width: '150px'
         },
-        {
-          title: 'Created By',
-          key: 'created_by',
-          sortable: false,
-          width: '200px'
-        },
+       
         {
           title: 'Created At',
           key: 'created_at',
@@ -611,6 +663,14 @@ export default {
           ? `${admin.first_name || ''} ${admin.last_name || ''}`.trim() 
           : (admin.email || `Admin ${admin.id}`),
         value: admin.id
+      })) || []
+    },
+    creatorOptions() {
+      return this.creators?.map(user => ({
+        text: (user.first_name || user.last_name) 
+          ? `${user.first_name || ''} ${user.last_name || ''}`.trim() 
+          : (user.email || `User ${user.id}`),
+        value: user.id
       })) || []
     },
     selectedCount() {
@@ -769,7 +829,12 @@ export default {
     },
     clearFilters() {
       this.filters = {
-        company_id: null
+        company_id: null,
+        type: null,
+        created_by: null,
+        has_issue: false,
+        date_start: null,
+        date_end: null
       }
       this.options.page = 1
       this.applyFilters()

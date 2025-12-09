@@ -285,4 +285,11 @@ class User extends Authenticatable
     {
         return $this->companies()->where('companies.id', $companyId)->exists();
     }
+    /**
+     * Get the recoltes created by the user.
+     */
+    public function recoltes(): HasMany
+    {
+        return $this->hasMany(Recolte::class, 'created_by');
+    }
 }

@@ -67,7 +67,7 @@
         }
 
         .tracking {
-            width: 32%;
+            width: 42%;
         }
 
         @page {
@@ -105,8 +105,19 @@
                     $totalCod = $recolte->collections->sum(function ($c) {
                         return $c->parcel ? (intval($c->amount) ?? 0) : 0;
                     });
+
+                    $firstCollection = $recolte->collections->first();
+                    $recoltedBy = 'N/A';
+                    if ($firstCollection) {
+                        if ($firstCollection->driver) {
+                            $recoltedBy = $firstCollection->driver->name;
+                        } elseif ($firstCollection->createdBy) {
+                            $recoltedBy = $firstCollection->createdBy->first_name ?? $firstCollection->createdBy->name;
+                        }
+                    }
                 @endphp
                 <div><span class="label">Total COD:</span> {{ number_format((int) round($totalCod)) }} Da</div>
+                <div><span class="label">Recolté par:</span> {{ $recoltedBy }}</div>
                 <div>
                     <span class="label">Note:</span> {{ $recolte->note }}
                 </div>
@@ -115,12 +126,11 @@
             <table class="zebra">
                 <thead>
                     <tr>
-                        <th style="width: 32%;">Tracking</th>
-                        <th style="width: 14%;">Montant</th>
-                        <th style="width: 11%;">telephone</th>
-                        <th style="width: 20%;">Recolté Par</th>
+                        <th style="width: 42%;">Tracking</th>
+                        <th style="width: 18%;">Montant</th>
+                        <th style="width: 15%;">telephone</th>
                         <th style="width: 15%;">Recolté le</th>
-                        <th style="width: 8%;">Type</th>
+                        <th style="width: 10%;">Type</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -148,7 +158,6 @@
                             <td class="text-left nowrap">{{ $tracking }}</td>
                             <td class="text-right nowrap">{{ number_format($amount) }} Da</td>
                             <td class="text-left nowrap">{{ $phone }}</td>
-                            <td class="text-center nowrap">{{ $by }}</td>
                             <td class="text-center nowrap">{{ $date }}</td>
                             <td class="text-center nowrap">{{ $type }}</td>
                         </tr>

@@ -44,33 +44,56 @@ class RecolteController extends BaseController
         }
 
         // Filter recoltes based on user's company access
-        if ($user->role === 'admin') {
-            // Admins can see all recoltes
-            // Optimized: Removed 'collections.parcel' as it's not needed for the index view and is heavy
-            $query = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses', 'transferRequest']);
+        // Initialize query
+        $query = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses', 'transferRequest']);
 
-            // Apply company filter if provided
+        // Apply company access/filter
+        if ($user->role === 'admin') {
             if ($companyFilter) {
                 $query->where('company_id', $companyFilter);
             }
-
-            $perPage = $request->input('per_page', 25);
-            $recoltes = $query->orderBy('created_at', 'desc')->paginate($perPage);
         } else {
-            // Other users can only see recoltes from their assigned companies
             $userCompanyIds = $user->companies()->pluck('companies.id');
-
-            // Apply company filter if provided (must be within user's companies)
             if ($companyFilter) {
                 $userCompanyIds = $userCompanyIds->intersect([$companyFilter]);
             }
-
-            $perPage = $request->input('per_page', 25);
-            $recoltes = Recolte::with(['collections.driver', 'collections.createdBy', 'createdBy', 'company', 'expenses', 'transferRequest'])
-                ->whereIn('company_id', $userCompanyIds)
-                ->orderBy('created_at', 'desc')
-                ->paginate($perPage);
+            $query->whereIn('company_id', $userCompanyIds);
         }
+
+        // Apply Type Filter
+        if ($request->filled('type')) {
+            $type = $request->input('type');
+            if ($type === 'driver') {
+                $query->whereHas('collections', function ($q) {
+                    $q->whereNotNull('driver_id');
+                });
+            } elseif ($type === 'agent') {
+                $query->whereHas('collections', function ($q) {
+                    $q->whereNull('driver_id');
+                });
+            }
+        }
+
+        // Apply Created By Filter
+        if ($request->filled('created_by')) {
+            $query->where('created_by', $request->input('created_by'));
+        }
+
+        // Apply Discrepancy Filter
+        if ($request->boolean('has_issue')) {
+            $query->whereNotNull('amount_discrepancy_note');
+        }
+
+        // Apply Date Range Filter
+        if ($request->filled('date_start')) {
+            $query->whereDate('created_at', '>=', $request->input('date_start'));
+        }
+        if ($request->filled('date_end')) {
+            $query->whereDate('created_at', '<=', $request->input('date_end'));
+        }
+
+        $perPage = $request->input('per_page', 25);
+        $recoltes = $query->orderBy('created_at', 'desc')->paginate($perPage);
 
         // Calculate cod_amount sum for each recolte and determine type/name
         $recoltes->getCollection()->transform(function ($recolte) {
@@ -103,10 +126,24 @@ class RecolteController extends BaseController
 
         $admins = \App\Models\User::where('role', 'admin')->get(['id', 'first_name', 'last_name']);
 
+        // Get users who created recoltes for filter dropdown
+        $creators = \App\Models\User::whereHas('recoltes', function ($q) use ($user, $companyFilter) {
+            if ($user->role !== 'admin') {
+                $userCompanyIds = $user->companies()->pluck('companies.id');
+                if ($companyFilter) {
+                    $userCompanyIds = $userCompanyIds->intersect([$companyFilter]);
+                }
+                $q->whereIn('company_id', $userCompanyIds);
+            } elseif ($companyFilter) {
+                $q->where('company_id', $companyFilter);
+            }
+        })->get(['id', 'first_name', 'last_name', 'email']);
+
         return Inertia::render('Recolte/Index', [
             'recoltes' => $recoltes,
             'companies' => $companies,
             'admins' => $admins,
+            'creators' => $creators,
         ]);
     }
 
@@ -368,7 +405,7 @@ class RecolteController extends BaseController
     {
         $type = request()->query('type');
         if ($type === 'pdf') {
-            $recolte->load(['collections.parcel', 'collections.createdBy', 'createdBy', 'expenses']);
+            $recolte->load(['collections.parcel', 'collections.driver', 'collections.createdBy', 'createdBy', 'expenses']);
 
             // Generate Barcode
             $generator = new \Picqer\Barcode\BarcodeGeneratorPNG();
@@ -476,7 +513,7 @@ class RecolteController extends BaseController
             'ids.*' => 'exists:recoltes,id'
         ]);
 
-        $recoltes = Recolte::with(['collections.parcel', 'collections.createdBy', 'createdBy', 'expenses'])
+        $recoltes = Recolte::with(['collections.parcel', 'collections.driver', 'collections.createdBy', 'createdBy', 'expenses'])
             ->whereIn('id', $request->ids)
             ->orderBy('created_at', 'desc')
             ->get();

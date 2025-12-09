@@ -155,6 +155,7 @@ body, html, input, textarea, select, button, label, span, div, p, h1, h2, h3, h4
 /* Fix for dense variant */
 .v-input--dense .v-input__control {
   min-height: 40px !important;
+  border-radius: 8px !important;
 }
 
 .v-input--dense .v-input__slot {
@@ -241,6 +242,7 @@ body, html, input, textarea, select, button, label, span, div, p, h1, h2, h3, h4
 .v-input--error fieldset {
   border-color: #f44336 !important;
   border-width: 2px !important;
+  border-radius: 8px !important;
 }
 
 .v-input--error .v-label {
@@ -268,6 +270,22 @@ body, html, input, textarea, select, button, label, span, div, p, h1, h2, h3, h4
 
 .enhanced-select fieldset {
   border-radius: 8px !important;
+}
+
+/* FIX: Remove native input outline in v-select */
+.v-select input:focus,
+.v-select input:active,
+.v-select input {
+    outline: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* FIX: Ensure v-field__input doesn't have a border */
+.v-field__input {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 /* Better mobile responsiveness */
