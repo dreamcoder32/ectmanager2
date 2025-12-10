@@ -232,7 +232,7 @@
                     $netTotal = $totalCollected - $totalExpenses;
 
                     if ($totalCommission > 0) {
-                        $netTotal -= $totalCommission;
+                        // $netTotal -= $totalCommission;
                     }
                 @endphp
                 <table style="width: 50%; margin-left: auto;">
@@ -246,8 +246,8 @@
                     </tr>
                     @if($totalCommission > 0)
                         <tr>
-                            <td class="text-right label" style="border: none;">Total Commission:</td>
-                            <td class="text-right" style="border: none;">- {{ number_format($totalCommission, 2) }} Da</td>
+                            <td class="text-right label" style="border: none;">Total Commission Livreur:</td>
+                            <td class="text-right" style="border: none;">{{ number_format($totalCommission, 2) }} Da</td>
                         </tr>
                     @endif
                     <tr style="font-size: 1.2em; font-weight: bold;">
