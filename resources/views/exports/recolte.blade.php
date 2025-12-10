@@ -269,12 +269,12 @@
             $totalExpenses = $recolte->expenses->sum('amount');
             $totalCommission = $recolte->collections->sum('driver_commission');
             $netTotal = $totalCollected - $totalExpenses;
-            
+
             // If it's a driver recolte, subtract commission from net total
             // We check if totalCommission > 0 to imply it's relevant, or reuse the isDriverRecolte logic if needed.
             // But strictly speaking, if there is commission, it should be subtracted.
             if ($totalCommission > 0) {
-                $netTotal -= $totalCommission;
+                // $netTotal -= $totalCommission;
             }
         @endphp
         <table style="width: 50%; margin-left: auto;">
@@ -287,10 +287,10 @@
                 <td class="text-right" style="border: none;">- {{ number_format($totalExpenses, 2) }} Da</td>
             </tr>
             @if($totalCommission > 0)
-            <tr>
-                <td class="text-right label" style="border: none;">Total Commission:</td>
-                <td class="text-right" style="border: none;">- {{ number_format($totalCommission, 2) }} Da</td>
-            </tr>
+                <tr>
+                    <td class="text-right label" style="border: none;">Total Commission:</td>
+                    <td class="text-right" style="border: none;"> {{ number_format($totalCommission, 2) }} Da</td>
+                </tr>
             @endif
             <tr style="font-size: 1.2em; font-weight: bold;">
                 <td class="text-right label" style="border: none; border-top: 1px solid #ccc;">Net à Verser:</td>
