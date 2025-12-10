@@ -161,6 +161,10 @@
             <span>{{ $recoltes->count() }}</span>
         </div>
         <div class="summary-row">
+            <span>Total Parcels:</span>
+            <span>{{ $recoltes->sum(fn($r) => $r->collections->count()) }}</span>
+        </div>
+        <div class="summary-row">
             <span>Total Collected:</span>
             <span>{{ number_format($grandTotalCollected, 2) }} DA</span>
         </div>
@@ -168,6 +172,12 @@
             <span>Total Expenses:</span>
             <span class="text-danger">-{{ number_format($grandTotalExpenses, 2) }} DA</span>
         </div>
+        @if(isset($grandTotalCommission) && $grandTotalCommission > 0)
+            <div class="summary-row">
+                <span>Total Commission Livreurs:</span>
+                <span class="text-danger">{{ number_format($grandTotalCommission, 2) }} DA</span>
+            </div>
+        @endif
         <div class="summary-row total">
             <span>Grand Net Total:</span>
             <span class="text-success">{{ number_format($grandNetTotal, 2) }} DA</span>
@@ -175,7 +185,7 @@
     </div>
 
     <div class="footer">
-        Page 1 of 1 &bull; Delivery Management System
+        Page 1 of 1 &bull; ECTManager.online
     </div>
 </body>
 

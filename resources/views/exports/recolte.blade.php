@@ -183,11 +183,19 @@
         @endif
     </div>
 
+    @php
+        $firstCollection = $recolte->collections->first();
+        $isDriverRecolte = $firstCollection && $firstCollection->driver_id;
+    @endphp
+
     <table class="zebra">
         <thead>
             <tr>
-                <th style="width: 42%;">Tracking</th>
+                <th style="width: {{ $isDriverRecolte ? '32%' : '42%' }};">Tracking</th>
                 <th style="width: 18%;">Montant</th>
+                @if($isDriverRecolte)
+                    <th style="width: 10%;">Comm.</th>
+                @endif
                 <th style="width: 15%;">telephone</th>
                 <th style="width: 15%;">Recolté le</th>
                 <th style="width: 10%;">Type</th>
@@ -198,6 +206,7 @@
                 @php
                     $tracking = optional($collection->parcel)->tracking_number ?? 'N/A';
                     $amount = (int) round(optional($collection->parcel)->cod_amount ?? 0);
+                    $commission = (int) round($collection->driver_commission ?? 0);
                     $phone = optional($collection->parcel)->recipient_phone ?? 'N/A';
                     $by = $collection->createdBy ? ($collection->createdBy->first_name ?? ($collection->createdBy->name ?? 'N/A')) : 'N/A';
                     $date = $collection->collected_at ? $collection->collected_at->format('Y-m-d H:i') : '';
@@ -217,6 +226,9 @@
                 <tr>
                     <td class="text-left nowrap">{{ $tracking }}</td>
                     <td class="text-right nowrap">{{ number_format($amount) }} Da</td>
+                    @if($isDriverRecolte)
+                        <td class="text-right nowrap">{{ number_format($commission) }} Da</td>
+                    @endif
                     <td class="text-left nowrap">{{ $phone }}</td>
                     <td class="text-center nowrap">{{ $date }}</td>
                     <td class="text-center nowrap">{{ $type }}</td>
@@ -255,7 +267,15 @@
         @php
             $totalCollected = $recolte->collections->sum('amount');
             $totalExpenses = $recolte->expenses->sum('amount');
+            $totalCommission = $recolte->collections->sum('driver_commission');
             $netTotal = $totalCollected - $totalExpenses;
+            
+            // If it's a driver recolte, subtract commission from net total
+            // We check if totalCommission > 0 to imply it's relevant, or reuse the isDriverRecolte logic if needed.
+            // But strictly speaking, if there is commission, it should be subtracted.
+            if ($totalCommission > 0) {
+                $netTotal -= $totalCommission;
+            }
         @endphp
         <table style="width: 50%; margin-left: auto;">
             <tr>
@@ -266,6 +286,12 @@
                 <td class="text-right label" style="border: none;">Total Dépenses:</td>
                 <td class="text-right" style="border: none;">- {{ number_format($totalExpenses, 2) }} Da</td>
             </tr>
+            @if($totalCommission > 0)
+            <tr>
+                <td class="text-right label" style="border: none;">Total Commission:</td>
+                <td class="text-right" style="border: none;">- {{ number_format($totalCommission, 2) }} Da</td>
+            </tr>
+            @endif
             <tr style="font-size: 1.2em; font-weight: bold;">
                 <td class="text-right label" style="border: none; border-top: 1px solid #ccc;">Net à Verser:</td>
                 <td class="text-right" style="border: none; border-top: 1px solid #ccc;">

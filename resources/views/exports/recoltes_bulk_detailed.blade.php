@@ -144,11 +144,19 @@
                 @endif
             </div>
 
+            @php
+                $firstCollection = $recolte->collections->first();
+                $isDriverRecolte = $firstCollection && $firstCollection->driver_id;
+            @endphp
+
             <table class="zebra">
                 <thead>
                     <tr>
-                        <th style="width: 42%;">Tracking</th>
+                        <th style="width: {{ $isDriverRecolte ? '32%' : '42%' }};">Tracking</th>
                         <th style="width: 18%;">Montant</th>
+                        @if($isDriverRecolte)
+                            <th style="width: 10%;">Comm.</th>
+                        @endif
                         <th style="width: 15%;">telephone</th>
                         <th style="width: 15%;">Recolté le</th>
                         <th style="width: 10%;">Type</th>
@@ -159,6 +167,7 @@
                         @php
                             $tracking = optional($collection->parcel)->tracking_number ?? 'N/A';
                             $amount = (int) round(optional($collection->parcel)->cod_amount ?? 0);
+                            $commission = (int) round($collection->driver_commission ?? 0);
                             $phone = optional($collection->parcel)->recipient_phone ?? 'N/A';
                             $by = $collection->createdBy ? ($collection->createdBy->first_name ?? ($collection->createdBy->name ?? 'N/A')) : 'N/A';
                             $date = $collection->collected_at ? $collection->collected_at->format('Y-m-d H:i') : '';
@@ -178,6 +187,9 @@
                         <tr>
                             <td class="text-left nowrap">{{ $tracking }}</td>
                             <td class="text-right nowrap">{{ number_format($amount) }} Da</td>
+                            @if($isDriverRecolte)
+                                <td class="text-right nowrap">{{ number_format($commission) }} Da</td>
+                            @endif
                             <td class="text-left nowrap">{{ $phone }}</td>
                             <td class="text-center nowrap">{{ $date }}</td>
                             <td class="text-center nowrap">{{ $type }}</td>
@@ -216,7 +228,12 @@
                 @php
                     $totalCollected = $recolte->collections->sum('amount');
                     $totalExpenses = $recolte->expenses->sum('amount');
+                    $totalCommission = $recolte->collections->sum('driver_commission');
                     $netTotal = $totalCollected - $totalExpenses;
+
+                    if ($totalCommission > 0) {
+                        $netTotal -= $totalCommission;
+                    }
                 @endphp
                 <table style="width: 50%; margin-left: auto;">
                     <tr>
@@ -227,6 +244,12 @@
                         <td class="text-right label" style="border: none;">Total Dépenses:</td>
                         <td class="text-right" style="border: none;">- {{ number_format($totalExpenses, 2) }} Da</td>
                     </tr>
+                    @if($totalCommission > 0)
+                        <tr>
+                            <td class="text-right label" style="border: none;">Total Commission:</td>
+                            <td class="text-right" style="border: none;">- {{ number_format($totalCommission, 2) }} Da</td>
+                        </tr>
+                    @endif
                     <tr style="font-size: 1.2em; font-weight: bold;">
                         <td class="text-right label" style="border: none; border-top: 1px solid #ccc;">Net à Verser:</td>
                         <td class="text-right" style="border: none; border-top: 1px solid #ccc;">
@@ -240,19 +263,13 @@
 
     <script type="text/php">
         if (isset($pdf)) {
-            // Render page number at the bottom-right: "Page {current}/{total}"
-            $font = $fontMetrics->get_font("Helvetica", "normal");
+            $text = "Page {PAGE_NUM} / {PAGE_COUNT} • ECTManager.online";
             $size = 10;
-            $canvas = $pdf->get_canvas();
-            $w = $canvas->get_width();
-            $h = $canvas->get_height();
-            $text = "page {PAGE_NUM}/{PAGE_COUNT}";
-        
-            // Place ~120pt from the right edge and ~24pt from the bottom edge
-            $x = $w - 120;
-            $y = $h - 24;
-        
-            $canvas->page_text($x, $y, $text, $font, $size, [0, 0, 0]);
+            $font = $fontMetrics->get_font("Helvetica");
+            $width = $fontMetrics->get_text_width($text, $font, $size) / 2;
+            $x = ($pdf->get_width() - $width) / 2;
+            $y = $pdf->get_height() - 35;
+            $pdf->page_text($x, $y, $text, $font, $size, array(0, 0, 0));
         }
     </script>
 </body>

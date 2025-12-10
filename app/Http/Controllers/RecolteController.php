@@ -467,9 +467,10 @@ class RecolteController extends BaseController
         // Calculate totals for each recolte and grand totals
         $grandTotalCollected = 0;
         $grandTotalExpenses = 0;
+        $grandTotalCommission = 0;
         $grandNetTotal = 0;
 
-        $recoltes->transform(function ($recolte) use (&$grandTotalCollected, &$grandTotalExpenses, &$grandNetTotal) {
+        $recoltes->transform(function ($recolte) use (&$grandTotalCollected, &$grandTotalExpenses, &$grandNetTotal, &$grandTotalCommission) {
             $recolte->total_cod_amount = $recolte->collections->sum(function ($collection) {
                 return $collection->amount ?? 0;
             });
@@ -484,10 +485,17 @@ class RecolteController extends BaseController
             }
 
             $recolte->total_expenses = $recolte->expenses->sum('amount');
-            $recolte->net_total = $recolte->manual_amount ?? ($recolte->total_cod_amount - $recolte->total_expenses);
+            $recolte->total_commission = $recolte->collections->sum('driver_commission');
+
+            $netTotal = ($recolte->manual_amount ?? $recolte->total_cod_amount) - $recolte->total_expenses;
+            if ($recolte->total_commission > 0) {
+                // $netTotal -= $recolte->total_commission;
+            }
+            $recolte->net_total = $netTotal;
 
             $grandTotalCollected += ($recolte->manual_amount ?? $recolte->total_cod_amount);
             $grandTotalExpenses += $recolte->total_expenses;
+            $grandTotalCommission += $recolte->total_commission;
             $grandNetTotal += $recolte->net_total;
 
             return $recolte;
@@ -498,6 +506,7 @@ class RecolteController extends BaseController
             'recoltes' => $recoltes,
             'grandTotalCollected' => $grandTotalCollected,
             'grandTotalExpenses' => $grandTotalExpenses,
+            'grandTotalCommission' => $grandTotalCommission,
             'grandNetTotal' => $grandNetTotal
         ])->render();
 
@@ -545,6 +554,7 @@ class RecolteController extends BaseController
 
         $options = new Options();
         $options->set('isRemoteEnabled', true);
+        $options->set('isPhpEnabled', true);
         $dompdf = new Dompdf($options);
         $dompdf->setPaper('A4');
         $dompdf->loadHtml('<style>@page { margin: 5mm }</style>' . $html);
