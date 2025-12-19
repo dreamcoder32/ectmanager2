@@ -84,6 +84,10 @@ Route::middleware(["auth"])->group(function () {
         "parcels.update",
     );
     // Route::delete('/parcels/{parcel}', [ParcelController::class, 'destroy'])->name('parcels.destroy');
+    Route::get("/parcels/{parcel}/sms-logs", [
+        ParcelController::class,
+        "getSmsLogs",
+    ])->name("parcels.sms-logs");
 
     // Bulk import
     Route::get("/parcels/import/form", [

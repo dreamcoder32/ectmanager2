@@ -27,7 +27,7 @@ class ParcelController extends Controller
 
         $query = Parcel::query()
             ->with(["company", "assignedDriver", "state", "city"])
-            ->withCount("messages"); // Load messages count for each parcel
+            ->withCount(["messages", "smsLogs"]); // Load messages and smsLogs count
 
         // Filter parcels by user's company access
         if ($user->role === "admin") {
@@ -85,7 +85,7 @@ class ParcelController extends Controller
         $parcels->getCollection()->transform(function ($parcel) {
             // Force load messages count if not already set
             if (!isset($parcel->messages_count)) {
-                $parcel->loadCount("messages");
+                $parcel->loadCount(["messages", "smsLogs"]);
             }
             // Add price_modified flag
             $parcel->price_modified = $parcel->priceChanges()->exists();
@@ -318,6 +318,30 @@ class ParcelController extends Controller
 
         return response()->json([
             "cities" => $query->get(),
+        ]);
+    }
+
+    /**
+     * Get SMS logs for a parcel.
+     */
+    public function getSmsLogs(Parcel $parcel)
+    {
+        $user = auth()->user();
+
+        // Check if user has access to this parcel's company
+        if (
+            $user->role !== "admin" &&
+            !$user->belongsToCompany($parcel->company_id)
+        ) {
+            abort(403, "You do not have access to this parcel.");
+        }
+
+        return response()->json([
+            "logs" => $parcel
+                ->smsLogs()
+                ->with("user")
+                ->latest()
+                ->get(),
         ]);
     }
 

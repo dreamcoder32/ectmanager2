@@ -625,6 +625,29 @@
                                                     class="whatsapp-count-section text-center"
                                                 >
                                                     <v-tooltip location="top">
+                                                        <template v-slot:activator="{ props }">
+                                                            <v-btn
+                                                                v-bind="props"
+                                                                icon
+                                                                variant="flat"
+                                                                color="primary"
+                                                                size="small"
+                                                                class="mr-2"
+                                                                @click.stop="viewSmsLogs(parcel)"
+                                                            >
+                                                                <v-badge
+                                                                    :content="parcel.sms_logs_count || '0'"
+                                                                    color="error"
+                                                                    offset-x="-5"
+                                                                    offset-y="-5"
+                                                                >
+                                                                    <v-icon size="20">mdi-message-text</v-icon>
+                                                                </v-badge>
+                                                            </v-btn>
+                                                        </template>
+                                                        <span>View SMS History</span>
+                                                    </v-tooltip>
+                                                    <v-tooltip location="top">
                                                       
                                                         <!-- <span
                                                             >{{
@@ -664,7 +687,7 @@
                                                                 icon
                                                                 variant="flat"
                                                                 color="secondary"
-                                                                size="large"
+                                                                size="small"
                                                                 @click.stop="
                                                                     openPriceChangeDialog(
                                                                         parcel,
@@ -930,6 +953,44 @@
                     </v-card>
                 </v-dialog>
 
+                <!-- SMS Logs Dialog -->
+                <v-dialog v-model="smsLogsDialog" max-width="600px">
+                    <v-card>
+                        <v-card-title class="d-flex justify-space-between align-center">
+                            <span class="text-h5">SMS History</span>
+                            <v-btn icon variant="text" @click="smsLogsDialog = false">
+                                <v-icon>mdi-close</v-icon>
+                            </v-btn>
+                        </v-card-title>
+                        <v-card-text>
+                            <div v-if="loadingSmsLogs" class="text-center pa-4">
+                                <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                            </div>
+                            <div v-else-if="smsLogs.length === 0" class="text-center pa-4">
+                                <p class="text-body-1">No SMS history found.</p>
+                            </div>
+                            <v-timeline v-else density="compact" align="start">
+                                <v-timeline-item
+                                    v-for="log in smsLogs"
+                                    :key="log.id"
+                                    dot-color="primary"
+                                    size="x-small"
+                                >
+                                    <div class="mb-4">
+                                        <div class="font-weight-normal">
+                                            <strong>Sent by: {{ log.user ? log.user.first_name : 'System' }}</strong>
+                                            <span class="text-caption text-grey ml-2">
+                                                {{ formatDate(log.created_at) }}
+                                            </span>
+                                        </div>
+                                        <div>{{ log.message }}</div>
+                                    </div>
+                                </v-timeline-item>
+                            </v-timeline>
+                        </v-card-text>
+                    </v-card>
+                </v-dialog>
+
                 <!-- Snackbar for notifications -->
                 <v-snackbar
                     v-model="snackbar.show"
@@ -986,6 +1047,9 @@ export default {
                 color: "success",
                 timeout: 3000,
             },
+            smsLogsDialog: false,
+            smsLogs: [],
+            loadingSmsLogs: false,
         };
     },
     computed: {
@@ -1246,6 +1310,26 @@ export default {
             this.snackbar.message = message;
             this.snackbar.color = color;
             this.snackbar.show = true;
+        },
+        async viewSmsLogs(parcel) {
+            this.selectedParcel = parcel;
+            this.smsLogsDialog = true;
+            this.loadingSmsLogs = true;
+            this.smsLogs = [];
+
+            try {
+                const response = await fetch(`/parcels/${parcel.id}/sms-logs`);
+                const result = await response.json();
+                this.smsLogs = result.logs;
+            } catch (error) {
+                this.showSnackbar("Error fetching SMS logs", "error");
+            } finally {
+                this.loadingSmsLogs = false;
+            }
+        },
+        formatDate(date) {
+            if (!date) return "";
+            return new Date(date).toLocaleString();
         },
     },
 };
