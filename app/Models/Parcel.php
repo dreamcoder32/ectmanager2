@@ -255,4 +255,11 @@ class Parcel extends Model
 
         return null;
     }
+    /**
+     * Get the SMS logs for the parcel.
+     */
+    public function smsLogs(): HasMany
+    {
+        return $this->hasMany(ParcelSmsLog::class);
+    }
 }

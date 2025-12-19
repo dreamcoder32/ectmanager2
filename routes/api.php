@@ -17,4 +17,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Parcels endpoints
     Route::get('/parcels', [ApiParcelController::class, 'index']);
     Route::get('/parcels/{parcel}', [ApiParcelController::class, 'show']);
+    Route::post('/parcels/{parcel}/sms-log', [ApiParcelController::class, 'logSms']);
+
+    // Stopdesk Payment endpoints
+    Route::get('/stopdesk-payment', [ApiParcelController::class, 'getStopdeskData']);
+    Route::post('/stopdesk-payment/search', [ApiParcelController::class, 'searchStopdesk']);
+    Route::post('/stopdesk-payment/collect', [ApiParcelController::class, 'collectStopdesk']);
 });
