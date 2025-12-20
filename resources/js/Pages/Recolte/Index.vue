@@ -347,7 +347,7 @@
                       small
                       style="font-weight: 700;"
                     >
-                      {{ formatCurrency(item.net_total) }} Da
+                      {{ formatCurrency(calculateNetTotal(item)) }} Da
                     </v-chip>
                   </template>
 
@@ -367,45 +367,11 @@
 
                  <!-- Actions Column -->
                  <template v-slot:[`item.actions`]="{ item }">
-                   <v-menu>
-                     <template v-slot:activator="{ props }">
-                       <v-btn
-                         icon
-                         size="small"
-                         v-bind="props"
-                         style="border-radius: 8px;"
-                       >
-                         <v-icon size="20">mdi-dots-vertical</v-icon>
-                       </v-btn>
-                     </template>
-                     <v-list style="border-radius: 8px;">
-                       <v-list-item @click="viewRecolte(item.id)">
-                         <template v-slot:prepend>
-                           <v-icon color="primary">mdi-eye</v-icon>
-                         </template>
-                         <v-list-item-title>View</v-list-item-title>
-                       </v-list-item>
-                       <v-list-item v-if="!item.transfer_request_id" @click="editRecolte(item.id)">
-                         <template v-slot:prepend>
-                           <v-icon color="warning">mdi-pencil</v-icon>
-                         </template>
-                         <v-list-item-title>Edit</v-list-item-title>
-                       </v-list-item>
-                       <v-list-item @click="exportPdf(item.id)">
-                         <template v-slot:prepend>
-                           <v-icon color="error">mdi-file-pdf-box</v-icon>
-                         </template>
-                         <v-list-item-title>Export PDF</v-list-item-title>
-                       </v-list-item>
-                       <v-divider></v-divider>
-                       <v-list-item v-if="!item.transfer_request_id" @click="deleteRecolte(item)" class="text-error">
-                         <template v-slot:prepend>
-                           <v-icon color="error">mdi-delete</v-icon>
-                         </template>
-                         <v-list-item-title>Delete</v-list-item-title>
-                       </v-list-item>
-                     </v-list>
-                   </v-menu>
+              <v-btn @click="exportPdf(item.id)">
+                             PDF
+                                      <v-icon color="error">mdi-file-pdf-box</v-icon>
+                                  </v-btn>
+                 
                  </template>
               </v-data-table>
             </v-card-text>
@@ -571,6 +537,8 @@ export default {
   data() {
     return {
       loading: false,
+      barcodeInput: '',
+      lastBarcodeTime: 0,
       deleting: false,
       deleteDialog: false,
       transferDialog: false,
@@ -710,22 +678,114 @@ export default {
       const selected = Array.isArray(this.selectedRecoltes) ? this.selectedRecoltes : []
       const list = Array.isArray(this.recoltes?.data) ? this.recoltes.data : []
       const byId = new Map(list.map(it => [it.id, it]))
-
+      
       return selected.reduce((sum, r) => {
-        let amt = 0
-        if (r && typeof r === 'object') {
-          const raw = r.raw || r
-          // Use net_total which is (manual_amount || total_cod_amount) - total_expenses
-          amt = parseFloat(raw?.net_total ?? 0)
+        let raw = r
+        // Handle case where r is an ID or raw object
+        if (typeof r !== 'object' || r === null) {
+           raw = byId.get(r)
         } else {
-          const found = byId.get(r)
-          amt = parseFloat(found?.net_total ?? 0)
+           raw = r.raw || r
         }
+        
+        if (!raw) return sum
+
+        let amt = 0
+        
+        // Calculate net amount: (Manual Amount OR Total COD) - Total Expenses
+        // Assuming manual_amount is Gross Cash Counted, we must subtract expenses.
+        const baseAmount = (raw.manual_amount !== null && raw.manual_amount !== undefined) 
+                           ? parseFloat(raw.manual_amount) 
+                           : parseFloat(raw.total_cod_amount || 0)
+                           
+        const totalExpenses = parseFloat(raw.total_expenses || 0)
+        
+        amt = baseAmount - totalExpenses
+        
         return sum + (isNaN(amt) ? 0 : amt)
       }, 0)
     }
   },
+  mounted() {
+    window.addEventListener('keydown', this.handleBarcodeKeydown)
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleBarcodeKeydown)
+  },
   methods: {
+    handleBarcodeKeydown(e) {
+      // Don't capture if user is typing in an input field
+      if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return
+
+      const now = Date.now()
+      
+      // Reset buffer if too much time passed (manual typing vs scanner)
+      // Scanners are fast, usually < 50ms between keys
+      if (now - this.lastBarcodeTime > 100) {
+        this.barcodeInput = ''
+      }
+      this.lastBarcodeTime = now
+
+      if (e.key === 'Enter') {
+        if (this.barcodeInput.length >= 3) { // Min length check
+          this.processBarcode(this.barcodeInput)
+        }
+        this.barcodeInput = ''
+        e.preventDefault() // Prevent default enter behavior
+      } else if (e.key.length === 1) {
+        this.barcodeInput += e.key
+      }
+    },
+    processBarcode(code) {
+      // Remove whitespace and standardize
+      const cleanCode = code.trim().toUpperCase()
+      
+      // Extract code part if it starts with RCT-
+      let searchCode = cleanCode
+      if (searchCode.startsWith('RCT-')) {
+        searchCode = searchCode.substring(4)
+      }
+      
+      // Find the recolte in the current page data
+      const recolte = this.recoltes.data.find(r => 
+        r.code.toString().toUpperCase() === searchCode || 
+        r.id.toString() === searchCode
+      )
+      
+      if (recolte) {
+        // Check if already selected
+        const alreadySelected = this.selectedRecoltes.some(r => r.id === recolte.id)
+        
+        if (!alreadySelected) {
+          // Add to selection
+          this.selectedRecoltes.push(recolte)
+          this.snackbar = {
+            show: true,
+            text: `Recolte #${recolte.code} selected!`,
+            color: 'success'
+          }
+        } else {
+          this.snackbar = {
+            show: true,
+            text: `Recolte #${recolte.code} is already selected.`,
+            color: 'info'
+          }
+        }
+      } else {
+        this.snackbar = {
+          show: true,
+          text: `Recolte ${cleanCode} not found on this page.`,
+          color: 'warning'
+        }
+      }
+    },
+    calculateNetTotal(item) {
+      const base = (item.manual_amount !== null && item.manual_amount !== undefined) 
+                   ? parseFloat(item.manual_amount) 
+                   : parseFloat(item.total_cod_amount || 0)
+      const expenses = parseFloat(item.total_expenses || 0)
+      return base - expenses
+    },
     formatDate(date) {
       return new Date(date).toLocaleDateString('en-US', {
         year: 'numeric',

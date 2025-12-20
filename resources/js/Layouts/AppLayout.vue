@@ -397,7 +397,19 @@
                     "
                 >
                     <v-btn
-                        color="warning"
+                        color="success"
+                        variant="tonal"
+                        size="small"
+                        class="mb-2"
+                        block
+                        @click="showDownloadDialog = true"
+                    >
+                        <v-icon start>mdi-android</v-icon>
+                        تحميل التطبيق
+                    </v-btn>
+
+                    <v-btn
+                        color="success"
                         variant="tonal"
                         size="small"
                         class="mb-3"
@@ -407,7 +419,7 @@
                         <v-icon start class="flash-icon">mdi-bell-ring</v-icon>
                        الاطلاع على التحديثات 
                     </v-btn>
-                    <p class="text-caption text-grey mb-1">Version 2.1 le 09/12/2025</p>
+                    <p class="text-caption text-grey mb-1">Version 2.2 le 19/12/2025</p>
                     <p class="text-caption text-grey-darken-1 mb-0">
                         © 2025 ECTManager
                     </p>
@@ -591,24 +603,78 @@
             </slot>
         </v-main>
 
+        <!-- Download App Dialog -->
+        <v-dialog v-model="showDownloadDialog" max-width="500">
+            <v-card>
+                <v-card-title class="text-h5 bg-success text-white">
+                    تحميل تطبيق الهاتف
+                </v-card-title>
+                <v-card-text class="pa-4">
+                    <div dir="rtl" class="text-right">
+                        <div class="d-flex justify-center mb-4">
+                            <v-icon size="64" color="success">mdi-android</v-icon>
+                        </div>
+                        
+                        <p class="mb-4">لتحميل التطبيق على هاتفك، يرجى اتباع الخطوات التالية:</p>
+                        
+                        <ol class="mr-4 mb-4" style="list-style-type: decimal;">
+                            <li class="mb-2">اضغط على الزر أدناه لتحميل ملف التطبيق (APK).</li>
+                            <li class="mb-2">بعد التحميل، قم بفتح الملف لتثبيته.</li>
+                            <li class="mb-2">إذا طلب منك النظام، قم بالسماح بالتثبيت من مصادر غير معروفة (Unknown Sources).</li>
+                        </ol>
+
+                        <v-btn
+                            href="/app.apk"
+                            download
+                            color="success"
+                            block
+                            size="large"
+                            class="mt-4"
+                            prepend-icon="mdi-download"
+                        >
+                            تحميل ملف APK
+                        </v-btn>
+
+                        <div class="mt-4 pt-4" style="border-top: 1px solid #eee">
+                            <p class="text-body-2 mb-2">أو يمكنك نسخ الرابط التالي:</p>
+                            <v-text-field
+                                v-model="downloadLink"
+                                readonly
+                                variant="outlined"
+                                density="compact"
+                                bg-color="grey-lighten-5"
+                                append-inner-icon="mdi-content-copy"
+                                @click:append-inner="copyLink"
+                                hide-details
+                                dir="ltr"
+                            ></v-text-field>
+                        </div>
+                    </div>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn color="grey" variant="text" @click="showDownloadDialog = false">إغلاق</v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+
         <!-- Update Notice Dialog -->
         <v-dialog v-model="showUpdateDialog" max-width="500">
             <v-card>
                 <v-card-title class="text-h5 bg-primary text-white">
-                    Mise à jour v2.1
+                    Mise à jour v2.2
                 </v-card-title>
                 <v-card-text class="pa-4">
                     <div dir="rtl" class="text-right">
-                        <p class="font-weight-bold mb-2">تم تحديث النظام اليوم بالتغييرات التالية:</p>
+                        <p class="font-weight-bold mb-2">تم تحديث النظام اليوم (19/12/2025) بالتغييرات التالية:</p>
                         <ul style="list-style-type: disc; padding-right: 20px;">
-                            <li class="mb-1"><strong>إصلاح مشكلة فقدان البيانات</strong> لضمان استقرار النظام.</li>
-                            <li class="mb-1">تحسين شامل لإدارة <strong>الركولت (Recolte) والمالية</strong>.</li>
-                            <li class="mb-1">تفعيل نظام <strong>التحويلات المالية (Transfers)</strong>.</li>
-                            <li class="mb-1">إدراج <strong>المصاريف (Expenses)</strong> وخصمها تلقائياً من الركولت.</li>
-                            <li class="mb-1">تسهيل قراءة تقارير PDF وإضافة أيقونات وتنبيهات بصرية واضحة.</li>
-                            <li class="mb-1">تحسينات في واجهة دفع StopDesk وإمكانية الدفع للطرود 0 دينار .</li>
-                              <li class="mb-1">يتم احتساب وخصم 0 جينار من الركولت عند إضافة طرد 0 دينار . بالنسبة للسائق</li>
-
+                            <li class="mb-1"><strong>التحصيلات (Recoltes):</strong> تصحيح حساب صافي الإجمالي (خصم المصاريف) لضمان دقة الحسابات.</li>
+                            <li class="mb-1"><strong>التحصيلات (Recoltes):</strong> إضافة ميزة مسح الباركود لتحديد التحصيلات بسرعة.</li>
+                            <li class="mb-1"><strong>تطبيق الهاتف:</strong> إضافة ميزة دفع Stopdesk وإرسال الرسائل النصية (SMS) للعملاء.</li>
+                            <!-- <li class="mb-1"><strong>تطبيق الهاتف:</strong> تحسين أمان التطبيق وتشفير الكود (Obfuscation) لنسخة الإصدار.</li> -->
+                            <li class="mb-1"><strong>لوحة التحكم:</strong> عرض عداد رسائل SMS المرسلة لكل طرد، مع إمكانية عرض سجل الرسائل.</li>
+                            <!-- <li class="mb-1"><strong>لوحة التحكم:</strong> إضافة زر "دفع Stopdesk" في صفحة تفاصيل الطرد للطرود المعلقة.</li> -->
+                            <li class="mb-1">تحسينات عامة في الأداء وإصلاح بعض الأخطاء.</li>
                         </ul>
                     </div>
                 </v-card-text>
@@ -646,7 +712,14 @@ export default {
             drawer: true,
             parcelSearchQuery: "",
             showUpdateDialog: false,
+            showDownloadDialog: false,
+            downloadLink: "",
         };
+    },
+    mounted() {
+        if (typeof window !== "undefined") {
+            this.downloadLink = window.location.origin + "/app.apk";
+        }
     },
     methods: {
         logout() {
@@ -678,6 +751,11 @@ export default {
         },
         openUpdateDialog() {
             this.showUpdateDialog = true;
+        },
+        copyLink() {
+            if (navigator.clipboard && this.downloadLink) {
+                navigator.clipboard.writeText(this.downloadLink);
+            }
         },
     },
 };
