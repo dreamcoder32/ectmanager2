@@ -35,6 +35,24 @@
               <v-card-text class="pa-6">
                 <v-form @submit.prevent="submit">
                   <v-row>
+                    <!-- Company Field -->
+                    <v-col cols="12">
+                      <v-select
+                        v-model="form.company_id"
+                        :items="companies"
+                        item-title="name"
+                        item-value="id"
+                        label="Company *"
+                        outlined
+                        :error-messages="errors.company_id"
+                        required
+                      >
+                        <template #prepend-inner>
+                          <v-icon color="primary">mdi-domain</v-icon>
+                        </template>
+                      </v-select>
+                    </v-col>
+
                     <!-- Name Field -->
                     <v-col cols="12">
                       <v-text-field
@@ -153,6 +171,10 @@ export default {
     errors: {
       type: Object,
       default: () => ({})
+    },
+    companies: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -165,6 +187,7 @@ export default {
   },
   setup() {
     const form = useForm({
+      company_id: null,
       name: '',
       description: '',
       balance: 0,

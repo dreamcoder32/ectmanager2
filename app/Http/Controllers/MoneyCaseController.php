@@ -12,27 +12,40 @@ class MoneyCaseController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $cases = MoneyCase::with(['collections', 'expenses'])
-            ->withCount(['collections', 'expenses'])
-            ->get()
-            ->map(function ($case) {
+        $query = MoneyCase::with(['collections', 'expenses', 'company'])
+            ->withCount(['collections', 'expenses']);
+
+        // Sorting
+        if ($request->has('sort_by')) {
+            $query->orderBy($request->sort_by, $request->boolean('sort_desc') ? 'desc' : 'asc');
+        } else {
+            $query->latest();
+        }
+
+        $cases = $query->paginate($request->integer('per_page', 25))
+            ->through(function ($case) {
                 $case->calculated_balance = $case->calculateBalance();
                 return $case;
             });
 
         return Inertia::render('MoneyCase/Index', [
-            'cases' => $cases
+            'moneyCases' => $cases
         ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
-        return Inertia::render('MoneyCase/Create');
+        return Inertia::render('MoneyCase/Create', [
+            'companies' => \App\Models\Company::select('id', 'name')->get()
+        ]);
     }
 
     /**
@@ -45,6 +58,7 @@ class MoneyCaseController extends Controller
             'description' => 'nullable|string',
             'balance' => 'nullable|numeric|min:0',
             'status' => ['required', Rule::in(['active', 'inactive'])],
+            'company_id' => 'required|exists:companies,id',
         ]);
 
         $case = MoneyCase::create($validated);
@@ -58,7 +72,7 @@ class MoneyCaseController extends Controller
      */
     public function show(MoneyCase $moneyCase)
     {
-        $moneyCase->load(['collections.parcel', 'expenses']);
+        $moneyCase->load(['collections.parcel', 'expenses', 'company']);
         $moneyCase->calculated_balance = $moneyCase->calculateBalance();
 
         return Inertia::render('MoneyCase/Show', [
@@ -72,7 +86,8 @@ class MoneyCaseController extends Controller
     public function edit(MoneyCase $moneyCase)
     {
         return Inertia::render('MoneyCase/Edit', [
-            'case' => $moneyCase
+            'case' => $moneyCase,
+            'companies' => \App\Models\Company::select('id', 'name')->get()
         ]);
     }
 
@@ -86,6 +101,7 @@ class MoneyCaseController extends Controller
             'description' => 'nullable|string',
             'balance' => 'nullable|numeric|min:0',
             'status' => ['required', Rule::in(['active', 'inactive'])],
+            'company_id' => 'required|exists:companies,id',
         ]);
 
         $moneyCase->update($validated);
@@ -146,7 +162,7 @@ class MoneyCaseController extends Controller
         ]);
 
         $moneyCase = MoneyCase::findOrFail($validated['case_id']);
-        
+
         // Check if case is active
         if ($moneyCase->status !== 'active') {
             return back()->withErrors([

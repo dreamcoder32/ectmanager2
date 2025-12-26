@@ -60,6 +60,13 @@
                       <h3 class="text-h6 mb-2">Created</h3>
                       <p class="text-body-1">{{ formatDate(moneyCase.created_at) }}</p>
                     </div>
+                    <div>
+                      <h3 class="text-h6 mb-2">Company</h3>
+                      <div class="d-flex align-center">
+                         <v-icon color="primary" class="mr-2">mdi-domain</v-icon>
+                         <p class="text-body-1 mb-0">{{ moneyCase.company?.name || 'N/A' }}</p>
+                      </div>
+                    </div>
                   </v-col>
                   <v-col cols="12" md="6">
                     <!-- Balance Card -->

@@ -19,6 +19,7 @@
         "smalot/pdfparser": "^2.12",
         "spatie/browsershot": "^5.0",
         "spatie/laravel-permission": "^6.21",
+        "stancl/tenancy": "^3.9",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {

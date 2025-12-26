@@ -218,6 +218,39 @@
                 </v-list-item>
 
                 <v-list-item
+                    v-if="$page.props.auth.user.role === 'admin'"
+                    @click="$inertia.visit('/money-cases')"
+                    link
+                    :class="{
+                        'sidebar-item-active':
+                            $page.component.startsWith('MoneyCase/'),
+                    }"
+                    class="sidebar-item mb-1"
+                >
+                    <template v-slot:prepend>
+                        <v-icon
+                            :color="
+                                $page.component.startsWith('MoneyCase/')
+                                    ? '#667eea'
+                                    : '#8b92a8'
+                            "
+                            size="22"
+                            >mdi-briefcase</v-icon
+                        >
+                    </template>
+                    <v-list-item-title
+                        :class="
+                            $page.component.startsWith('MoneyCase/')
+                                ? 'text-white'
+                                : 'text-grey-lighten-1'
+                        "
+                        class="font-weight-medium text-body-2"
+                    >
+                        {{ $t("navigation.money_cases") || "Money Cases" }}
+                    </v-list-item-title>
+                </v-list-item>
+
+                <v-list-item
                     @click="$inertia.visit('/expenses')"
                     link
                     :class="{

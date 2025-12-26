@@ -45,6 +45,14 @@
             class="simple-table"
             item-key="id"
           >
+            <!-- Company Column -->
+            <template v-slot:[`item.company.name`]="{ item }">
+              <div class="d-flex align-center">
+                <v-icon color="secondary" small class="mr-2">mdi-domain</v-icon>
+                <span class="text-body-2">{{ item.company?.name || 'N/A' }}</span>
+              </div>
+            </template>
+
             <!-- Name Column -->
             <template v-slot:[`item.name`]="{ item }">
               <div class="d-flex align-center">
@@ -176,6 +184,12 @@ export default {
         sortBy: [{ key: 'created_at', order: 'desc' }]
       },
       headers: [
+        {
+          title: 'Company',
+          key: 'company.name',
+          sortable: true,
+          width: '150px'
+        },
         {
           title: 'Name',
           key: 'name',

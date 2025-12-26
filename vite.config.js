@@ -19,6 +19,13 @@ export default defineConfig({
         }),
         vuetify({ autoImport: true }),
     ],
+    server: {
+        host: '0.0.0.0',
+        hmr: {
+            host: '192.168.1.37',
+        },
+        cors: true,
+    },
     build: {
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
