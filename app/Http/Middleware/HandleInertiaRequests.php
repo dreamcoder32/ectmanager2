@@ -41,8 +41,10 @@ class HandleInertiaRequests extends Middleware
                 'new_transfer_id' => fn() => $request->session()->get('new_transfer_id'),
             ],
             'pending_transfers_count' => function () use ($request) {
-                if (!$request->user())
+                // Only query tenant tables when tenancy is initialized
+                if (!$request->user() || !tenancy()->initialized) {
                     return 0;
+                }
                 return \App\Models\TransferRequest::where('admin_id', $request->user()->id)
                     ->where('status', 'pending')
                     ->count();
