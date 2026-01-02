@@ -24,7 +24,7 @@ Route::domain('{central_domain}')
     ->where(['central_domain' => $centralDomainsPattern])
     ->group(function () {
         Route::get('/', function () {
-            return 'Welcome to the Central Delivery Management System. Please visit your tenant subdomain.';
+            return 'تم تحويل رابط المنصة يرجى الاتصال بمديرك ';
         });
 
         // WhatsApp Webhook routes (public access for wasenderapi.com)
