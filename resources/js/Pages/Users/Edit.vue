@@ -182,6 +182,20 @@
                     ></v-text-field>
                   </v-col>
 
+                  <!-- Device User ID -->
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="form.device_user_id"
+                      label="Device User ID (ZKTeco)"
+                      variant="outlined"
+                      :error-messages="errors.device_user_id"
+                      prepend-inner-icon="mdi-fingerprint"
+                      placeholder="Enter device user ID"
+                      hint="Must match the User ID on the ZKTeco attendance device"
+                      persistent-hint
+                    ></v-text-field>
+                  </v-col>
+
                   <!-- Salary Information -->
                   <v-col cols="12">
                     <v-divider class="my-4"></v-divider>
@@ -351,6 +365,7 @@ const form = useForm({
   identity_card_number: props.user.identity_card_number || '',
   national_identification_number: props.user.national_identification_number || '',
   started_working_at: props.user.started_working_at || '',
+  device_user_id: props.user.device_user_id || '',
   monthly_salary: props.user.monthly_salary || '',
   payment_day_of_month: props.user.payment_day_of_month || null,
   is_active: props.user.is_active ?? true,

@@ -13,9 +13,9 @@ use Illuminate\Support\Facades\Log;
 
 class AttendanceService
 {
-    protected ZKTecoService $zktecoService;
+    protected ZKTecoServiceV2 $zktecoService;
 
-    public function __construct(ZKTecoService $zktecoService)
+    public function __construct(ZKTecoServiceV2 $zktecoService)
     {
         $this->zktecoService = $zktecoService;
     }

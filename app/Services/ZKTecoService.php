@@ -76,13 +76,19 @@ class ZKTecoService
 
             // Send CMD_CONNECT via TCP
             Log::info("Testing ZKTeco Connect (TCP)...");
-            // Some devices need 4 bytes of 0 as payload for valid connection
-            $command = $this->createCommand(self::CMD_CONNECT, pack('V', 0));
+            // Some devices need 4 bytes of 0 as payload for valid connection, or the Comm Key
+            $commKey = 0;
+            $command = $this->createCommand(self::CMD_CONNECT, pack('V', $commKey));
             $this->sendCommand($this->ip, $this->port, $command);
 
             $reply = $this->receiveReply();
 
             if ($reply) {
+                $rHeader = unpack('vcmd', substr($reply, 0, 2));
+                $cmdCode = $rHeader['cmd'] ?? 0;
+                Log::info("Connect Reply CMD: " . $cmdCode);
+
+
                 Log::info("Established TCP session: {$this->sessionId}");
                 return true;
             }
@@ -177,6 +183,18 @@ class ZKTecoService
         try {
             // Disable device to prevent new records during sync
             $this->disableDevice();
+
+            // Try to prepare/refresh the attendance data buffer
+            // This might force the device to include new records
+            Log::info("Sending CMD_PREPARE_DATA to refresh attendance buffer...");
+            $prepareCmd = $this->createCommand(101); // CMD_PREPARE_DATA
+            $this->sendCommand($device->ip_address, $device->port, $prepareCmd);
+            $prepareReply = $this->receiveReply();
+            if ($prepareReply) {
+                Log::info("Prepare data reply received: " . bin2hex($prepareReply));
+            }
+
+            usleep(500000); // Wait 500ms for device to prepare data
 
             // Request user templates first (sometimes helps wake up the data stream)
             $preCmd = $this->createCommand(self::CMD_USERTEMP_RRQ);
@@ -453,6 +471,7 @@ class ZKTecoService
             $recordSize = 16;
         }
 
+        Log::info("Parsing attendance records. Payload Hex: " . bin2hex($payload));
         Log::info("Parsing attendance records. Payload length: {$payloadLen}, Estimated record size: {$recordSize}");
 
         $offset = 0;
@@ -460,13 +479,13 @@ class ZKTecoService
             $record = substr($payload, $offset, $recordSize);
 
             if ($recordSize === 8) {
-                $parsed = unpack('vuser_id/vstatus/vyear/vmonth/vday/vhour/vminute/vsecond', $record);
-                // Note: Standard 8-byte record is different, but let's try this
+                // 8 bytes total: vuser_id (2) + vstatus (2) + Vtime (4) = 8 bytes
+                $parsed = unpack('vuser_id/vstatus/Vtime', $record);
             } elseif ($recordSize === 40) {
                 $parsed = unpack('vuser_id/Cyear/Cmonth/Cday/Chour/Cminute/Csecond/Cverify', $record);
             } else {
-                // Default to 16 byte?
-                $parsed = unpack('vuser_id/vverify/vtime', $record);
+                // 16 bytes: vuser_id (2) + vstatus (2) + Vtime (4) + rest (8)
+                $parsed = unpack('vuser_id/vstatus/Vtime/Vreserved1/Vreserved2', $record);
             }
 
             if (!$parsed || !isset($parsed['user_id'])) {
@@ -485,8 +504,12 @@ class ZKTecoService
                         $parsed['minute'] ?? 0,
                         $parsed['second'] ?? 0
                     );
+                } elseif ($recordSize === 8 || $recordSize === 16) {
+                    // For 8 and 16 byte records, 'time' is a Unix timestamp
+                    if (isset($parsed['time']) && $parsed['time'] > 0) {
+                        $punchTime = Carbon::createFromTimestamp($parsed['time']);
+                    }
                 }
-                // ... (more logic for other sizes could be added)
 
                 if ($punchTime) {
                     Log::info("Parsed Record: UserID={$parsed['user_id']}, Time={$punchTime->toDateTimeString()}");

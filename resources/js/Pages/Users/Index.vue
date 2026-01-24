@@ -145,10 +145,27 @@
           </template>
 
           <template v-slot:[`item.name`]="{ item }">
-            <div>
-              <div class="font-weight-medium">{{ item.first_name }}</div>
-              <div class="text-caption text--secondary" v-if="item.first_name || item.last_name">
-                {{ item.first_name }} {{ item.last_name }}
+            <div class="d-flex align-center">
+              <div>
+                <div class="font-weight-medium">
+                  {{ item.first_name }}
+                  <v-tooltip v-if="item.device_user_id" location="top">
+                    <template v-slot:activator="{ props }">
+                      <v-icon 
+                        v-bind="props"
+                        color="primary" 
+                        size="small" 
+                        class="ml-1"
+                      >
+                        mdi-fingerprint
+                      </v-icon>
+                    </template>
+                    <span>Device ID: {{ item.device_user_id }}</span>
+                  </v-tooltip>
+                </div>
+                <div class="text-caption text--secondary" v-if="item.first_name || item.last_name">
+                  {{ item.first_name }} {{ item.last_name }}
+                </div>
               </div>
             </div>
           </template>
