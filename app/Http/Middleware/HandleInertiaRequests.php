@@ -39,6 +39,7 @@ class HandleInertiaRequests extends Middleware
                 'success' => fn() => $request->session()->get('success'),
                 'error' => fn() => $request->session()->get('error'),
                 'new_transfer_id' => fn() => $request->session()->get('new_transfer_id'),
+                'result' => fn() => $request->session()->get('result'),
             ],
             'pending_transfers_count' => function () use ($request) {
                 // Only query tenant tables when tenancy is initialized

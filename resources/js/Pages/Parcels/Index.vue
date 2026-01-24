@@ -66,6 +66,32 @@
                         </v-col>
 
                         <v-col cols="12" md="2">
+                             <v-text-field
+                                v-model="tempFilters.start_date"
+                                label="Start Date"
+                                type="date"
+                                variant="outlined"
+                                density="compact"
+                                clearable
+                                color="primary"
+                                class="filter-field"
+                            ></v-text-field>
+                        </v-col>
+
+                         <v-col cols="12" md="2">
+                             <v-text-field
+                                v-model="tempFilters.end_date"
+                                label="End Date"
+                                type="date"
+                                variant="outlined"
+                                density="compact"
+                                clearable
+                                color="primary"
+                                class="filter-field"
+                            ></v-text-field>
+                        </v-col>
+
+                        <v-col cols="12" md="2">
                             <v-select
                                 v-model="tempFilters.company_id"
                                 :items="companyOptions"
@@ -110,6 +136,17 @@
                                 color="primary"
                                 class="filter-field"
                             ></v-select>
+                        </v-col>
+
+                        <v-col cols="12" md="2" class="d-flex align-center" v-if="isAdmin">
+                            <v-checkbox
+                                v-model="tempFilters.payment_missing"
+                                label="Payment Missing"
+                                density="compact"
+                                hide-details
+                                color="error"
+                                class="mt-0 pt-0"
+                            ></v-checkbox>
                         </v-col>
 
                         <v-col
@@ -258,6 +295,42 @@
                         </div>
 
                         <div v-else>
+                            <!-- Bulk Actions Bar -->
+                            <v-expand-transition>
+                                <div v-if="selectedParcels.length > 0 && isAdmin" class="d-flex align-center px-4 py-2 bg-grey-lighten-4 border-bottom">
+                                    <span class="text-body-2 font-weight-medium mr-4">
+                                        {{ selectedParcels.length }} selected
+                                    </span>
+                                    <v-btn
+                                        color="indigo"
+                                        size="small"
+                                        prepend-icon="mdi-cube-scan"
+                                        @click="verifyBulkEcoTrack"
+                                        :loading="loading"
+                                    >
+                                        Verify EcoTrack Status
+                                    </v-btn>
+                                    <v-spacer></v-spacer>
+                                    <v-btn size="small" variant="text" @click="selectedParcels = []">
+                                        Clear Selection
+                                    </v-btn>
+                                </div>
+                            </v-expand-transition>
+
+                            <!-- Select All Checkbox -->
+                             <div v-if="isAdmin" class="px-4 py-2 border-bottom d-flex align-center">
+                                <v-checkbox
+                                    :model-value="selectedParcels.length === parcels.data.length && parcels.data.length > 0"
+                                    :indeterminate="selectedParcels.length > 0 && selectedParcels.length < parcels.data.length"
+                                    @click.stop="toggleAllSelection"
+                                    hide-details
+                                    density="compact"
+                                    color="primary"
+                                    label="Select All on Page"
+                                    class="ma-0 pa-0"
+                                ></v-checkbox>
+                            </div>
+
                             <!-- Parcel Cards -->
                             <div class="parcel-cards-container">
                                 <v-card
@@ -285,6 +358,17 @@
                                                 <div
                                                     class="d-flex align-center mb-3"
                                                 >
+                                                     <div v-if="isAdmin" class="mr-2">
+                                                        <v-checkbox
+                                                            v-model="selectedParcels"
+                                                            :value="parcel.id"
+                                                            hide-details
+                                                            density="compact"
+                                                            color="primary"
+                                                            @click.stop
+                                                        ></v-checkbox>
+                                                    </div>
+
                                                     <v-avatar
                                                         size="32"
                                                         class="mr-3"
@@ -389,6 +473,11 @@
                                                                     }}
                                                                     pending
                                                                 </v-chip>
+                                                            </div>
+                                                            
+                                                            <!-- EcoTrack Status -->
+                                                            <div v-if="isAdmin && parcel.status !== 'delivered' && parcel.status !== 'returned'" class="mt-2">
+                                                                    <EcoTrackStatusBadge :parcel="parcel" />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -611,6 +700,25 @@
                                                                     .name
                                                             }}
                                                         </v-chip>
+                                                    </div>
+
+                                                    <!-- Recolte Information -->
+                                                    <div v-if="parcel.latest_collection && parcel.latest_collection.recoltes && parcel.latest_collection.recoltes.length > 0" class="mt-2">
+                                                        <div class="text-caption text-grey">Recolte(s)</div>
+                                                        <div class="d-flex flex-wrap gap-1">
+                                                            <v-chip
+                                                                v-for="recolte in parcel.latest_collection.recoltes"
+                                                                :key="recolte.id"
+                                                                size="small"
+                                                                color="success"
+                                                                variant="tonal"
+                                                                class="mr-1 mb-1 cursor-pointer"
+                                                                @click.stop="$inertia.visit(`/recoltes/${recolte.id}`)"
+                                                            >
+                                                                <v-icon start size="12">mdi-cash-check</v-icon>
+                                                              RCT-{{ recolte.code }}
+                                                            </v-chip>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </v-col>
@@ -1007,11 +1115,13 @@
 <script>
 import { router } from "@inertiajs/vue3";
 import AppLayout from "@/Layouts/AppLayout.vue";
+import EcoTrackStatusBadge from "@/Components/EcoTrackStatusBadge.vue";
 
 export default {
     name: "ParcelIndex",
     components: {
         AppLayout,
+        EcoTrackStatusBadge,
     },
     props: {
         parcels: Object,
@@ -1040,7 +1150,11 @@ export default {
                 state_id: this.filters.state_id || null,
                 city_id: this.filters.city_id || null,
                 company_id: this.filters.company_id || null,
+                start_date: this.filters.start_date || null,
+                end_date: this.filters.end_date || null,
+                payment_missing: this.filters.payment_missing === '1' || this.filters.payment_missing === true,
             },
+            selectedParcels: [],
             snackbar: {
                 show: false,
                 message: "",
@@ -1111,6 +1225,9 @@ export default {
         totalPages() {
             return this.parcels?.last_page || 1;
         },
+        isAdmin() {
+            return this.$page.props.auth?.user?.role === 'admin';
+        },
     },
     methods: {
         getStatusColor(status) {
@@ -1165,6 +1282,9 @@ export default {
                     state_id: this.tempFilters.state_id,
                     city_id: this.tempFilters.city_id,
                     company_id: this.tempFilters.company_id,
+                    start_date: this.tempFilters.start_date,
+                    end_date: this.tempFilters.end_date,
+                    payment_missing: this.tempFilters.payment_missing,
                     page: 1,
                 },
                 {
@@ -1186,12 +1306,49 @@ export default {
                 state_id: null,
                 city_id: null,
                 company_id: null,
+                start_date: null,
+                end_date: null,
+                payment_missing: false,
             };
             this.currentPage = 1;
             this.applyFilters();
         },
         onStateChange() {
             this.tempFilters.city_id = null;
+        },
+        toggleAllSelection() {
+             if (this.selectedParcels.length === this.parcels.data.length) {
+                 this.selectedParcels = [];
+             } else {
+                 this.selectedParcels = this.parcels.data.map(p => p.id);
+             }
+        },
+        verifyBulkEcoTrack() {
+             if (this.selectedParcels.length === 0) return;
+             
+             this.loading = true;
+             this.$inertia.post(route('parcels.bulk-verify-ecotrack'), {
+                 parcel_ids: this.selectedParcels
+             }, {
+                 preserveScroll: true,
+                 onSuccess: () => {
+                     this.loading = false;
+                     this.selectedParcels = []; // Clear selection
+                     this.snackbar = {
+                         show: true,
+                         message: "Bulk verification started/completed",
+                         color: "success"
+                     };
+                 },
+                 onError: () => {
+                     this.loading = false;
+                     this.snackbar = {
+                         show: true,
+                         message: "Failed to verify parcels",
+                         color: "error"
+                     };
+                 }
+             });
         },
         onPageChange(page) {
             this.currentPage = page;
@@ -1203,6 +1360,9 @@ export default {
                     state_id: this.tempFilters.state_id,
                     city_id: this.tempFilters.city_id,
                     company_id: this.tempFilters.company_id,
+                    start_date: this.tempFilters.start_date,
+                    end_date: this.tempFilters.end_date,
+                    payment_missing: this.tempFilters.payment_missing,
                     page: page,
                 },
                 {

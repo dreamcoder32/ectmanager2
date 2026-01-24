@@ -22,7 +22,7 @@ class ExpenseController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        $query = Expense::with(['createdBy', 'approvedBy', 'paidBy', 'moneyCase', 'category', 'company']);
+        $query = Expense::with(['createdBy', 'approvedBy', 'paidBy', 'moneyCase', 'category', 'company', 'recolte']);
 
         // Role-based filtering
         if ($user->role === 'agent') {

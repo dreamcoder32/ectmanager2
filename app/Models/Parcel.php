@@ -43,6 +43,8 @@ class Parcel extends Model
         "parcel_creation_date",
         "assigned_driver_id",
         "description",
+        "ecotrack_status",
+        "ecotrack_status_updated_at",
     ];
 
     protected $casts = [
@@ -57,6 +59,7 @@ class Parcel extends Model
         "collected_at" => "datetime",
         "delivered_at" => "datetime",
         "parcel_creation_date" => "datetime",
+        "ecotrack_status_updated_at" => "datetime",
     ];
 
     /**

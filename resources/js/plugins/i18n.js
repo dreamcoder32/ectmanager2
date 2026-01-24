@@ -14,6 +14,7 @@ const messages = {
             expenses: "Expenses",
             whatsapp: "WhatsApp Management",
             companies: "Companies",
+            attendance: "Attendance",
         },
         dashboard: {
             title: "Dashboard",
@@ -321,6 +322,7 @@ const messages = {
             users: "Utilisateurs",
             whatsapp: "Gestion WhatsApp",
             companies: "Entreprises",
+            attendance: "Présence",
         },
         dashboard: {
             title: "Tableau de bord",
@@ -624,6 +626,7 @@ const messages = {
             drivers: "السائقون",
             driverSettlement: "تسوية السائق",
             expenses: "المصاريف",
+            attendance: "الحضور والانصراف",
         },
         dashboard: {
             title: "لوحة التحكم",

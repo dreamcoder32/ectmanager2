@@ -259,13 +259,25 @@
                         <span v-else class="text--secondary">-</span>
                     </template>
 
+                    <template v-slot:[`item.recolte.code`]="{ item }">
+                        <a
+                            v-if="item.recolte"
+                            :href="route('recoltes.show', item.recolte.id)"
+                            class="text-decoration-none text-primary font-weight-bold"
+                            @click.prevent="$inertia.visit(route('recoltes.show', item.recolte.id))"
+                        >
+                            RCT-{{ item.recolte.code }}
+                        </a>
+                        <span v-else class="text--secondary">-</span>
+                    </template>
+
                     <template v-slot:[`item.created_by.name`]="{ item }">
                         <div class="d-flex align-center">
                             <v-avatar size="24" class="mr-2">
                                 <v-icon>mdi-account</v-icon>
                             </v-avatar>
                             <span class="text-body-2">{{
-                                item.created_by?.uid || $t("common.unknown")
+                                item.created_by?.first_name || $t("common.unknown")
                             }}</span>
                         </div>
                     </template>
@@ -494,9 +506,15 @@ export default {
                     sortable: true,
                     width: "120px",
                 },
+                // {
+                //     title: this.$t("expenses.table.money_case"),
+                //     key: "money_case.name",
+                //     sortable: false,
+                //     width: "150px",
+                // },
                 {
-                    title: this.$t("expenses.table.money_case"),
-                    key: "money_case.name",
+                    title: "Recolte",
+                    key: "recolte.code",
                     sortable: false,
                     width: "150px",
                 },

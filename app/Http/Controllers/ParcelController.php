@@ -26,7 +26,7 @@ class ParcelController extends Controller
         $user = auth()->user();
 
         $query = Parcel::query()
-            ->with(["company", "assignedDriver", "state", "city"])
+            ->with(["company", "assignedDriver", "state", "city", "latestCollection.recoltes"])
             ->withCount(["messages", "smsLogs"]); // Load messages and smsLogs count
 
         // Filter parcels by user's company access
@@ -63,6 +63,11 @@ class ParcelController extends Controller
             $query->where("company_id", $request->company_id);
         }
 
+        if ($request->boolean("payment_missing") && $user->role === 'admin') {
+            $query->where("status", "!=", "delivered")
+                ->where("ecotrack_status", "Colis Livré");
+        }
+
         if ($request->filled("search")) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -70,6 +75,14 @@ class ParcelController extends Controller
                     ->orWhere("recipient_name", "like", "%{$search}%")
                     ->orWhere("recipient_phone", "like", "%{$search}%");
             });
+        }
+
+        if ($request->filled("start_date")) {
+            $query->whereDate("created_at", ">=", $request->start_date);
+        }
+
+        if ($request->filled("end_date")) {
+            $query->whereDate("created_at", "<=", $request->end_date);
         }
 
         // Get per_page from request, default to 15, max 100
@@ -109,6 +122,9 @@ class ParcelController extends Controller
                 "city_id",
                 "company_id",
                 "search",
+                "start_date",
+                "end_date",
+                "payment_missing",
             ]),
             "states" => State::active()->get(),
             "companies" => $companies,
@@ -117,11 +133,56 @@ class ParcelController extends Controller
     }
 
     /**
+     * verify ecotrack status for multiple parcels
+     */
+    public function bulkVerifyEcoTrackStatus(Request $request)
+    {
+        $request->validate([
+            'parcel_ids' => 'required|array',
+            'parcel_ids.*' => 'exists:parcels,id',
+        ]);
+
+        // Increase execution time for bulk operations
+        set_time_limit(300);
+
+        // Only admins can do this bulk action
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized');
+        }
+
+        $parcels = Parcel::whereIn('id', $request->parcel_ids)->get();
+        $service = new \App\Services\EcoTrackService();
+        $updatedCount = 0;
+
+        foreach ($parcels as $parcel) {
+            // Add a small delay to avoid overwhelming the server
+            // usleep(200000); // 200ms
+
+            try {
+                $result = $service->getTrackingStatus($parcel->tracking_number);
+                if ($result['status'] !== 'Status not found' && !str_starts_with($result['status'], 'Error')) {
+                    $parcel->update([
+                        'ecotrack_status' => $result['status'],
+                        'ecotrack_status_updated_at' => \Carbon\Carbon::now(),
+                    ]);
+                    $updatedCount++;
+                }
+            } catch (\Exception $e) {
+                // Continue to next parcel if one fails
+                Log::error("Bulk EcoTrack verification failed for parcel {$parcel->id}: " . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', "Updated status for {$updatedCount} parcels.");
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
         $user = auth()->user();
+
 
         // Get companies based on user's access
         if ($user->role === "admin") {
@@ -137,6 +198,31 @@ class ParcelController extends Controller
             "userCompanies" => $companies, // For import selection
             "drivers" => Driver::active()->get(),
             "states" => State::active()->get(),
+        ]);
+    }
+
+    /**
+     * verify ecotrack status
+     */
+    public function verifyEcoTrackStatus(Parcel $parcel)
+    {
+        if (auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized');
+        }
+
+        $service = new \App\Services\EcoTrackService();
+        $result = $service->getTrackingStatus($parcel->tracking_number);
+
+        if ($result['status'] !== 'Status not found' && !str_starts_with($result['status'], 'Error')) {
+            $parcel->update([
+                'ecotrack_status' => $result['status'],
+                'ecotrack_status_updated_at' => \Carbon\Carbon::now(),
+            ]);
+        }
+
+        return response()->json([
+            'ecotrack_status' => $parcel->ecotrack_status,
+            'ecotrack_status_updated_at' => $parcel->ecotrack_status_updated_at,
         ]);
     }
 

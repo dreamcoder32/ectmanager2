@@ -23,7 +23,6 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'uid',
-        'first_name',
         'email',
         'password',
         'role',
@@ -51,6 +50,11 @@ class User extends Authenticatable
         'commission_rate',
         'commission_type',
         'commission_is_active',
+        // Attendance fields
+        'device_user_id',
+        'attendance_enabled',
+        'custom_work_start_time',
+        'custom_work_end_time',
     ];
 
     /**
@@ -86,6 +90,8 @@ class User extends Authenticatable
             'salary_is_active' => 'boolean',
             'commission_rate' => 'decimal:2',
             'commission_is_active' => 'boolean',
+            // Attendance fields
+            'attendance_enabled' => 'boolean',
         ];
     }
 
@@ -291,5 +297,21 @@ class User extends Authenticatable
     public function recoltes(): HasMany
     {
         return $this->hasMany(Recolte::class, 'created_by');
+    }
+
+    /**
+     * Get the attendance records for the user.
+     */
+    public function attendanceRecords(): HasMany
+    {
+        return $this->hasMany(AttendanceRecord::class);
+    }
+
+    /**
+     * Get the attendance summaries for the user.
+     */
+    public function attendanceSummaries(): HasMany
+    {
+        return $this->hasMany(AttendanceSummary::class);
     }
 }

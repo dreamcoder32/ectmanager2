@@ -85,6 +85,18 @@ Route::middleware([
 
         // Search by tracking number
         Route::post("/parcels/search-by-tracking", [ParcelController::class, "searchByTrackingNumber"])->name("parcels.search-by-tracking");
+
+        // Ecotrack verification for single parcel
+        Route::post("/parcels/{parcel}/verify-ecotrack", [ParcelController::class, "verifyEcoTrackStatus"])->name("parcels.verify-ecotrack");
+
+        // Bulk Ecotrack verification
+        Route::post("/parcels/bulk-verify-ecotrack", [ParcelController::class, "bulkVerifyEcoTrackStatus"])->name("parcels.bulk-verify-ecotrack");
+    });
+
+    // Tracking Verification
+    Route::middleware(["auth"])->group(function () {
+        Route::get("/tracking-verification", [\App\Http\Controllers\TrackingVerificationController::class, "index"])->name("tracking-verification.index");
+        Route::post("/tracking-verification/verify", [\App\Http\Controllers\TrackingVerificationController::class, "verify"])->name("tracking-verification.verify");
     });
 
     // Add API endpoints for states and cities used by selectors
@@ -255,6 +267,44 @@ Route::middleware([
         Route::post("/whatsapp/parcels/{parcel}/update-price", [WhatsAppController::class, "updateParcelPrice"])->name("whatsapp.update-price");
         Route::get("/whatsapp/parcels/{parcel}/price-history", [WhatsAppController::class, "getPriceChangeHistory"])->name("whatsapp.price-history");
         Route::post("/whatsapp/companies/{company}/check-phone", [WhatsAppController::class, "checkPhoneOnWhatsApp"])->name("whatsapp.check-phone");
+    });
+
+    // Attendance Management routes
+    Route::middleware(["auth"])->group(function () {
+        // Attendance Dashboard
+        Route::get("/attendance", [\App\Http\Controllers\AttendanceController::class, "index"])->name("attendance.index");
+        Route::get("/attendance/daily", [\App\Http\Controllers\AttendanceController::class, "daily"])->name("attendance.daily");
+        Route::get("/attendance/users/{user}", [\App\Http\Controllers\AttendanceController::class, "show"])->name("attendance.show");
+
+        // Sync operations
+        Route::post("/attendance/sync", [\App\Http\Controllers\AttendanceController::class, "sync"])->name("attendance.sync");
+
+        // Manual punch
+        Route::post("/attendance/manual-punch", [\App\Http\Controllers\AttendanceController::class, "manualPunch"])->name("attendance.manual-punch");
+
+        // Export
+        Route::get("/attendance/export", [\App\Http\Controllers\AttendanceController::class, "export"])->name("attendance.export");
+
+        // Update notes
+        Route::put("/attendance/summaries/{summary}/notes", [\App\Http\Controllers\AttendanceController::class, "updateNotes"])->name("attendance.summaries.notes");
+
+        // Device Management
+        Route::resource("attendance/devices", \App\Http\Controllers\AttendanceDeviceController::class)->names([
+            'index' => 'attendance.devices.index',
+            'create' => 'attendance.devices.create',
+            'store' => 'attendance.devices.store',
+            'show' => 'attendance.devices.show',
+            'edit' => 'attendance.devices.edit',
+            'update' => 'attendance.devices.update',
+            'destroy' => 'attendance.devices.destroy',
+        ]);
+
+        // Test device connection
+        Route::post("/attendance/devices/{device}/test-connection", [\App\Http\Controllers\AttendanceDeviceController::class, "testConnection"])->name("attendance.devices.test-connection");
+
+        // Attendance Settings
+        Route::get("/attendance/settings", [\App\Http\Controllers\AttendanceSettingController::class, "index"])->name("attendance.settings.index");
+        Route::put("/attendance/settings", [\App\Http\Controllers\AttendanceSettingController::class, "update"])->name("attendance.settings.update");
     });
 });
 

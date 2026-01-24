@@ -192,21 +192,35 @@ const submit = () => {
 
 /* Login input styling */
 :deep(.login-input .v-field) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :deep(.login-input .v-field:hover) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(102, 126, 234, 0.4);
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(102, 126, 234, 0.6) !important;
   transform: translateY(-2px);
 }
 
 :deep(.login-input .v-field--focused) {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: #6b7280;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: #667eea !important;
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2) !important;
+}
+
+/* Fix browser autofill background and text color */
+:deep(.login-input input:-webkit-autofill),
+:deep(.login-input input:-webkit-autofill:hover), 
+:deep(.login-input input:-webkit-autofill:focus), 
+:deep(.login-input input:-webkit-autofill:active) {
+  -webkit-box-shadow: 0 0 0 30px #2a2d3c inset !important;
+  -webkit-text-fill-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+:deep(.login-input input) {
+  caret-color: white !important;
 }
 
 :deep(.login-input .v-label) {

@@ -118,6 +118,38 @@
                 </v-list-item>
 
                 <v-list-item
+                    @click="$inertia.visit('/tracking-verification')"
+                    link
+                    :class="{
+                        'sidebar-item-active':
+                            $page.component.startsWith('TrackingVerification/'),
+                    }"
+                    class="sidebar-item mb-1"
+                >
+                    <template v-slot:prepend>
+                        <v-icon
+                            :color="
+                                $page.component.startsWith('TrackingVerification/')
+                                    ? '#667eea'
+                                    : '#8b92a8'
+                            "
+                            size="22"
+                            >mdi-cube-scan</v-icon
+                        >
+                    </template>
+                    <v-list-item-title
+                        :class="
+                            $page.component.startsWith('TrackingVerification/')
+                                ? 'text-white'
+                                : 'text-grey-lighten-1'
+                        "
+                        class="font-weight-medium text-body-2"
+                    >
+                        Tracking Verification
+                    </v-list-item-title>
+                </v-list-item>
+
+                <v-list-item
                     @click="$inertia.visit('/stopdesk-payment')"
                     link
                     :class="{
@@ -385,6 +417,39 @@
                         {{ $t("navigation.whatsapp") }}
                     </v-list-item-title>
                 </v-list-item> -->
+
+                <v-list-item
+                    v-if="$page.props.auth.user.role === 'admin' || $page.props.auth.user.role === 'supervisor'"
+                    @click="$inertia.visit('/attendance')"
+                    link
+                    :class="{
+                        'sidebar-item-active':
+                            $page.component.startsWith('Attendance/'),
+                    }"
+                    class="sidebar-item mb-1"
+                >
+                    <template v-slot:prepend>
+                        <v-icon
+                            :color="
+                                $page.component.startsWith('Attendance/')
+                                    ? '#667eea'
+                                    : '#8b92a8'
+                            "
+                            size="22"
+                            >mdi-fingerprint</v-icon
+                        >
+                    </template>
+                    <v-list-item-title
+                        :class="
+                            $page.component.startsWith('Attendance/')
+                                ? 'text-white'
+                                : 'text-grey-lighten-1'
+                        "
+                        class="font-weight-medium text-body-2"
+                    >
+                        {{ $t("navigation.attendance") || "Attendance" }}
+                    </v-list-item-title>
+                </v-list-item>
 
                 <v-list-item
                     v-if="$page.props.auth.user.role === 'admin'"
